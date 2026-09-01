@@ -171,7 +171,7 @@
             </section>
         </div>
 
-        <!-- PROFILE VIEW (Image 1 UI) -->
+        <!-- PROFILE VIEW -->
         <div id="profileView" class="page-view" hidden>
             <div class="profile-dashboard">
                 <div class="user-profile-header">
@@ -252,7 +252,7 @@
     </div>
 </div>
 
-<!-- DEPOSIT MODAL (With Copy Support) -->
+<!-- DEPOSIT MODAL -->
 <div class="custom-modal" id="depositModal" hidden>
     <div class="modal-overlay"></div>
     <div class="modal-card">
@@ -288,36 +288,39 @@
             </div>
         </div>
 
-        <div class="form-group">
-            <label>የገንዘብ መጠን ይምረጡ (Deposit):</label>
-            <select class="form-control" id="depositAmount">
-                <option value="">-- የገንዘብ መጠን ይምረጡ --</option>
-                <option value="50">50 ብር</option>
-                <option value="100">100 ብር</option>
-                <option value="200">200 ብር</option>
-                <option value="300">300 ብር</option>
-                <option value="500">500 ብር</option>
-                <option value="1000">1,000 ብር</option>
-                <option value="5000">5,000 ብር</option>
-            </select>
-        </div>
+        <!-- FORM WRAPPER -->
+        <form id="deposit-form">
+            <div class="form-group">
+                <label>የገንዘብ መጠን ይምረጡ (Deposit):</label>
+                <select class="form-control" id="deposit-amount" required>
+                    <option value="">-- የገንዘብ መጠን ይምረጡ --</option>
+                    <option value="50">50 ብር</option>
+                    <option value="100">100 ብር</option>
+                    <option value="200">200 ብር</option>
+                    <option value="300">300 ብር</option>
+                    <option value="500">500 ብር</option>
+                    <option value="1000">1,000 ብር</option>
+                    <option value="5000">5,000 ብር</option>
+                </select>
+            </div>
 
-        <div class="form-group">
-            <label>ብር የላኩበት የባንክ አይነት:</label>
-            <select class="form-control" id="depositBank">
-                <option value="Telebirr">Telebirr</option>
-                <option value="CBE">CBE (የኢትዮጵያ ንግድ ባንክ)</option>
-                <option value="Abyssinia">አቢሲንያ ባንክ</option>
-                <option value="Awash">አዋሽ ባንክ</option>
-            </select>
-        </div>
+            <div class="form-group">
+                <label>ብር የላኩበት የባንክ አይነት:</label>
+                <select class="form-control" id="deposit-bank" required>
+                    <option value="Telebirr">Telebirr</option>
+                    <option value="CBE">CBE (የኢትዮጵያ ንግድ ባንክ)</option>
+                    <option value="Abyssinia">አቢሲንያ ባንክ</option>
+                    <option value="Awash">አዋሽ ባንክ</option>
+                </select>
+            </div>
 
-        <div class="form-group">
-            <label>የባንክ ማረጋገጫ (SMS) እዚህ ይለጥፉ:</label>
-            <textarea class="form-control" rows="3" placeholder="የባንኩን SMS ሙሉ በሙሉ እዚህ ላይ Paste ያድርጉ..."></textarea>
-        </div>
+            <div class="form-group">
+                <label>የባንክ ማረጋገጫ (SMS) እዚህ ይለጥፉ:</label>
+                <textarea class="form-control" id="deposit-sms" rows="3" placeholder="የባንኩን SMS ሙሉ በሙሉ እዚህ ላይ Paste ያድርጉ..." required></textarea>
+            </div>
 
-        <button class="submit-btn btn-green" type="button">📩 የማስገቢያ ጥያቄ ላክ</button>
+            <button class="submit-btn btn-green" type="submit">📩 የማስገቢያ ጥያቄ ላክ</button>
+        </form>
     </div>
 </div>
 
@@ -330,36 +333,39 @@
             <button class="close-modal-btn" type="button" onclick="closeModals()">✕</button>
         </div>
 
-        <div class="form-group">
-            <label>የምታወጡት የገንዘብ መጠን ይምረጡ (Withdraw):</label>
-            <select class="form-control" id="withdrawAmount">
-                <option value="">-- የገንዘብ መጠን ይምረጡ --</option>
-                <option value="100">100 ብር</option>
-                <option value="200">200 ብር</option>
-                <option value="300">300 ብር</option>
-                <option value="400">400 ብር</option>
-                <option value="500">500 ብር</option>
-                <option value="1000">1,000 ብር</option>
-                <option value="5000">5,000 ብር</option>
-            </select>
-        </div>
+        <!-- FORM WRAPPER -->
+        <form id="withdraw-form">
+            <div class="form-group">
+                <label>የምታወጡት የገንዘብ መጠን ይምረጡ (Withdraw):</label>
+                <select class="form-control" id="withdraw-amount" required>
+                    <option value="">-- የገንዘብ መጠን ይምረጡ --</option>
+                    <option value="100">100 ብር</option>
+                    <option value="200">200 ብር</option>
+                    <option value="300">300 ብር</option>
+                    <option value="400">400 ብር</option>
+                    <option value="500">500 ብር</option>
+                    <option value="1000">1,000 ብር</option>
+                    <option value="5000">5,000 ብር</option>
+                </select>
+            </div>
 
-        <div class="form-group">
-            <label>ብር የሚገባበት የባንክ ስም:</label>
-            <select class="form-control" id="withdrawBank">
-                <option value="Telebirr">Telebirr</option>
-                <option value="CBE">CBE (የኢትዮጵያ ንግድ ባንክ)</option>
-                <option value="Abyssinia">አቢሲንያ ባንክ</option>
-                <option value="Awash">አዋሽ ባንክ</option>
-            </select>
-        </div>
+            <div class="form-group">
+                <label>ብር የሚገባበት የባንክ ስም:</label>
+                <select class="form-control" id="withdraw-bank" required>
+                    <option value="Telebirr">Telebirr</option>
+                    <option value="CBE">CBE (የኢትዮጵያ ንግድ ባንክ)</option>
+                    <option value="Abyssinia">አቢሲንያ ባንክ</option>
+                    <option value="Awash">አዋሽ ባንክ</option>
+                </select>
+            </div>
 
-        <div class="form-group">
-            <label>የአካውንት ወይም የስልክ ቁጥር:</label>
-            <input type="text" class="form-control" placeholder="የባንክ አካውንት ወይም ስልክ ቁጥር">
-        </div>
+            <div class="form-group">
+                <label>የአካውንት ወይም የስልክ ቁጥር:</label>
+                <input type="text" class="form-control" id="withdraw-account" placeholder="የባንክ አካውንት ወይም ስልክ ቁጥር" required>
+            </div>
 
-        <button class="submit-btn btn-red" type="button">📬 የማውጫ ጥያቄ ላክ</button>
+            <button class="submit-btn btn-red" type="submit">📬 የማውጫ ጥያቄ ላክ</button>
+        </form>
     </div>
 </div>
 
