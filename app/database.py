@@ -14,7 +14,7 @@ DATABASE_URL = os.getenv(
 )
 
 
-# Railway/PostgreSQL compatibility
+# Render / Railway / PostgreSQL compatibility
 if DATABASE_URL.startswith("postgres://"):
     DATABASE_URL = DATABASE_URL.replace(
         "postgres://",
@@ -24,7 +24,7 @@ if DATABASE_URL.startswith("postgres://"):
 
 
 # =========================================================
-# ENGINE
+# ENGINE & CONNECT ARGS
 # =========================================================
 
 connect_args = {}
@@ -33,7 +33,6 @@ if DATABASE_URL.startswith("sqlite"):
     connect_args = {
         "check_same_thread": False
     }
-
 
 engine = create_engine(
     DATABASE_URL,
@@ -61,15 +60,13 @@ Base = declarative_base()
 
 
 # =========================================================
-# DATABASE SESSION
+# DATABASE SESSION DEPENDENCY
 # =========================================================
 
 def get_db():
     db = SessionLocal()
-
     try:
         yield db
-
     finally:
         db.close()
 
@@ -81,11 +78,8 @@ def get_db():
 def initialize_database():
     """
     Create all QUICK_BIRR GAMES tables.
-
-    Models are imported here so SQLAlchemy can
-    register them before creating the tables.
+    Registers models dynamically to avoid circular dependencies.
     """
-
-    from app import models  # noqa: F401
+    import app.models  # noqa: F401
 
     Base.metadata.create_all(bind=engine)
