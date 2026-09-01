@@ -54,8 +54,23 @@ class WalletTransactionResponse(BaseModel):
 
 
 # =========================================================
-# WALLET OPERATIONS
+# WALLET OPERATIONS (DIRECT DEPOSIT / WITHDRAW)
 # =========================================================
+
+class DepositCreate(BaseModel):
+    telegram_id: str = Field(..., min_length=1, max_length=64)
+    telegram_name: Optional[str] = None
+    amount: float = Field(..., gt=0, le=1_000_000)
+    bank_name: str = Field(..., min_length=1, max_length=100)
+    sms_data: str = Field(..., min_length=1)
+
+
+class WithdrawCreate(BaseModel):
+    telegram_id: str = Field(..., min_length=1, max_length=64)
+    amount: float = Field(..., gt=0, le=1_000_000)
+    bank_name: str = Field(..., min_length=1, max_length=100)
+    account_number: str = Field(..., min_length=1, max_length=255)
+
 
 class DepositRequest(BaseModel):
     amount: float = Field(
