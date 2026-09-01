@@ -1,5 +1,5 @@
 import os
-import requests
+import httpx
 from fastapi import APIRouter, Depends, BackgroundTasks, Request
 from sqlalchemy.orm import Session
 from datetime import datetime
@@ -18,8 +18,8 @@ ADMIN_TELEGRAM_ID = str(os.getenv("ADMIN_TELEGRAM_ID", "")).strip()
 BACKEND_URL = os.getenv("BACKEND_URL", "http://127.0.0.1:8000")
 
 
-# 📢 Telegram Notification Helper
-def send_admin_notification(text: str, reply_markup=None):
+# 📢 Telegram Notification Helper (Async with httpx)
+async def send_admin_notification(text: str, reply_markup=None):
     if not ADMIN_TELEGRAM_ID or not BOT_TOKEN:
         print("⚠️ ADMIN_TELEGRAM_ID ወይም BOT_TOKEN አልተዋቀረም!")
         return
@@ -28,13 +28,15 @@ def send_admin_notification(text: str, reply_markup=None):
     payload = {"chat_id": ADMIN_TELEGRAM_ID, "text": text, "parse_mode": "HTML"}
     if reply_markup:
         payload["reply_markup"] = reply_markup
+        
     try:
-        requests.post(url, json=payload, timeout=10)
+        async with httpx.AsyncClient() as client:
+            await client.post(url, json=payload, timeout=10.0)
     except Exception as e:
         print(f"❌ Telegram notify error: {e}")
 
 
-def _telegram_edit_message_sync(chat_id: str, message_id: int, text: str):
+async def _telegram_edit_message_sync(chat_id: str, message_id: int, text: str):
     if not BOT_TOKEN:
         return
     url = f"https://api.telegram.org/bot{BOT_TOKEN}/editMessageText"
@@ -45,7 +47,8 @@ def _telegram_edit_message_sync(chat_id: str, message_id: int, text: str):
         "parse_mode": "HTML"
     }
     try:
-        requests.post(url, json=payload, timeout=10)
+        async with httpx.AsyncClient() as client:
+            await client.post(url, json=payload, timeout=10.0)
     except Exception as e:
         print(f"❌ Telegram Edit Exception: {e}")
 
@@ -232,18 +235,19 @@ async def telegram_webhook(request: Request):
         message_id = message.get("message_id")
         admin_tg_id = str(cb.get("from_user", {}).get("id"))
 
-        if callback_data.startswith(("approve_dep_", "reject_dep_")):
-            action = "APPROVE" if callback_data.startswith("approve_dep_") else "REJECT"
-            dep_id = int(callback_data.replace("approve_dep_", "").replace("reject_dep_", ""))
-            requests.post(f"{BACKEND_URL}/api/deposit/admin/approve", json={
-                "id": dep_id, "action": action, "admin_telegram_id": admin_tg_id, "message_id": message_id
-            })
+        async with httpx.AsyncClient() as client:
+            if callback_data.startswith(("approve_dep_", "reject_dep_")):
+                action = "APPROVE" if callback_data.startswith("approve_dep_") else "REJECT"
+                dep_id = int(callback_data.replace("approve_dep_", "").replace("reject_dep_", ""))
+                await client.post(f"{BACKEND_URL}/api/deposit/admin/approve", json={
+                    "id": dep_id, "action": action, "admin_telegram_id": admin_tg_id, "message_id": message_id
+                })
 
-        elif callback_data.startswith(("approve_with_", "reject_with_")):
-            action = "APPROVE" if callback_data.startswith("approve_with_") else "REJECT"
-            with_id = int(callback_data.replace("approve_with_", "").replace("reject_with_", ""))
-            requests.post(f"{BACKEND_URL}/api/withdraw/admin/approve", json={
-                "id": with_id, "action": action, "admin_telegram_id": admin_tg_id, "message_id": message_id
-            })
+            elif callback_data.startswith(("approve_with_", "reject_with_")):
+                action = "APPROVE" if callback_data.startswith("approve_with_") else "REJECT"
+                with_id = int(callback_data.replace("approve_with_", "").replace("reject_with_", ""))
+                await client.post(f"{BACKEND_URL}/api/withdraw/admin/approve", json={
+                    "id": with_id, "action": action, "admin_telegram_id": admin_tg_id, "message_id": message_id
+                })
 
     return {"status": "ok"}
