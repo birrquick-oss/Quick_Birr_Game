@@ -245,3 +245,47 @@ document.addEventListener("DOMContentLoaded", () => {
         document.getElementById("playerCount").textContent = "0";
     }
 });
+
+// Copy to Clipboard Logic
+function copyToClipboard(text) {
+    if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(text).then(() => {
+            showCopyToast();
+        }).catch(err => {
+            fallbackCopyTextToClipboard(text);
+        });
+    } else {
+        fallbackCopyTextToClipboard(text);
+    }
+}
+
+// Fallback method for WebApp / Mobile Browsers
+function fallbackCopyTextToClipboard(text) {
+    const textArea = document.createElement("textarea");
+    textArea.value = text;
+    textArea.style.position = "fixed";
+    textArea.style.left = "-999999px";
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    try {
+        document.execCommand('copy');
+        showCopyToast();
+    } catch (err) {
+        console.error('Fallback: Copying failed', err);
+    }
+    document.body.removeChild(textArea);
+}
+
+// Toast notification when copied
+function showCopyToast() {
+    if (window.Telegram?.WebApp?.HapticFeedback) {
+        window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
+    }
+    
+    if (typeof showMessage === "function") {
+        showMessage("Copied!", "የአካውንት ቁጥሩ ተገልብጧል (Copied)", "📋");
+    } else {
+        alert("የአካውንት ቁጥሩ ተገልብጧል!");
+    }
+}
