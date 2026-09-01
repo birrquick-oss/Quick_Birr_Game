@@ -139,3 +139,113 @@ class WalletTransaction(Base):
         nullable=False,
         index=True
     )
+
+
+# =========================================================
+# DEPOSIT REQUESTS
+# =========================================================
+
+class Deposit(Base):
+    __tablename__ = "deposits"
+
+    id = Column(
+        Integer,
+        primary_key=True,
+        index=True
+    )
+
+    user_id = Column(
+        Integer,
+        ForeignKey("users.id"),
+        nullable=False,
+        index=True
+    )
+
+    telegram_id = Column(
+        String(64),
+        nullable=True
+    )
+
+    telegram_name = Column(
+        String(255),
+        nullable=True
+    )
+
+    amount = Column(
+        Float,
+        nullable=False
+    )
+
+    method = Column(
+        String(100),
+        nullable=False
+    )
+
+    sms_text = Column(
+        Text,
+        nullable=False
+    )
+
+    # pending / approved / rejected
+    status = Column(
+        String(50),
+        default="pending",
+        nullable=False,
+        index=True
+    )
+
+    created_at = Column(
+        DateTime,
+        default=datetime.utcnow,
+        nullable=False
+    )
+
+
+# =========================================================
+# WITHDRAWAL REQUESTS
+# =========================================================
+
+class Withdrawal(Base):
+    __tablename__ = "withdrawals"
+
+    id = Column(
+        Integer,
+        primary_key=True,
+        index=True
+    )
+
+    user_id = Column(
+        Integer,
+        ForeignKey("users.id"),
+        nullable=False,
+        index=True
+    )
+
+    amount = Column(
+        Float,
+        nullable=False
+    )
+
+    method = Column(
+        String(100),
+        nullable=False
+    )
+
+    account_number = Column(
+        String(255),
+        nullable=False
+    )
+
+    # pending / approved / rejected
+    status = Column(
+        String(50),
+        default="pending",
+        nullable=False,
+        index=True
+    )
+
+    created_at = Column(
+        DateTime,
+        default=datetime.utcnow,
+        nullable=False
+    )
