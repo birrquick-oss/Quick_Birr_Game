@@ -42,11 +42,11 @@ app.add_middleware(
 
 
 # =========================================================
-# MOUNT STATIC FILES (ይህ እንዳይበላሽ /static አቃፊን ብቻ ማየት አለበት)
+# MOUNT STATIC FILES
+# Root ('.') ላይ ያሉትን style.css እና app.js በ /static path ስር እንዲያገኛቸው ያደርጋል
 # =========================================================
 
-if os.path.exists("static"):
-    app.mount("/static", StaticFiles(directory="static"), name="static")
+app.mount("/static", StaticFiles(directory="."), name="static")
 
 
 # =========================================================
