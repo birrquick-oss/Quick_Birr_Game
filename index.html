@@ -2,17 +2,8 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-
-    <meta
-        name="viewport"
-        content="width=device-width,
-        initial-scale=1.0,
-        maximum-scale=1.0,
-        user-scalable=no"
-    >
-
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="theme-color" content="#0d1119">
-
     <title>QUICK_BIRR GAMES</title>
 
     <!-- Telegram Mini App -->
@@ -21,551 +12,341 @@
     <!-- Main CSS -->
     <link rel="stylesheet" href="/static/style.css">
 </head>
-
 <body>
 
 <div id="app">
 
-    <!-- =========================
-         TOP BAR
-    ========================== -->
-
+    <!-- TOP BAR -->
     <header class="top-bar">
-
         <div class="brand">
-
-            <div class="brand-logo">
-                ⚡
-            </div>
-
+            <div class="brand-logo">⚡</div>
             <div>
-                <div class="brand-name">
-                    QUICK_BIRR
-                </div>
-
-                <div class="brand-subtitle">
-                    GAMES
-                </div>
+                <div class="brand-name">QUICK_BIRR</div>
+                <div class="brand-subtitle">GAMES</div>
             </div>
-
         </div>
 
-
-        <button
-            class="balance-box"
-            id="balanceButton"
-            type="button"
-        >
-
-            <span class="balance-icon">
-                💰
-            </span>
-
-            <span id="balance">
-                0.00 ETB
-            </span>
-
-            <span class="refresh-icon">
-                ↻
-            </span>
-
+        <button class="balance-box" id="balanceButton" type="button">
+            <span class="balance-icon">💰</span>
+            <span id="balance">0.00 ETB</span>
+            <span class="refresh-icon">↻</span>
         </button>
-
     </header>
 
+    <!-- MAIN CONTENT -->
+    <main id="mainContent">
 
-    <!-- =========================
-         MAIN CONTENT
-    ========================== -->
+        <!-- HOME PAGE VIEW -->
+        <div id="homeView" class="page-view">
+            <!-- HERO -->
+            <section class="hero">
+                <div class="hero-content">
+                    <span class="hero-badge">🎮 PLAY & WIN</span>
+                    <h1>Welcome to<br><strong>QUICK_BIRR GAMES</strong></h1>
+                    <p>Your favorite games, all in one place.</p>
+                    <button class="primary-button" id="playNowButton" type="button">🎮 PLAY NOW</button>
+                </div>
+                <div class="hero-decoration">🎰</div>
+            </section>
 
-    <main>
-
-        <!-- HERO -->
-
-        <section class="hero">
-
-            <div class="hero-content">
-
-                <span class="hero-badge">
-                    🎮 PLAY & WIN
-                </span>
-
-                <h1>
-                    Welcome to<br>
-                    <strong>QUICK_BIRR GAMES</strong>
-                </h1>
-
-                <p>
-                    Your favorite games,
-                    all in one place.
-                </p>
-
-                <button
-                    class="primary-button"
-                    id="playNowButton"
-                    type="button"
-                >
-                    🎮 PLAY NOW
+            <!-- QUICK ACTIONS -->
+            <section class="quick-actions">
+                <button class="action-button withdraw" type="button" id="withdrawButton">
+                    <span>💸</span> Withdraw
                 </button>
+                <button class="action-button deposit" type="button" id="depositButton">
+                    <span>💰</span> Deposit
+                </button>
+            </section>
 
-            </div>
-
-            <div class="hero-decoration">
-                🎰
-            </div>
-
-        </section>
-
-
-        <!-- =========================
-             QUICK ACTIONS
-        ========================== -->
-
-        <section class="quick-actions">
-
-            <button
-                class="action-button withdraw"
-                type="button"
-                id="withdrawButton"
-            >
-                <span>💸</span>
-                Withdraw
-            </button>
-
-            <button
-                class="action-button deposit"
-                type="button"
-                id="depositButton"
-            >
-                <span>💰</span>
-                Deposit
-            </button>
-
-        </section>
-
-
-        <!-- =========================
-             FEATURED GAMES
-        ========================== -->
-
-        <section class="games-section">
-
-            <div class="section-header">
-
-                <div>
-                    <h2>
-                        🎮 Featured Games
-                    </h2>
-
-                    <p>
-                        Choose your favorite game
-                    </p>
+            <!-- FEATURED GAMES -->
+            <section class="games-section">
+                <div class="section-header">
+                    <div>
+                        <h2>🎮 Featured Games</h2>
+                        <p>Choose your favorite game</p>
+                    </div>
+                    <button class="see-all" id="seeAllButton" type="button">See all →</button>
                 </div>
 
-                <button
-                    class="see-all"
-                    id="seeAllButton"
-                    type="button"
-                >
-                    See all →
-                </button>
+                <div class="games-grid">
+                    <button class="game-card bingo-card" data-game="bingo" type="button">
+                        <div class="game-image">
+                            <span class="game-icon">🎱</span>
+                            <span class="game-star">★</span>
+                        </div>
+                        <div class="game-info">
+                            <h3>QUICK BIRR BINGO</h3>
+                            <p>1–1000 Numbers</p>
+                            <span class="game-price">10 ETB</span>
+                        </div>
+                    </button>
 
+                    <button class="game-card slots-card" data-game="slots" type="button">
+                        <div class="game-image">
+                            <span class="game-icon">🎰</span>
+                            <span class="game-star">★</span>
+                        </div>
+                        <div class="game-info">
+                            <h3>Lucky Slots</h3>
+                            <p>Spin & Win</p>
+                            <span class="game-price">Coming Soon</span>
+                        </div>
+                    </button>
+
+                    <button class="game-card plinko-card" data-game="plinko" type="button">
+                        <div class="game-image">
+                            <span class="game-icon">🟢</span>
+                            <span class="game-star">★</span>
+                        </div>
+                        <div class="game-info">
+                            <h3>Plinko</h3>
+                            <p>Drop & Win</p>
+                            <span class="game-price">Coming Soon</span>
+                        </div>
+                    </button>
+
+                    <button class="game-card roulette-card" data-game="roulette" type="button">
+                        <div class="game-image">
+                            <span class="game-icon">🎡</span>
+                            <span class="game-star">★</span>
+                        </div>
+                        <div class="game-info">
+                            <h3>Roulette</h3>
+                            <p>European Roulette</p>
+                            <span class="game-price">Coming Soon</span>
+                        </div>
+                    </button>
+
+                    <button class="game-card blackjack-card" data-game="blackjack" type="button">
+                        <div class="game-image">
+                            <span class="game-icon">🃏</span>
+                            <span class="game-star">★</span>
+                        </div>
+                        <div class="game-info">
+                            <h3>Blackjack</h3>
+                            <p>21</p>
+                            <span class="game-price">Coming Soon</span>
+                        </div>
+                    </button>
+
+                    <button class="game-card mines-card" data-game="mines" type="button">
+                        <div class="game-image">
+                            <span class="game-icon">💎</span>
+                            <span class="game-star">★</span>
+                        </div>
+                        <div class="game-info">
+                            <h3>Mines</h3>
+                            <p>Find the Gems</p>
+                            <span class="game-price">Coming Soon</span>
+                        </div>
+                    </button>
+                </div>
+            </section>
+
+            <!-- PROMO -->
+            <section class="promo-card">
+                <div class="promo-icon">🎁</div>
+                <div class="promo-content">
+                    <h2>More Games Coming Soon</h2>
+                    <p>New games and exciting features are on the way.</p>
+                </div>
+                <span class="promo-arrow">→</span>
+            </section>
+
+            <!-- STATS -->
+            <section class="stats-section">
+                <div class="stat-box">
+                    <strong id="playerCount">0</strong>
+                    <span>Players</span>
+                </div>
+                <div class="stat-box">
+                    <strong>6+</strong>
+                    <span>Games</span>
+                </div>
+                <div class="stat-box">
+                    <strong>24/7</strong>
+                    <span>Available</span>
+                </div>
+            </section>
+        </div>
+
+        <!-- PROFILE VIEW (Image 1 UI) -->
+        <div id="profileView" class="page-view" hidden>
+            <div class="profile-dashboard">
+                <div class="user-profile-header">
+                    <div class="profile-avatar">💼</div>
+                    <div class="user-details">
+                        <h3 id="profileName">Loading User...</h3>
+                        <p id="profilePhone">---</p>
+                    </div>
+                </div>
+
+                <div class="wallet-summary-grid">
+                    <div class="wallet-card">
+                        <div class="wallet-title">Balance ↻</div>
+                        <div class="wallet-amount" id="dashBalance">0.00 ETB</div>
+                    </div>
+                    <div class="wallet-card">
+                        <div class="wallet-title">Credit 🎁</div>
+                        <div class="wallet-amount">0.00 ETB</div>
+                    </div>
+                </div>
+
+                <div class="action-buttons-grid">
+                    <button class="action-btn btn-withdraw" id="dashWithdrawBtn" type="button">💸 Withdraw</button>
+                    <button class="action-btn btn-deposit" id="dashDepositBtn" type="button">💰 Deposit</button>
+                </div>
+
+                <div class="dashboard-banner promo-cashback">
+                    <div class="cashback-info">
+                        <h4>🔄 Daily Cashback</h4>
+                        <div class="countdown">03 : 37 : 54</div>
+                    </div>
+                    <div class="cashback-badge">CASHBACK</div>
+                </div>
+
+                <div class="dashboard-menu-grid">
+                    <button class="menu-tile" type="button">📊 Leaderboard ➔</button>
+                    <button class="menu-tile" type="button">👥 Affiliate ➔</button>
+                </div>
             </div>
-
-
-            <div class="games-grid">
-
-
-                <!-- BINGO -->
-
-                <button
-                    class="game-card bingo-card"
-                    data-game="bingo"
-                    type="button"
-                >
-
-                    <div class="game-image">
-                        <span class="game-icon">
-                            🎱
-                        </span>
-
-                        <span class="game-star">
-                            ★
-                        </span>
-                    </div>
-
-                    <div class="game-info">
-
-                        <h3>
-                            QUICK BIRR BINGO
-                        </h3>
-
-                        <p>
-                            1–1000 Numbers
-                        </p>
-
-                        <span class="game-price">
-                            10 ETB
-                        </span>
-
-                    </div>
-
-                </button>
-
-
-                <!-- SLOTS -->
-
-                <button
-                    class="game-card slots-card"
-                    data-game="slots"
-                    type="button"
-                >
-
-                    <div class="game-image">
-                        <span class="game-icon">
-                            🎰
-                        </span>
-
-                        <span class="game-star">
-                            ★
-                        </span>
-                    </div>
-
-                    <div class="game-info">
-
-                        <h3>
-                            Lucky Slots
-                        </h3>
-
-                        <p>
-                            Spin & Win
-                        </p>
-
-                        <span class="game-price">
-                            Coming Soon
-                        </span>
-
-                    </div>
-
-                </button>
-
-
-                <!-- PLINKO -->
-
-                <button
-                    class="game-card plinko-card"
-                    data-game="plinko"
-                    type="button"
-                >
-
-                    <div class="game-image">
-                        <span class="game-icon">
-                            🟢
-                        </span>
-
-                        <span class="game-star">
-                            ★
-                        </span>
-                    </div>
-
-                    <div class="game-info">
-
-                        <h3>
-                            Plinko
-                        </h3>
-
-                        <p>
-                            Drop & Win
-                        </p>
-
-                        <span class="game-price">
-                            Coming Soon
-                        </span>
-
-                    </div>
-
-                </button>
-
-
-                <!-- ROULETTE -->
-
-                <button
-                    class="game-card roulette-card"
-                    data-game="roulette"
-                    type="button"
-                >
-
-                    <div class="game-image">
-                        <span class="game-icon">
-                            🎡
-                        </span>
-
-                        <span class="game-star">
-                            ★
-                        </span>
-                    </div>
-
-                    <div class="game-info">
-
-                        <h3>
-                            Roulette
-                        </h3>
-
-                        <p>
-                            European Roulette
-                        </p>
-
-                        <span class="game-price">
-                            Coming Soon
-                        </span>
-
-                    </div>
-
-                </button>
-
-
-                <!-- BLACKJACK -->
-
-                <button
-                    class="game-card blackjack-card"
-                    data-game="blackjack"
-                    type="button"
-                >
-
-                    <div class="game-image">
-                        <span class="game-icon">
-                            🃏
-                        </span>
-
-                        <span class="game-star">
-                            ★
-                        </span>
-                    </div>
-
-                    <div class="game-info">
-
-                        <h3>
-                            Blackjack
-                        </h3>
-
-                        <p>
-                            21
-                        </p>
-
-                        <span class="game-price">
-                            Coming Soon
-                        </span>
-
-                    </div>
-
-                </button>
-
-
-                <!-- MINES -->
-
-                <button
-                    class="game-card mines-card"
-                    data-game="mines"
-                    type="button"
-                >
-
-                    <div class="game-image">
-                        <span class="game-icon">
-                            💎
-                        </span>
-
-                        <span class="game-star">
-                            ★
-                        </span>
-                    </div>
-
-                    <div class="game-info">
-
-                        <h3>
-                            Mines
-                        </h3>
-
-                        <p>
-                            Find the Gems
-                        </p>
-
-                        <span class="game-price">
-                            Coming Soon
-                        </span>
-
-                    </div>
-
-                </button>
-
-            </div>
-
-        </section>
-
-
-        <!-- =========================
-             PROMO
-        ========================== -->
-
-        <section class="promo-card">
-
-            <div class="promo-icon">
-                🎁
-            </div>
-
-            <div class="promo-content">
-
-                <h2>
-                    More Games Coming Soon
-                </h2>
-
-                <p>
-                    New games and exciting
-                    features are on the way.
-                </p>
-
-            </div>
-
-            <span class="promo-arrow">
-                →
-            </span>
-
-        </section>
-
-
-        <!-- =========================
-             STATS
-        ========================== -->
-
-        <section class="stats-section">
-
-            <div class="stat-box">
-                <strong id="playerCount">
-                    0
-                </strong>
-                <span>
-                    Players
-                </span>
-            </div>
-
-            <div class="stat-box">
-                <strong>
-                    6+
-                </strong>
-                <span>
-                    Games
-                </span>
-            </div>
-
-            <div class="stat-box">
-                <strong>
-                    24/7
-                </strong>
-                <span>
-                    Available
-                </span>
-            </div>
-
-        </section>
+        </div>
 
     </main>
 
-
-    <!-- =========================
-         BOTTOM NAV
-    ========================== -->
-
+    <!-- BOTTOM NAV -->
     <nav class="bottom-nav">
-
-        <button
-            class="nav-item active"
-            data-page="home"
-            type="button"
-        >
+        <button class="nav-item active" data-page="home" type="button">
             <span>⌂</span>
             <small>Home</small>
         </button>
 
-        <button
-            class="nav-item"
-            data-page="games"
-            type="button"
-        >
+        <button class="nav-item" data-page="games" type="button">
             <span>🎮</span>
             <small>Games</small>
         </button>
 
-        <button
-            class="nav-item"
-            data-page="promo"
-            type="button"
-        >
+        <button class="nav-item" data-page="promo" type="button">
             <span>🎁</span>
             <small>Promo</small>
         </button>
 
-        <button
-            class="nav-item"
-            data-page="profile"
-            type="button"
-        >
+        <button class="nav-item" data-page="profile" type="button">
             <span>👤</span>
             <small>Profile</small>
         </button>
-
     </nav>
 
 </div>
 
-
-<!-- =========================
-     MODAL
-========================== -->
-
-<div
-    class="modal"
-    id="messageModal"
-    hidden
->
-
+<!-- GENERAL MESSAGE MODAL -->
+<div class="modal" id="messageModal" hidden>
     <div class="modal-overlay"></div>
-
     <div class="modal-box">
-
-        <button
-            class="modal-close"
-            id="modalClose"
-            type="button"
-        >
-            ×
-        </button>
-
-        <div
-            class="modal-icon"
-            id="modalIcon"
-        >
-            🎮
-        </div>
-
-        <h2 id="modalTitle">
-            QUICK_BIRR GAMES
-        </h2>
-
-        <p id="modalMessage">
-            Coming soon.
-        </p>
-
-        <button
-            class="primary-button modal-button"
-            id="modalButton"
-            type="button"
-        >
-            OK
-        </button>
-
+        <button class="modal-close" id="modalClose" type="button">×</button>
+        <div class="modal-icon" id="modalIcon">🎮</div>
+        <h2 id="modalTitle">QUICK_BIRR GAMES</h2>
+        <p id="modalMessage">Coming soon.</p>
+        <button class="primary-button modal-button" id="modalButton" type="button">OK</button>
     </div>
-
 </div>
 
+<!-- DEPOSIT MODAL (Image 3 & 6 UI) -->
+<div class="custom-modal" id="depositModal" hidden>
+    <div class="modal-overlay"></div>
+    <div class="modal-card">
+        <div class="modal-header">
+            <h3>📥 ገንዘብ ማስገቢያ (Deposit)</h3>
+            <button class="close-modal-btn" type="button" onclick="closeModals()">✕</button>
+        </div>
+
+        <div class="instruction-box">
+            💡 <strong>ማሳሰቢያ:</strong> አካውንቶቹን ለመቅዳት የቁጥሩን ጽሁፍ ይጫኑት:: ብር ካስገቡ በኋላ SMS ከታች ባለው ሳጥን ላይ ይለጥፉት::
+        </div>
+
+        <div class="bank-accounts-list">
+            <div class="account-item"><span>📱 Telebirr:</span> <strong>+251910032722</strong></div>
+            <div class="account-item"><span>🔸 CBE Birr:</span> <strong>+251910032722</strong></div>
+            <div class="account-item"><span>🏦 CBE Bank:</span> <strong>1000406099141</strong></div>
+            <div class="account-item"><span>🦅 Abyssinia:</span> <strong>214157098</strong></div>
+            <div class="account-item"><span>🏛️ Awash Bank:</span> <strong>013201588359000</strong></div>
+        </div>
+
+        <div class="form-group">
+            <label>የገንዘብ መጠን ይምረጡ (Deposit):</label>
+            <select class="form-control" id="depositAmount">
+                <option value="">-- የገንዘብ መጠን ይምረጡ --</option>
+                <option value="50">50 ብር</option>
+                <option value="100">100 ብር</option>
+                <option value="200">200 ብር</option>
+                <option value="300">300 ብር</option>
+                <option value="500">500 ብር</option>
+                <option value="1000">1,000 ብር</option>
+                <option value="5000">5,000 ብር</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>ብር የላኩበት የባንክ አይነት:</label>
+            <select class="form-control" id="depositBank">
+                <option value="Telebirr">Telebirr</option>
+                <option value="CBE">CBE (የኢትዮጵያ ንግድ ባንክ)</option>
+                <option value="Abyssinia">አቢሲንያ ባንክ</option>
+                <option value="Awash">አዋሽ ባንክ</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>የባንክ ማረጋገጫ (SMS) እዚህ ይለጥፉ:</label>
+            <textarea class="form-control" rows="3" placeholder="የባንኩን SMS ሙሉ በሙሉ እዚህ ላይ Paste ያድርጉ..."></textarea>
+        </div>
+
+        <button class="submit-btn btn-green" type="button">📩 የማስገቢያ ጥያቄ ላክ</button>
+    </div>
+</div>
+
+<!-- WITHDRAW MODAL (Image 2, 4 & 5 UI) -->
+<div class="custom-modal" id="withdrawModal" hidden>
+    <div class="modal-overlay"></div>
+    <div class="modal-card">
+        <div class="modal-header">
+            <h3>📬 ገንዘብ ማውጫ (Withdraw)</h3>
+            <button class="close-modal-btn" type="button" onclick="closeModals()">✕</button>
+        </div>
+
+        <div class="form-group">
+            <label>የምታወጡት የገንዘብ መጠን ይምረጡ (Withdraw):</label>
+            <select class="form-control" id="withdrawAmount">
+                <option value="">-- የገንዘብ መጠን ይምረጡ --</option>
+                <option value="100">100 ብር</option>
+                <option value="200">200 ብር</option>
+                <option value="300">300 ብር</option>
+                <option value="400">400 ብር</option>
+                <option value="500">500 ብር</option>
+                <option value="1000">1,000 ብር</option>
+                <option value="5000">5,000 ብር</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>ብር የሚገባበት የባንክ ስም:</label>
+            <select class="form-control" id="withdrawBank">
+                <option value="Telebirr">Telebirr</option>
+                <option value="CBE">CBE (የኢትዮጵያ ንግድ ባንክ)</option>
+                <option value="Abyssinia">አቢሲንያ ባንክ</option>
+                <option value="Awash">አዋሽ ባንክ</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>የአካውንት ወይም የስልክ ቁጥር:</label>
+            <input type="text" class="form-control" placeholder="የባንክ አካውንት ወይም ስልክ ቁጥር">
+        </div>
+
+        <button class="submit-btn btn-red" type="button">📬 የማውጫ ጥያቄ ላክ</button>
+    </div>
+</div>
 
 <!-- Main JavaScript -->
 <script src="/static/app.js"></script>
