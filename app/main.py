@@ -1,4 +1,3 @@
-import os
 from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
@@ -7,6 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db, initialize_database
 from app.models import User
+
 
 # =========================================================
 # QUICK_BIRR GAMES
@@ -18,6 +18,7 @@ app = FastAPI(
     description="Quick Birr Games API",
     version="1.0.0",
 )
+
 
 # =========================================================
 # CORS
@@ -31,12 +32,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 # =========================================================
-# MOUNT STATIC FILES (HTML, CSS, JS)
+# MOUNT STATIC FILES
 # =========================================================
 
-# index.html, style.css, app.js ያሉበትን ፎልደር ያያይዛል
 app.mount("/static", StaticFiles(directory="."), name="static")
+
 
 # =========================================================
 # STARTUP
@@ -46,14 +48,15 @@ app.mount("/static", StaticFiles(directory="."), name="static")
 def startup_event():
     initialize_database()
 
+
 # =========================================================
-# ROOT ROUTE (Serves index.html)
+# ROOT ROUTE (Serves Front-end HTML)
 # =========================================================
 
 @app.get("/")
 def read_root():
-    # በብራውዘር ዋናው URL ሲከፈት index.html ን ያሳያል
     return FileResponse("index.html")
+
 
 # =========================================================
 # HEALTH CHECK
@@ -67,8 +70,9 @@ def health_check():
         "version": "1.0.0",
     }
 
+
 # =========================================================
-# API ROOT
+# ROOT API
 # =========================================================
 
 @app.get("/api")
@@ -77,6 +81,7 @@ def api_root():
         "message": "QUICK_BIRR GAMES API is running",
         "status": "online",
     }
+
 
 # =========================================================
 # GET USER
@@ -111,6 +116,7 @@ def get_user(
         },
     }
 
+
 # =========================================================
 # CREATE / GET USER
 # =========================================================
@@ -136,9 +142,12 @@ def create_user(
             "user": {
                 "id": existing_user.id,
                 "telegram_id": existing_user.telegram_id,
-                "telegram_username": existing_user.telegram_username,
-                "first_name": existing_user.first_name,
-                "balance": round(existing_user.balance, 2),
+                "telegram_username":
+                    existing_user.telegram_username,
+                "first_name":
+                    existing_user.first_name,
+                "balance":
+                    round(existing_user.balance, 2),
             },
         }
 
