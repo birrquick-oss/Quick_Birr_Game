@@ -975,3 +975,49 @@ button {
 }
 .btn-green { background: #10b981; }
 .btn-red { background: #f43f5e; }
+
+.bank-accounts-list {
+    background: #0f172a;
+    padding: 12px;
+    border-radius: 10px;
+    border-left: 4px solid #10b981;
+    margin-bottom: 14px;
+}
+
+.account-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 8px;
+    margin-bottom: 6px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.account-item:hover {
+    background: #1e293b;
+}
+
+.account-item span {
+    font-size: 13px;
+    color: #cbd5e1;
+}
+
+.acc-num {
+    background: #090d16;
+    color: #22c55e !important;
+    font-weight: bold;
+    padding: 4px 8px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: monospace;
+    font-size: 14px !important;
+}
+
+.copy-icon {
+    font-size: 12px;
+    opacity: 0.8;
+}
