@@ -1,8 +1,6 @@
 import os
-
 from sqlalchemy import create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
-
 
 # =========================================================
 # QUICK_BIRR GAMES DATABASE
@@ -13,7 +11,6 @@ DATABASE_URL = os.getenv(
     "sqlite:///./quick_birr_games.db"
 )
 
-
 # Render / Railway / PostgreSQL compatibility
 if DATABASE_URL.startswith("postgres://"):
     DATABASE_URL = DATABASE_URL.replace(
@@ -22,17 +19,13 @@ if DATABASE_URL.startswith("postgres://"):
         1
     )
 
-
 # =========================================================
 # ENGINE & CONNECT ARGS
 # =========================================================
 
 connect_args = {}
-
 if DATABASE_URL.startswith("sqlite"):
-    connect_args = {
-        "check_same_thread": False
-    }
+    connect_args = {"check_same_thread": False}
 
 engine = create_engine(
     DATABASE_URL,
@@ -40,9 +33,8 @@ engine = create_engine(
     pool_pre_ping=True
 )
 
-
 # =========================================================
-# SESSION
+# SESSION & BASE
 # =========================================================
 
 SessionLocal = sessionmaker(
@@ -51,13 +43,7 @@ SessionLocal = sessionmaker(
     bind=engine
 )
 
-
-# =========================================================
-# BASE MODEL
-# =========================================================
-
 Base = declarative_base()
-
 
 # =========================================================
 # DATABASE SESSION DEPENDENCY
@@ -70,7 +56,6 @@ def get_db():
     finally:
         db.close()
 
-
 # =========================================================
 # INITIALIZE DATABASE
 # =========================================================
@@ -78,8 +63,10 @@ def get_db():
 def initialize_database():
     """
     Create all QUICK_BIRR GAMES tables.
-    Registers models dynamically to avoid circular dependencies.
     """
-    import app.models  # noqa: F401
+    # ⚠️ Models ከ Base በኋላ መጫን ስላለባቸው በቀጥታ እዚህ ላይ Import ይደረጋሉ።
+    import app.models as models  # noqa: F401
 
+    # Base.metadata ላይ የተመዘገቡትን Tables በሙሉ Database ውስጥ ይፈጥራል
     Base.metadata.create_all(bind=engine)
+    print("✅ Database tables created successfully!")
