@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db, initialize_database
 from app.models import User
+from app.routers.transactions import router as transactions_router
 
 
 # =========================================================
@@ -18,6 +19,13 @@ app = FastAPI(
     description="Quick Birr Games API",
     version="1.0.0",
 )
+
+
+# =========================================================
+# INCLUDE ROUTERS
+# =========================================================
+
+app.include_router(transactions_router)
 
 
 # =========================================================
