@@ -6,7 +6,7 @@ from datetime import datetime
 
 from app.database import get_db
 from app.models import User, Deposit, Withdrawal
-from app.schemas import DepositCreate, WithdrawCreate 
+from app.schemas import DepositCreate, WithdrawCreate
 
 router = APIRouter(
     prefix="/api",
@@ -16,6 +16,7 @@ router = APIRouter(
 BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", os.getenv("BOT_TOKEN", ""))
 ADMIN_TELEGRAM_ID = str(os.getenv("ADMIN_TELEGRAM_ID", "")).strip()
 BACKEND_URL = os.getenv("BACKEND_URL", "http://127.0.0.1:8000")
+
 
 # 📢 Telegram Notification Helper
 def send_admin_notification(text: str, reply_markup=None):
@@ -32,8 +33,10 @@ def send_admin_notification(text: str, reply_markup=None):
     except Exception as e:
         print(f"❌ Telegram notify error: {e}")
 
+
 def _telegram_edit_message_sync(chat_id: str, message_id: int, text: str):
-    if not BOT_TOKEN: return
+    if not BOT_TOKEN:
+        return
     url = f"https://api.telegram.org/bot{BOT_TOKEN}/editMessageText"
     payload = {
         "chat_id": str(chat_id),
