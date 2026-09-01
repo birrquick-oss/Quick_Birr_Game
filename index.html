@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+    <title>QUICK_BIRR GAMES</title>
+
+    <!-- Telegram Mini App -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #10141d;
+            color: white;
+            min-height: 100vh;
+        }
+
+        .app {
+            max-width: 600px;
+            margin: auto;
+            padding-bottom: 90px;
+        }
+
+        /* TOP BAR */
+        .topbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px;
+            background: #151b26;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .logo-icon {
+            width: 42px;
+            height: 42px;
+            border-radius: 12px;
+            background: #2388ff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+        }
+
+        .logo-text {
+            font-size: 18px;
+            font-weight: 800;
+        }
+
+        .balance {
+            background: #242c3a;
+            border-radius: 12px;
+            padding: 10px 14px;
+            font-size: 14px;
+        }
+
+        /* HERO */
+        .hero {
+            margin: 14px;
+            padding: 22px;
+            border-radius: 18px;
+            background: linear-gradient(135deg, #1684ff, #174fa9);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero h1 {
+            font-size: 27px;
+            margin-bottom: 8px;
+        }
+
+        .hero p {
+            font-size: 14px;
+            opacity: .9;
+        }
+
+        .hero-button {
+            margin-top: 16px;
+            border: none;
+            background: white;
+            color: #126ee0;
+            padding: 11px 18px;
+            border-radius: 12px;
+            font-weight: bold;
+        }
+
+        /* SECTION */
+        .section {
+            padding: 8px 14px;
+        }
+
+        .section-title {
+            font-size: 20px;
+            font-weight: 800;
+            margin-bottom: 5px;
+        }
+
+        .section-subtitle {
+            color: #8e98aa;
+            font-size: 13px;
+            margin-bottom: 14px;
+        }
+
+        /* GAMES */
+        .games-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+        }
+
+        .game-card {
+            background: #202735;
+            border-radius: 14px;
+            overflow: hidden;
+            border: 1px solid #30394a;
+            cursor: pointer;
+            transition: transform .15s;
+        }
+
+        .game-card:active {
+            transform: scale(.96);
+        }
+
+        .game-image {
+            height: 115px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 45px;
+        }
+
+        .bingo {
+            background: linear-gradient(135deg, #0d65d9, #20a4ff);
+        }
+
+        .slots {
+            background: linear-gradient(135deg, #7c1ed1, #e33788);
+        }
+
+        .plinko {
+            background: linear-gradient(135deg, #087f62, #18c995);
+        }
+
+        .roulette {
+            background: linear-gradient(135deg, #7c1717, #e13b3b);
+        }
+
+        .blackjack {
+            background: linear-gradient(135deg, #172e61, #316dd9);
+        }
+
+        .mines {
+            background: linear-gradient(135deg, #493017, #b87521);
+        }
+
+        .game-name {
+            padding: 10px 7px;
+            font-size: 13px;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        .badge {
+            font-size: 10px;
+            color: #ffd84d;
+            text-align: center;
+            padding-bottom: 9px;
+        }
+
+        /* PROMO */
+        .promo {
+            margin: 14px;
+            padding: 18px;
+            border-radius: 16px;
+            background: linear-gradient(135deg, #252e40, #1b2230);
+            border: 1px solid #344158;
+        }
+
+        .promo-title {
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .promo-text {
+            margin-top: 6px;
+            color: #aab3c2;
+            font-size: 13px;
+        }
+
+        /* BOTTOM NAV */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            max-width: 600px;
+            margin: auto;
+            height: 72px;
+            background: rgba(20, 25, 35, .97);
+            border-top: 1px solid #30394a;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            z-index: 100;
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            color: #8994a7;
+            font-size: 11px;
+            cursor: pointer;
+        }
+
+        .nav-item span {
+            font-size: 21px;
+        }
+
+        .nav-item.active {
+            color: #3b96ff;
+        }
+
+        @media (max-width: 380px) {
+            .game-image {
+                height: 95px;
+            }
+
+            .games-grid {
+                gap: 7px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="app">
+
+    <!-- TOP BAR -->
+    <header class="topbar">
+
+        <div class="logo">
+            <div class="logo-icon">⚡</div>
+            <div class="logo-text">QUICK_BIRR</div>
+        </div>
+
+        <div class="balance">
+            💰 <span id="balance">0.00</span> ETB
+        </div>
+
+    </header>
+
+
+    <!-- HERO -->
+    <section class="hero">
+        <h1>🎮 QUICK_BIRR GAMES</h1>
+
+        <p>
+            Play exciting games and enjoy the action!
+        </p>
+
+        <button class="hero-button" onclick="openGames()">
+            🎮 Explore Games
+        </button>
+    </section>
+
+
+    <!-- GAMES -->
+    <section class="section">
+
+        <div class="section-title">
+            🎮 Featured Games
+        </div>
+
+        <div class="section-subtitle">
+            Choose your favorite game and start playing.
+        </div>
+
+
+        <div class="games-grid">
+
+            <!-- BINGO -->
+            <div class="game-card" onclick="openGame('bingo')">
+                <div class="game-image bingo">
+                    🎱
+                </div>
+
+                <div class="game-name">
+                    QUICK BINGO
+                </div>
+
+                <div class="badge">
+                    10 ETB
+                </div>
+            </div>
+
+
+            <!-- SLOTS -->
+            <div class="game-card" onclick="openGame('slots')">
+                <div class="game-image slots">
+                    🎰
+                </div>
+
+                <div class="game-name">
+                    SLOTS
+                </div>
+
+                <div class="badge">
+                    COMING SOON
+                </div>
+            </div>
+
+
+            <!-- PLINKO -->
+            <div class="game-card" onclick="openGame('plinko')">
+                <div class="game-image plinko">
+                    🟢
+                </div>
+
+                <div class="game-name">
+                    PLINKO
+                </div>
+
+                <div class="badge">
+                    COMING SOON
+                </div>
+            </div>
+
+
+            <!-- ROULETTE -->
+            <div class="game-card" onclick="openGame('roulette')">
+                <div class="game-image roulette">
+                    🎡
+                </div>
+
+                <div class="game-name">
+                    ROULETTE
+                </div>
+
+                <div class="badge">
+                    COMING SOON
+                </div>
+            </div>
+
+
+            <!-- BLACKJACK -->
+            <div class="game-card" onclick="openGame('blackjack')">
+                <div class="game-image blackjack">
+                    🃏
+                </div>
+
+                <div class="game-name">
+                    BLACKJACK
+                </div>
+
+                <div class="badge">
+                    COMING SOON
+                </div>
+            </div>
+
+
+            <!-- MINES -->
+            <div class="game-card" onclick="openGame('mines')">
+                <div class="game-image mines">
+                    💣
+                </div>
+
+                <div class="game-name">
+                    MINES
+                </div>
+
+                <div class="badge">
+                    COMING SOON
+                </div>
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- PROMO -->
+    <section class="promo">
+
+        <div class="promo-title">
+            🎁 QUICK_BIRR Rewards
+        </div>
+
+        <div class="promo-text">
+            More games, more excitement and more rewards are coming soon.
+        </div>
+
+    </section>
+
+</div>
+
+
+<!-- BOTTOM NAV -->
+<nav class="bottom-nav">
+
+    <div class="nav-item active" onclick="goHome()">
+        <span>🏠</span>
+        Home
+    </div>
+
+    <div class="nav-item" onclick="openGames()">
+        <span>🎮</span>
+        Games
+    </div>
+
+    <div class="nav-item" onclick="openWallet()">
+        <span>💰</span>
+        Wallet
+    </div>
+
+    <div class="nav-item" onclick="openProfile()">
+        <span>👤</span>
+        Profile
+    </div>
+
+</nav>
+
+
+<script>
+
+    // Telegram Mini App
+    const tg = window.Telegram?.WebApp;
+
+    if (tg) {
+        tg.ready();
+        tg.expand();
+
+        // Use Telegram theme
+        if (tg.setHeaderColor) {
+            tg.setHeaderColor("#10141d");
+        }
+
+        if (tg.setBackgroundColor) {
+            tg.setBackgroundColor("#10141d");
+        }
+    }
+
+
+    function openGames() {
+        alert("Games section coming soon 🎮");
+    }
+
+
+    function openGame(game) {
+
+        if (game === "bingo") {
+            alert("🎱 QUICK BINGO\n\n1–1000 Numbers\n10 ETB Stake\n\nComing next!");
+            return;
+        }
+
+        alert(game.toUpperCase() + "\n\nComing Soon 🚀");
+    }
+
+
+    function openWallet() {
+        alert("💰 Wallet\n\nComing soon.");
+    }
+
+
+    function openProfile() {
+        alert("👤 Profile\n\nComing soon.");
+    }
+
+
+    function goHome() {
+        window.scrollTo({
+            top: 0,
+            behavior: "smooth"
+        });
+    }
+
+</script>
+
+</body>
+</html>
