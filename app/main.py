@@ -1,0 +1,159 @@
+from fastapi import Depends, FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from sqlalchemy.orm import Session
+
+from app.database import get_db, initialize_database
+from app.models import User
+
+
+# =========================================================
+# QUICK_BIRR GAMES
+# MAIN APPLICATION
+# =========================================================
+
+app = FastAPI(
+    title="QUICK_BIRR GAMES",
+    description="Quick Birr Games API",
+    version="1.0.0",
+)
+
+
+# =========================================================
+# CORS
+# =========================================================
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+# =========================================================
+# STARTUP
+# =========================================================
+
+@app.on_event("startup")
+def startup_event():
+    initialize_database()
+
+
+# =========================================================
+# HEALTH CHECK
+# =========================================================
+
+@app.get("/health")
+def health_check():
+    return {
+        "status": "ok",
+        "service": "QUICK_BIRR GAMES",
+        "version": "1.0.0",
+    }
+
+
+# =========================================================
+# ROOT
+# =========================================================
+
+@app.get("/api")
+def api_root():
+    return {
+        "message": "QUICK_BIRR GAMES API is running",
+        "status": "online",
+    }
+
+
+# =========================================================
+# GET USER
+# =========================================================
+
+@app.get("/api/users/{telegram_id}")
+def get_user(
+    telegram_id: str,
+    db: Session = Depends(get_db),
+):
+    user = (
+        db.query(User)
+        .filter(User.telegram_id == telegram_id)
+        .first()
+    )
+
+    if not user:
+        return {
+            "success": False,
+            "message": "User not found",
+        }
+
+    return {
+        "success": True,
+        "user": {
+            "id": user.id,
+            "telegram_id": user.telegram_id,
+            "telegram_username": user.telegram_username,
+            "first_name": user.first_name,
+            "balance": round(user.balance, 2),
+            "is_banned": bool(user.is_banned),
+        },
+    }
+
+
+# =========================================================
+# CREATE / GET USER
+# =========================================================
+
+@app.post("/api/users")
+def create_user(
+    telegram_id: str,
+    telegram_username: str | None = None,
+    first_name: str | None = None,
+    db: Session = Depends(get_db),
+):
+    existing_user = (
+        db.query(User)
+        .filter(User.telegram_id == telegram_id)
+        .first()
+    )
+
+    if existing_user:
+        return {
+            "success": True,
+            "created": False,
+            "message": "User already exists",
+            "user": {
+                "id": existing_user.id,
+                "telegram_id": existing_user.telegram_id,
+                "telegram_username":
+                    existing_user.telegram_username,
+                "first_name":
+                    existing_user.first_name,
+                "balance":
+                    round(existing_user.balance, 2),
+            },
+        }
+
+    user = User(
+        telegram_id=telegram_id,
+        telegram_username=telegram_username,
+        first_name=first_name,
+        balance=0.0,
+    )
+
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+
+    return {
+        "success": True,
+        "created": True,
+        "message": "User created",
+        "user": {
+            "id": user.id,
+            "telegram_id": user.telegram_id,
+            "telegram_username": user.telegram_username,
+            "first_name": user.first_name,
+            "balance": round(user.balance, 2),
+        },
+    }
