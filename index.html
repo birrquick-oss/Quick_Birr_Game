@@ -252,7 +252,7 @@
     </div>
 </div>
 
-<!-- DEPOSIT MODAL (Image 3 & 6 UI) -->
+<!-- DEPOSIT MODAL (With Copy Support) -->
 <div class="custom-modal" id="depositModal" hidden>
     <div class="modal-overlay"></div>
     <div class="modal-card">
@@ -266,11 +266,26 @@
         </div>
 
         <div class="bank-accounts-list">
-            <div class="account-item"><span>📱 Telebirr:</span> <strong>+251910032722</strong></div>
-            <div class="account-item"><span>🔸 CBE Birr:</span> <strong>+251910032722</strong></div>
-            <div class="account-item"><span>🏦 CBE Bank:</span> <strong>1000406099141</strong></div>
-            <div class="account-item"><span>🦅 Abyssinia:</span> <strong>214157098</strong></div>
-            <div class="account-item"><span>🏛️ Awash Bank:</span> <strong>013201588359000</strong></div>
+            <div class="account-item" onclick="copyToClipboard('+251910032722')">
+                <span>📱 Telebirr:</span>
+                <span class="acc-num">+251910032722 <span class="copy-icon">📋</span></span>
+            </div>
+            <div class="account-item" onclick="copyToClipboard('+251910032722')">
+                <span>🔸 CBE Birr:</span>
+                <span class="acc-num">+251910032722 <span class="copy-icon">📋</span></span>
+            </div>
+            <div class="account-item" onclick="copyToClipboard('1000406099141')">
+                <span>🏦 CBE Bank:</span>
+                <span class="acc-num">1000406099141 <span class="copy-icon">📋</span></span>
+            </div>
+            <div class="account-item" onclick="copyToClipboard('214157098')">
+                <span>🦅 Abyssinia:</span>
+                <span class="acc-num">214157098 <span class="copy-icon">📋</span></span>
+            </div>
+            <div class="account-item" onclick="copyToClipboard('013201588359000')">
+                <span>🏛️ Awash Bank:</span>
+                <span class="acc-num">013201588359000 <span class="copy-icon">📋</span></span>
+            </div>
         </div>
 
         <div class="form-group">
@@ -306,7 +321,7 @@
     </div>
 </div>
 
-<!-- WITHDRAW MODAL (Image 2, 4 & 5 UI) -->
+<!-- WITHDRAW MODAL -->
 <div class="custom-modal" id="withdrawModal" hidden>
     <div class="modal-overlay"></div>
     <div class="modal-card">
