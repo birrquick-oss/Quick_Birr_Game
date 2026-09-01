@@ -1,3 +1,4 @@
+import os
 from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
@@ -10,8 +11,7 @@ from app.routers.transactions import router as transactions_router
 
 
 # =========================================================
-# QUICK_BIRR GAMES
-# MAIN APPLICATION
+# QUICK_BIRR GAMES MAIN APPLICATION
 # =========================================================
 
 app = FastAPI(
@@ -42,14 +42,15 @@ app.add_middleware(
 
 
 # =========================================================
-# MOUNT STATIC FILES
+# MOUNT STATIC FILES (ይህ እንዳይበላሽ /static አቃፊን ብቻ ማየት አለበት)
 # =========================================================
 
-app.mount("/static", StaticFiles(directory="."), name="static")
+if os.path.exists("static"):
+    app.mount("/static", StaticFiles(directory="static"), name="static")
 
 
 # =========================================================
-# STARTUP
+# STARTUP (Tables በ PostgreSQL ላይ መፈጠራቸውን ያረጋግጣል)
 # =========================================================
 
 @app.on_event("startup")
@@ -102,7 +103,7 @@ def get_user(
 ):
     user = (
         db.query(User)
-        .filter(User.telegram_id == telegram_id)
+        .filter(User.telegram_id == str(telegram_id))
         .first()
     )
 
@@ -119,8 +120,8 @@ def get_user(
             "telegram_id": user.telegram_id,
             "telegram_username": user.telegram_username,
             "first_name": user.first_name,
-            "balance": round(user.balance, 2),
-            "is_banned": bool(user.is_banned),
+            "balance": round(user.balance or 0.0, 2),
+            "is_banned": bool(getattr(user, "is_banned", False)),
         },
     }
 
@@ -138,7 +139,7 @@ def create_user(
 ):
     existing_user = (
         db.query(User)
-        .filter(User.telegram_id == telegram_id)
+        .filter(User.telegram_id == str(telegram_id))
         .first()
     )
 
@@ -150,17 +151,14 @@ def create_user(
             "user": {
                 "id": existing_user.id,
                 "telegram_id": existing_user.telegram_id,
-                "telegram_username":
-                    existing_user.telegram_username,
-                "first_name":
-                    existing_user.first_name,
-                "balance":
-                    round(existing_user.balance, 2),
+                "telegram_username": existing_user.telegram_username,
+                "first_name": existing_user.first_name,
+                "balance": round(existing_user.balance or 0.0, 2),
             },
         }
 
     user = User(
-        telegram_id=telegram_id,
+        telegram_id=str(telegram_id),
         telegram_username=telegram_username,
         first_name=first_name,
         balance=0.0,
@@ -179,6 +177,6 @@ def create_user(
             "telegram_id": user.telegram_id,
             "telegram_username": user.telegram_username,
             "first_name": user.first_name,
-            "balance": round(user.balance, 2),
+            "balance": round(user.balance or 0.0, 2),
         },
     }
