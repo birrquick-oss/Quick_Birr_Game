@@ -1,15 +1,15 @@
 /* =========================================================
    QUICK_BIRR GAMES
-   Frontend Controller (Updated with User Init & Modals)
+   Frontend Controller (Full Integration with Backend)
    ========================================================= */
 
 const tg = window.Telegram?.WebApp;
 
 /* =========================
-   TELEGRAM INIT
+   TELEGRAM INIT & STATE
 ========================= */
 let userData = {
-    user_id: null,
+    telegram_id: null,
     first_name: "Guest",
     last_name: "",
     username: "",
@@ -51,10 +51,13 @@ const withdrawModal = document.getElementById("withdrawModal");
    MODALS (MESSAGE & FORM MODALS)
 ========================= */
 function showMessage(title, message, icon = "🎮") {
-    if (!modal) return;
-    modalTitle.textContent = title;
-    modalMessage.textContent = message;
-    modalIcon.textContent = icon;
+    if (!modal) {
+        alert(`${title}\n${message}`);
+        return;
+    }
+    if (modalTitle) modalTitle.textContent = title;
+    if (modalMessage) modalMessage.textContent = message;
+    if (modalIcon) modalIcon.textContent = icon;
     modal.hidden = false;
 }
 
@@ -142,20 +145,31 @@ document.getElementById("seeAllButton")?.addEventListener("click", () => {
 });
 
 /* =========================
-   BALANCE FETCH & REFRESH
+   BALANCE FETCH & USER SYNC
 ========================= */
-async function fetchUserBalance() {
-    if (!userData.user_id) return;
+async function syncAndFetchUser() {
+    if (!userData.telegram_id) return;
 
     try {
-        const response = await fetch(`/api/user/balance?user_id=${userData.user_id}`);
-        if (response.ok) {
-            const data = await response.json();
-            userData.balance = parseFloat(data.balance || 0).toFixed(2);
+        // 1. Get or Create user in Backend
+        const userRes = await fetch('/api/users', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                telegram_id: String(userData.telegram_id),
+                telegram_username: userData.username,
+                first_name: userData.first_name
+            })
+        });
+        
+        const userDataResult = await userRes.json();
+        
+        if (userDataResult.success && userDataResult.user) {
+            userData.balance = parseFloat(userDataResult.user.balance || 0).toFixed(2);
             updateBalanceUI(userData.balance);
         }
     } catch (error) {
-        console.error("Balance fetch error:", error);
+        console.error("User sync/balance fetch error:", error);
     }
 }
 
@@ -166,8 +180,103 @@ function updateBalanceUI(amount) {
 }
 
 document.getElementById("balanceButton")?.addEventListener("click", () => {
-    fetchUserBalance();
+    syncAndFetchUser();
 });
+
+/* =========================
+   FORM SUBMISSIONS (API CALLS)
+========================= */
+function setupFormSubmitListeners() {
+    // Deposit Form Submit
+    const depositForm = document.getElementById("deposit-form") || document.querySelector("#depositModal form");
+    if (depositForm) {
+        depositForm.addEventListener("submit", async (e) => {
+            e.preventDefault();
+
+            const bankName = document.getElementById("deposit-bank")?.value || "CBE";
+            const amount = parseFloat(document.getElementById("deposit-amount")?.value);
+            const smsData = document.getElementById("deposit-sms")?.value;
+
+            if (!amount || amount <= 0 || !smsData) {
+                showMessage("የተሳሳተ መረጃ", "እባክዎን የገንዘብ መጠን እና የባንክ SMS መረጃውን በትክክል ይሙሉ!", "⚠️");
+                return;
+            }
+
+            const payload = {
+                telegram_id: String(userData.telegram_id),
+                telegram_name: userData.first_name,
+                amount: amount,
+                bank_name: bankName,
+                sms_data: smsData
+            };
+
+            try {
+                const res = await fetch("/api/users/deposit", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+
+                if (data.success) {
+                    closeModals();
+                    depositForm.reset();
+                    showMessage("ተልኳል!", data.message, "✅");
+                } else {
+                    showMessage("ስህተት", data.message, "❌");
+                }
+            } catch (err) {
+                console.error("Deposit Error:", err);
+                showMessage("ስህተት", "የዲፖዚት ጥያቄ መላክ አልተቻለም!", "❌");
+            }
+        });
+    }
+
+    // Withdraw Form Submit
+    const withdrawForm = document.getElementById("withdraw-form") || document.querySelector("#withdrawModal form");
+    if (withdrawForm) {
+        withdrawForm.addEventListener("submit", async (e) => {
+            e.preventDefault();
+
+            const bankName = document.getElementById("withdraw-bank")?.value || "CBE";
+            const accountNumber = document.getElementById("withdraw-account")?.value;
+            const amount = parseFloat(document.getElementById("withdraw-amount")?.value);
+
+            if (!amount || amount <= 0 || !accountNumber) {
+                showMessage("የተሳሳተ መረጃ", "እባክዎን የባንክ ሂሳብ ቁጥር እና የማውጫ መጠን በትክክል ይሙሉ!", "⚠️");
+                return;
+            }
+
+            const payload = {
+                telegram_id: String(userData.telegram_id),
+                amount: amount,
+                bank_name: bankName,
+                account_number: accountNumber
+            };
+
+            try {
+                const res = await fetch("/api/users/withdraw", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+
+                if (data.success) {
+                    closeModals();
+                    withdrawForm.reset();
+                    showMessage("ተመዝግቧል!", data.message, "✅");
+                    syncAndFetchUser(); // refresh balance
+                } else {
+                    showMessage("ስህተት", data.message, "❌");
+                }
+            } catch (err) {
+                console.error("Withdraw Error:", err);
+                showMessage("ስህተት", "የማውጫ ጥያቄ መላክ አልተቻለም!", "❌");
+            }
+        });
+    }
+}
 
 /* =========================
    BOTTOM NAV & PAGE SWITCHING
@@ -216,22 +325,23 @@ document.querySelectorAll(".nav-item").forEach(item => {
 function loadTelegramUser() {
     if (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) {
         const user = tg.initDataUnsafe.user;
-        userData.user_id = user.id;
+        userData.telegram_id = user.id;
         userData.first_name = user.first_name || "User";
         userData.last_name = user.last_name || "";
         userData.username = user.username ? `@${user.username}` : "";
 
         const fullName = `${userData.first_name} ${userData.last_name}`.trim();
 
-        // Top bar እና Profile view ላይ መረጃዎችን መሙላት
         if (profileNameEl) profileNameEl.textContent = fullName;
-        if (profilePhoneEl) profilePhoneEl.textContent = userData.username || `ID: ${userData.user_id}`;
+        if (profilePhoneEl) profilePhoneEl.textContent = userData.username || `ID: ${userData.telegram_id}`;
 
-        fetchUserBalance();
+        syncAndFetchUser();
     } else {
         console.log("Running outside Telegram Mini App context.");
+        userData.telegram_id = "12345678"; // Test Telegram ID for Local Browser
         if (profileNameEl) profileNameEl.textContent = "Guest User";
         if (profilePhoneEl) profilePhoneEl.textContent = "No Telegram ID";
+        syncAndFetchUser();
     }
 }
 
@@ -240,13 +350,16 @@ function loadTelegramUser() {
 ========================= */
 document.addEventListener("DOMContentLoaded", () => {
     loadTelegramUser();
+    setupFormSubmitListeners();
     updateBalanceUI("0.00");
     if (document.getElementById("playerCount")) {
-        document.getElementById("playerCount").textContent = "0";
+        document.getElementById("playerCount").textContent = "1";
     }
 });
 
-// Copy to Clipboard Logic
+/* =========================
+   COPY TO CLIPBOARD LOGIC
+========================= */
 function copyToClipboard(text) {
     if (navigator.clipboard && window.isSecureContext) {
         navigator.clipboard.writeText(text).then(() => {
@@ -259,7 +372,6 @@ function copyToClipboard(text) {
     }
 }
 
-// Fallback method for WebApp / Mobile Browsers
 function fallbackCopyTextToClipboard(text) {
     const textArea = document.createElement("textarea");
     textArea.value = text;
@@ -277,15 +389,10 @@ function fallbackCopyTextToClipboard(text) {
     document.body.removeChild(textArea);
 }
 
-// Toast notification when copied
 function showCopyToast() {
     if (window.Telegram?.WebApp?.HapticFeedback) {
         window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
     }
     
-    if (typeof showMessage === "function") {
-        showMessage("Copied!", "የአካውንት ቁጥሩ ተገልብጧል (Copied)", "📋");
-    } else {
-        alert("የአካውንት ቁጥሩ ተገልብጧል!");
-    }
+    showMessage("Copied!", "የአካውንት ቁጥሩ ተገልብጧል (Copied)", "📋");
 }
