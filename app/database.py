@@ -1,5 +1,4 @@
 import os
-
 from sqlalchemy import create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
 
@@ -16,8 +15,8 @@ if not DATABASE_URL:
     print("⚠️ DATABASE_URL not found. Using local SQLite database.")
 else:
     print("✅ DATABASE_URL found.")
-    print("🔗 Database type:",
-          "PostgreSQL" if "postgres" in DATABASE_URL else "Other")
+    db_type = "PostgreSQL" if "postgres" in DATABASE_URL else "Other"
+    print(f"🔗 Database type: {db_type}")
 
 
 # =========================================================
@@ -93,7 +92,6 @@ def initialize_database():
     print("==============================================")
 
     try:
-
         # Import models so SQLAlchemy registers all tables
         import app.models  # noqa: F401
 
