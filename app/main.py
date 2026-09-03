@@ -1,4 +1,5 @@
 import os
+import asyncio
 from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
@@ -8,7 +9,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db, initialize_database
 from app.models import User
 from app.routers.transactions import router as transactions_router
-from app.routers.bingo import router as bingo_router  # 👈 Bingo Router Import ተደርጓል
+from app.routers.bingo import router as bingo_router, engine  # 👈 engine እዚህ ጋር ተጨምሯል
 
 
 # =========================================================
@@ -27,7 +28,7 @@ app = FastAPI(
 # =========================================================
 
 app.include_router(transactions_router)
-app.include_router(bingo_router)  # 👈 Bingo Router ተካቷል
+app.include_router(bingo_router)
 
 
 # =========================================================
@@ -45,19 +46,21 @@ app.add_middleware(
 
 # =========================================================
 # MOUNT STATIC FILES
-# Root ('.') ላይ ያሉትን style.css እና app.js በ /static path ስር እንዲያገኛቸው ያደርጋል
 # =========================================================
 
 app.mount("/static", StaticFiles(directory="."), name="static")
 
 
 # =========================================================
-# STARTUP (Tables በ PostgreSQL ላይ መፈጠራቸውን ያረጋግጣል)
+# STARTUP (Database Init & Game Engine Background Loop)
 # =========================================================
 
 @app.on_event("startup")
-def startup_event():
+async def startup_event():
+    # 1. የዳታቤዝ ቴብሎችን መፍጠር
     initialize_database()
+    # 2. የቢንጎ ጌም ኢንጂኑን በጀርባ (Background) ማስጀመር
+    asyncio.create_task(engine.start_game())
 
 
 # =========================================================
