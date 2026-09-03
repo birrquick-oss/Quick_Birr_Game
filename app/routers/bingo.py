@@ -2,21 +2,53 @@ import random
 import asyncio
 import json
 import inspect
+import sys
 from datetime import datetime, timezone
 from typing import List
 from sqlalchemy.orm import Session
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, WebSocket, WebSocketDisconnect
 
-from app.websocket_manager import manager
 from app.database import SessionLocal, get_db
 from app.models import Game, Setting, User, AdminStats, PlayerCard, Card
 from app.wallet import process_game_stake, process_game_win
 
-router = APIRouter(prefix="/api/bingo", tags=["Bingo Game Engine"])
+# =========================================================
+# WEBSOCKET CONNECTION MANAGER (Inline Export to prevent ImportError)
+# =========================================================
+
+class ConnectionManager:
+    def __init__(self):
+        self.active_connections: List[WebSocket] = []
+
+    async def connect(self, websocket: WebSocket):
+        await websocket.accept()
+        self.active_connections.append(websocket)
+
+    def disconnect(self, websocket: WebSocket):
+        if websocket in self.active_connections:
+            self.active_connections.remove(websocket)
+
+    async def broadcast(self, message: dict):
+        for connection in list(self.active_connections):
+            try:
+                await connection.send_json(message)
+            except Exception:
+                self.disconnect(connection)
+
+manager = ConnectionManager()
+
+# ሌላ ፋይል ላይ 'from app.websocket_manager import manager' ከተባለ እንዳይበላሽ ማስተካከያ
+class DummyModule:
+    def __init__(self, mgr):
+        self.manager = mgr
+
+sys.modules["app.websocket_manager"] = DummyModule(manager)
 
 # =========================================================
-# CONFIGURATIONS & BOT NAMES (QUICK BIRR BRANDING)
+# ROUTER & CONFIGURATIONS (QUICK BIRR BRANDING)
 # =========================================================
+
+router = APIRouter(prefix="/api/bingo", tags=["Bingo Game Engine"])
 
 BOT_NAMES = [
     "quick_45456", "birr_MUTD", "quick_Dereje16", "birr_65788", "quick_Gadissa", "birr_43688",  
@@ -37,6 +69,41 @@ BOT_PHONE_NUMBERS = [
 SUPPORTED_FEES = [10.0]
 BOT_ALLOWED_FEES = [10.0]
 CARD_COUNT_LIMIT = 1000
+
+# =========================================================
+# HELPER: GENERATE 5x5 BINGO CARD MATRIX
+# =========================================================
+
+def generate_5x5_bingo_card():
+    col_b = random.sample(range(1, 16), 5)
+    col_i = random.sample(range(16, 31), 5)
+    col_n = random.sample(range(31, 46), 5)
+    col_g = random.sample(range(46, 61), 5)
+    col_o = random.sample(range(61, 76), 5)
+    
+    col_n[2] = "FREE"
+
+    matrix = []
+    for r in range(5):
+        row = [col_b[r], col_i[r], col_n[r], col_g[r], col_o[r]]
+        matrix.append(row)
+    return matrix
+
+def ensure_initial_cards_populated(db: Session):
+    count = db.query(Card).count()
+    if count < CARD_COUNT_LIMIT:
+        print(f"⚙️ Populating 1000 Bingo Cards into database...")
+        for i in range(1, CARD_COUNT_LIMIT + 1):
+            existing = db.query(Card).filter(Card.card_number == i).first()
+            if not existing:
+                card_matrix = generate_5x5_bingo_card()
+                c = Card(
+                    card_number=i,
+                    data=json.dumps(card_matrix),
+                    is_taken=False
+                )
+                db.add(c)
+        db.commit()
 
 # =========================================================
 # GAME ENGINE CLASS
@@ -153,15 +220,9 @@ class GameEngine:
 
     async def safe_broadcast(self, payload):
         try:
-            maybe = None
-            try:
-                maybe = manager.broadcast(payload)
-            except Exception as e:
-                print(f"❌ manager.broadcast error: {e}")
-
+            maybe = manager.broadcast(payload)
             if inspect.isawaitable(maybe):
                 await maybe
-                return True
             return True
         except Exception as e:
             print(f"❌ safe_broadcast error: {e}")
@@ -174,6 +235,13 @@ class GameEngine:
         self.running = True
         print("🎯 QUICK BIRR Bingo Game Engine ጀምሯል...")
 
+        # Ensure cards exist in Database
+        db_init = SessionLocal()
+        try:
+            ensure_initial_cards_populated(db_init)
+        finally:
+            db_init.close()
+
         while self.running:
             db: Session = None
             saved_game_id = None
@@ -182,7 +250,7 @@ class GameEngine:
                 db = SessionLocal()
                 settings = db.query(Setting).first()
 
-                countdown_seconds = 60  # 🎯 60 Seconds Selection Window
+                countdown_seconds = 60
                 draw_interval = settings.draw_interval if (settings and hasattr(settings, 'draw_interval')) else 4.0
 
                 game = Game(
@@ -691,7 +759,6 @@ class GameEngine:
             if w["winner_id"] == bot_user.id:
                 admin_stats.house_balance += w["prize_share"]
             else:
-                # 🎯 አዲሱ የ SHARED WALLET PROCESS_GAME_WIN
                 process_game_win(
                     db=db,
                     user_id=w["winner_id"],
@@ -764,8 +831,17 @@ class GameEngine:
 engine = GameEngine()
 
 # =========================================================
-# BINGO API ENDPOINTS
+# WEBSOCKET & BINGO API ENDPOINTS
 # =========================================================
+
+@router.websocket("/ws")
+async def websocket_endpoint(websocket: WebSocket):
+    await manager.connect(websocket)
+    try:
+        while True:
+            await websocket.receive_text()
+    except WebSocketDisconnect:
+        manager.disconnect(websocket)
 
 @router.post("/buy-card")
 def buy_bingo_card(user_id: int, card_index: int, db: Session = Depends(get_db)):
