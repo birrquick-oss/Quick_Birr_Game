@@ -70,7 +70,7 @@
                 </div>
 
                 <div class="games-grid">
-                    <button class="game-card bingo-card" data-game="bingo" type="button">
+                    <button class="game-card bingo-card" data-game="bingo" type="button" id="bingoGameCard">
                         <div class="game-image">
                             <span class="game-icon">🎱</span>
                             <span class="game-star">★</span>
@@ -169,6 +169,111 @@
                     <span>Available</span>
                 </div>
             </section>
+        </div>
+
+        <!-- ========================================================= -->
+        <!-- 1. BINGO CARD SELECTION VIEW (1-1000 NUMBERS, 10 COLUMNS) -->
+        <!-- ========================================================= -->
+        <div id="bingoSelectionView" class="page-view" hidden>
+            <div class="bingo-header-stats">
+                <div class="stat-pill orange-glow">
+                    <span class="icon">🤖</span>
+                    <div>
+                        <small>PLAY</small>
+                        <strong id="betAmountText">10.00</strong>
+                    </div>
+                </div>
+
+                <div class="stat-pill center-stat">
+                    <small>ደራሽ</small>
+                    <strong id="jackpotAmountText">0.00</strong>
+                    <div class="sub-info">የተያዙ ካርዶች: <span id="takenCardsCount">0</span></div>
+                </div>
+
+                <div class="stat-pill orange-glow">
+                    <span class="icon">🏆</span>
+                    <div>
+                        <small>WIN</small>
+                        <strong id="winAmountText">0.00</strong>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bingo-banner orange-banner">
+                <span>FLASH • BINGO</span>
+                <span class="timer-badge" id="selectionTimer">60</span>
+            </div>
+
+            <!-- 10 Columns Grid for Cards 1 to 1000 -->
+            <div class="cards-grid-10cols" id="cardsGridContainer">
+                <!-- Dynamically generated via JS from 1 to 1000 -->
+            </div>
+
+            <div class="selection-footer-bar">
+                <button class="orange-action-btn" id="confirmCardsBtn" type="button">
+                    ካርቴላ አረጋግጥ (<span id="mySelectedCount">0</span>)
+                </button>
+            </div>
+        </div>
+
+        <!-- ========================================================= -->
+        <!-- 2. BINGO LIVE GAMEPLAY VIEW (1-75 DRAWING BOARD & CARDS)  -->
+        <!-- ========================================================= -->
+        <div id="bingoGameView" class="page-view" hidden>
+            
+            <div class="live-game-topbar">
+                <span class="game-call-badge" id="callCountBadge">Call 0</span>
+                <span class="derash-badge" id="liveDerashBadge">Derash: 0.00 ETB</span>
+                <span class="game-id-badge" id="gameIdBadge">Game #0</span>
+            </div>
+
+            <!-- 1-75 Board Container (Image 3 Style) -->
+            <div class="bingo-board-container orange-theme">
+                <div class="board-row" data-row="B"><span class="row-label orange-text">B</span><div class="row-cells" id="row-B"></div></div>
+                <div class="board-row" data-row="I"><span class="row-label orange-text">I</span><div class="row-cells" id="row-I"></div></div>
+                <div class="board-row" data-row="N"><span class="row-label orange-text">N</span><div class="row-cells" id="row-N"></div></div>
+                <div class="board-row" data-row="G"><span class="row-label orange-text">G</span><div class="row-cells" id="row-G"></div></div>
+                <div class="board-row" data-row="O"><span class="row-label orange-text">O</span><div class="row-cells" id="row-O"></div></div>
+            </div>
+
+            <!-- Drawn Balls Display Section -->
+            <div class="balls-display-wrapper">
+                <div class="recent-balls-list" id="recentBallsList">
+                    <!-- History of called balls -->
+                </div>
+                <div class="current-ball-big orange-glow" id="currentBallBig">
+                    <span class="letter" id="currentBallLetter">-</span>
+                    <span class="number" id="currentBallNumber">--</span>
+                </div>
+            </div>
+
+            <!-- Selected Cards Carousel / Display Section -->
+            <div class="active-card-container">
+                <div class="card-navigation">
+                    <button class="nav-arrow" id="prevCardBtn" type="button">◄</button>
+                    <div class="card-title-info">
+                        <span id="activeCardHeader">ካርድ #--</span>
+                        <span class="card-count-indicator" id="cardCountIndicator">(0/0)</span>
+                    </div>
+                    <button class="nav-arrow" id="nextCardBtn" type="button">►</button>
+                </div>
+
+                <!-- 5x5 Matrix Card -->
+                <div class="bingo-matrix-card orange-border" id="matrixCardWrapper">
+                    <div class="matrix-header">
+                        <span>B</span><span>I</span><span>N</span><span>G</span><span>O</span>
+                    </div>
+                    <div class="matrix-grid" id="matrixGrid">
+                        <!-- 5x5 Cells generated by JS -->
+                    </div>
+                </div>
+            </div>
+
+            <div class="live-action-footer">
+                <button class="orange-bingo-btn" id="claimBingoBtn" type="button">
+                    🔥 BINGO!
+                </button>
+            </div>
         </div>
 
         <!-- PROFILE VIEW -->
