@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db, initialize_database
 from app.models import User
 from app.routers.transactions import router as transactions_router
+from app.routers.bingo import router as bingo_router  # 👈 Bingo Router Import ተደርጓል
 
 
 # =========================================================
@@ -26,6 +27,7 @@ app = FastAPI(
 # =========================================================
 
 app.include_router(transactions_router)
+app.include_router(bingo_router)  # 👈 Bingo Router ተካቷል
 
 
 # =========================================================
