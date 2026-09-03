@@ -179,6 +179,14 @@ class GameEngine:
                             if not active_check:
                                 break
 
+                            # Double check if card was taken by real player during sleep
+                            already_taken = db.query(PlayerCard).filter(
+                                PlayerCard.game_id == game_id,
+                                PlayerCard.card_number == c_num
+                            ).first()
+                            if already_taken:
+                                continue
+
                             p_card = PlayerCard(
                                 game_id=game_id,
                                 user_id=bot_user.id,
@@ -844,23 +852,70 @@ async def websocket_endpoint(websocket: WebSocket):
         manager.disconnect(websocket)
 
 @router.post("/buy-card")
-def buy_bingo_card(user_id: int, card_index: int, db: Session = Depends(get_db)):
+async def buy_bingo_card(user_id: int, card_number: int, game_id: int, db: Session = Depends(get_db)):
     """
-    ከ Central Wallet 10 ETB ቀንሶ 1-1000 ካርቴላ ይገዛል።
+    ከ Central Wallet 10 ETB ቀንሶ የተመረጠውን 1-1000 ካርቴላ ይገዛል።
+    በተመሳሳይ ሰዓት ለሁሉም ተጫዋቾች የተያዘውን ካርድ በ WebSocket ያሰራጫል።
     """
-    if not (1 <= card_index <= CARD_COUNT_LIMIT):
+    if not (1 <= card_number <= CARD_COUNT_LIMIT):
         raise HTTPException(status_code=400, detail="Card number must be between 1 and 1000.")
 
-    user = process_game_stake(
-        db=db,
+    # Check if game is active
+    game = db.query(Game).filter(Game.id == game_id, Game.status.in_(["running", "waiting"])).first()
+    if not game:
+        raise HTTPException(status_code=400, detail="የነቃ ጨዋታ አልተገኘም!")
+
+    # Check if card is already bought
+    existing = db.query(PlayerCard).filter(
+        PlayerCard.game_id == game_id,
+        PlayerCard.card_number == card_number
+    ).first()
+    if existing:
+        raise HTTPException(status_code=400, detail="ይህ ካርቴላ ቀደሞ በሌላ ተጫዋች ተይዟል!")
+
+    # Deduct 10 ETB from User Wallet
+    try:
+        user = process_game_stake(
+            db=db,
+            user_id=user_id,
+            amount=10.0,
+            game_name="Bingo"
+        )
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+    # Record Player Card
+    p_card = PlayerCard(
+        game_id=game_id,
         user_id=user_id,
-        amount=10.0,
-        game_name="Bingo"
+        card_number=card_number,
+        bet_amount=10.0
     )
+    db.add(p_card)
+
+    # Reserve Main Card
+    main_card = db.query(Card).filter(Card.card_number == card_number).first()
+    if main_card:
+        main_card.is_taken = True
+        main_card.reserved_by = user_id
+        main_card.current_game_id = game_id
+
+    db.commit()
+
+    # Get updated taken cards list
+    all_taken = db.query(PlayerCard).filter(PlayerCard.game_id == game_id).all()
+    taken_list = [c.card_number for c in all_taken]
+
+    # Realtime Broadcast to connected clients
+    await engine.safe_broadcast({
+        "type": "taken_cards_update",
+        "bet_amount": 10.0,
+        "taken_cards": taken_list
+    })
 
     return {
         "success": True,
-        "message": f"ካርቴላ #{card_index} በ 10 ETB ተገዝቷል!",
-        "card_index": card_index,
+        "message": f"ካርቴላ #{card_number} በ 10 ETB ተገዝቷል!",
+        "card_number": card_number,
         "new_balance": round(user.balance, 2)
     }
