@@ -1,6 +1,6 @@
 /* =========================================================
    QUICK_BIRR GAMES
-   Frontend Controller (Full Integration with Backend & Bingo)
+   Frontend Controller (Full Integration with Backend & Bingo Engine)
    ========================================================= */
 
 const tg = window.Telegram?.WebApp;
@@ -10,6 +10,7 @@ const tg = window.Telegram?.WebApp;
 ========================= */
 let userData = {
     telegram_id: null,
+    db_user_id: null,
     first_name: "Guest",
     last_name: "",
     username: "",
@@ -17,6 +18,9 @@ let userData = {
 };
 
 let selectedBingoCards = [];
+let currentGameId = null;
+let bingoSocket = null;
+let takenCardsList = [];
 
 if (tg) {
     tg.ready();
@@ -112,6 +116,7 @@ document.querySelectorAll(".game-card").forEach(card => {
         if (game === "bingo") {
             showPage("bingoSelection");
             render1000BingoCards();
+            connectBingoWebSocket();
             return;
         }
 
@@ -132,6 +137,118 @@ document.querySelectorAll(".game-card").forEach(card => {
 });
 
 /* =========================
+   BINGO WEBSOCKET INTEGRATION
+========================= */
+function connectBingoWebSocket() {
+    if (bingoSocket && bingoSocket.readyState === WebSocket.OPEN) return;
+
+    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+    const wsUrl = `${protocol}//${window.location.host}/api/bingo/ws`;
+
+    bingoSocket = new WebSocket(wsUrl);
+
+    bingoSocket.onopen = () => {
+        console.log("⚡ Bingo WebSocket Connected successfully!");
+    };
+
+    bingoSocket.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+
+        switch (data.type) {
+            case "countdown":
+                currentGameId = data.game_id;
+                updateCountdownUI(data);
+                break;
+
+            case "taken_cards_update":
+                updateTakenCardsUI(data.taken_cards);
+                break;
+
+            case "phase_change":
+                if (data.phase === "DRAW") {
+                    showPage("bingoLive");
+                }
+                break;
+
+            case "ball":
+                renderDrawnBall(data);
+                break;
+
+            case "game_over":
+                handleGameOver(data);
+                break;
+
+            default:
+                break;
+        }
+    };
+
+    bingoSocket.onclose = () => {
+        console.log("❌ Bingo WebSocket Connection Closed. Reconnecting...");
+        setTimeout(connectBingoWebSocket, 3000);
+    };
+}
+
+function updateCountdownUI(data) {
+    const timerEl = document.getElementById("bingoTimer");
+    const countEl = document.getElementById("playerCount");
+    const prizeEl = document.getElementById("potAmount");
+
+    if (timerEl) timerEl.textContent = `${data.seconds}s`;
+    if (countEl) countEl.textContent = data.player_count || "0";
+    if (prizeEl && data.derash_rooms) {
+        prizeEl.textContent = `${data.derash_rooms["10"] || 0} ETB`;
+    }
+
+    if (data.taken_cards) {
+        updateTakenCardsUI(data.taken_cards);
+    }
+}
+
+function updateTakenCardsUI(takenCards) {
+    takenCardsList = takenCards || [];
+    document.querySelectorAll(".card-item").forEach(item => {
+        const cardNum = parseInt(item.dataset.cardNum);
+        if (takenCardsList.includes(cardNum)) {
+            item.classList.add("taken");
+            item.classList.remove("selected");
+        } else {
+            item.classList.remove("taken");
+        }
+    });
+}
+
+function renderDrawnBall(data) {
+    const ballEl = document.getElementById("currentBall");
+    const historyContainer = document.getElementById("ballHistory");
+
+    if (ballEl) {
+        ballEl.textContent = data.label;
+        ballEl.className = `active-ball ball-${data.letter}`;
+    }
+
+    if (historyContainer) {
+        const ballBadge = document.createElement("span");
+        ballBadge.className = `ball-badge ball-${data.letter}`;
+        ballBadge.textContent = data.label;
+        historyContainer.prepend(ballBadge);
+    }
+}
+
+function handleGameOver(data) {
+    showMessage(
+        "የጨዋታው ፍጻሜ!",
+        `${data.message}\nየአሸናፊነት ሽልማት፦ ${data.prize} ETB`,
+        "🎉"
+    );
+    syncAndFetchUser();
+    setTimeout(() => {
+        showPage("bingoSelection");
+        render1000BingoCards();
+    }, 5000);
+}
+
+/* =========================
    BINGO 1-1000 SELECTION & LOGIC
 ========================= */
 function render1000BingoCards() {
@@ -142,11 +259,13 @@ function render1000BingoCards() {
     selectedBingoCards = [];
     updateSelectedCardsUI();
 
-    // Generate 1 to 1000 buttons
     const fragment = document.createDocumentFragment();
     for (let i = 1; i <= 1000; i++) {
         const cardBtn = document.createElement("div");
         cardBtn.className = "card-item";
+        if (takenCardsList.includes(i)) {
+            cardBtn.classList.add("taken");
+        }
         cardBtn.textContent = i;
         cardBtn.dataset.cardNum = i;
 
@@ -164,6 +283,7 @@ function toggleCardSelection(element, cardNum) {
         selectedBingoCards.splice(index, 1);
         element.classList.remove("selected");
     } else {
+        // Option: allow buying single or multiple cards
         selectedBingoCards.push(cardNum);
         element.classList.add("selected");
     }
@@ -178,7 +298,7 @@ function toggleCardSelection(element, cardNum) {
 function updateSelectedCardsUI() {
     const countEl = document.getElementById("selectedCount");
     const totalEl = document.getElementById("totalPrice");
-    const cardPrice = 10; // 10 ETB per card
+    const cardPrice = 10;
 
     if (countEl) countEl.textContent = selectedBingoCards.length;
     if (totalEl) totalEl.textContent = (selectedBingoCards.length * cardPrice).toFixed(2);
@@ -187,7 +307,12 @@ function updateSelectedCardsUI() {
 // Confirm Bingo Purchases
 document.getElementById("buyBingoCardsBtn")?.addEventListener("click", async () => {
     if (selectedBingoCards.length === 0) {
-        showMessage("ካርድ አልመረጡም", "እባክዎን ለመጫወት ቢያንስ አንድ የቢንጎ ካርድ ይምረጡ!", "⚠️");
+        showMessage("ካርድ አልመረቱም", "እባክዎን ለመጫወት ቢያንስ አንድ የቢንጎ ካርድ ይምረጡ!", "⚠️");
+        return;
+    }
+
+    if (!currentGameId) {
+        showMessage("ማስጠንቀቂያ", "እባክዎን ጨዋታው እስኪጀምር ጥቂት ሰከንድ ይታገሱ!", "⏳");
         return;
     }
 
@@ -197,27 +322,31 @@ document.getElementById("buyBingoCardsBtn")?.addEventListener("click", async () 
         return;
     }
 
-    try {
-        const res = await fetch("/api/bingo/buy-cards", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                telegram_id: String(userData.telegram_id),
-                cards: selectedBingoCards
-            })
-        });
+    let successCount = 0;
+    for (const cardNum of selectedBingoCards) {
+        try {
+            const res = await fetch(`/api/bingo/buy-card?user_id=${userData.db_user_id}&card_number=${cardNum}&game_id=${currentGameId}`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" }
+            });
 
-        const data = await res.json();
-        if (data.success) {
-            showMessage("ተሳክቷል!", `${selectedBingoCards.length} ካርዶች ተገዝተዋል:: መልካም እድል!`, "🎉");
-            syncAndFetchUser();
-            showPage("bingoLive");
-        } else {
-            showMessage("ስህተት", data.message || "ካርድ መግዛት አልተቻለም", "❌");
+            const data = await res.json();
+            if (res.ok && data.success) {
+                successCount++;
+                userData.balance = data.new_balance;
+                updateBalanceUI(userData.balance);
+            } else {
+                showMessage("ስህተት", data.detail || data.message || "ካርድ መግዛት አልተቻለም", "❌");
+            }
+        } catch (err) {
+            console.error("Buy Card Error:", err);
         }
-    } catch (err) {
-        console.error("Buy Cards Error:", err);
-        showMessage("ስህተት", "የካርድ መግዛት ጥያቄ ማስተላለፍ አልተቻለም!", "❌");
+    }
+
+    if (successCount > 0) {
+        showMessage("ተሳክቷል!", `${successCount} ካርዶች ተገዝተዋል:: መልካም እድል!`, "🎉");
+        selectedBingoCards = [];
+        updateSelectedCardsUI();
     }
 });
 
@@ -255,6 +384,7 @@ async function syncAndFetchUser() {
         const userDataResult = await userRes.json();
         
         if (userDataResult.success && userDataResult.user) {
+            userData.db_user_id = userDataResult.user.id;
             userData.balance = parseFloat(userDataResult.user.balance || 0).toFixed(2);
             updateBalanceUI(userData.balance);
         }
