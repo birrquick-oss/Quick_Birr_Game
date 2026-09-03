@@ -50,7 +50,7 @@ const profilePhoneEl = document.getElementById("profilePhone");
 const homeView = document.getElementById("homeView");
 const profileView = document.getElementById("profileView");
 const bingoSelectionView = document.getElementById("bingoSelectionView");
-const bingoLiveView = document.getElementById("bingoLiveView");
+const bingoGameView = document.getElementById("bingoGameView"); // Fixed ID match with index.html
 
 const depositModal = document.getElementById("depositModal");
 const withdrawModal = document.getElementById("withdrawModal");
@@ -116,6 +116,7 @@ document.querySelectorAll(".game-card").forEach(card => {
         if (game === "bingo") {
             showPage("bingoSelection");
             render1000BingoCards();
+            render75BoardSkeleton(); // 1-75 ቦርድ በቦታው ይሰራሌ
             connectBingoWebSocket();
             return;
         }
@@ -165,7 +166,7 @@ function connectBingoWebSocket() {
                 break;
 
             case "phase_change":
-                if (data.phase === "DRAW") {
+                if (data.phase === "DRAW" || data.phase === "GAME_START") {
                     showPage("bingoLive");
                 }
                 break;
@@ -189,15 +190,18 @@ function connectBingoWebSocket() {
     };
 }
 
+// 60s ቆጣሪን በ index.html 'selectionTimer' ላይ የሚያዘምንበት
 function updateCountdownUI(data) {
-    const timerEl = document.getElementById("bingoTimer");
+    const timerEl = document.getElementById("selectionTimer"); 
     const countEl = document.getElementById("playerCount");
-    const prizeEl = document.getElementById("potAmount");
+    const takenCountEl = document.getElementById("takenCardsCount");
+    const jackpotEl = document.getElementById("jackpotAmountText");
 
-    if (timerEl) timerEl.textContent = `${data.seconds}s`;
+    if (timerEl) timerEl.textContent = `${data.seconds}`;
     if (countEl) countEl.textContent = data.player_count || "0";
-    if (prizeEl && data.derash_rooms) {
-        prizeEl.textContent = `${data.derash_rooms["10"] || 0} ETB`;
+    if (takenCountEl) takenCountEl.textContent = data.taken_cards ? data.taken_cards.length : "0";
+    if (jackpotEl && data.derash_rooms) {
+        jackpotEl.textContent = `${data.derash_rooms["10"] || 0}.00`;
     }
 
     if (data.taken_cards) {
@@ -207,7 +211,7 @@ function updateCountdownUI(data) {
 
 function updateTakenCardsUI(takenCards) {
     takenCardsList = takenCards || [];
-    document.querySelectorAll(".card-item").forEach(item => {
+    document.querySelectorAll("#cardsGrid .card-item").forEach(item => {
         const cardNum = parseInt(item.dataset.cardNum);
         if (takenCardsList.includes(cardNum)) {
             item.classList.add("taken");
@@ -218,27 +222,60 @@ function updateTakenCardsUI(takenCards) {
     });
 }
 
-function renderDrawnBall(data) {
-    const ballEl = document.getElementById("currentBall");
-    const historyContainer = document.getElementById("ballHistory");
+// 1-75 ቦርድ ላይ የወጡ ኳሶችን ማሳያ Logic
+function render75BoardSkeleton() {
+    const ranges = {
+        B: [1, 15],
+        I: [16, 30],
+        N: [31, 45],
+        G: [46, 60],
+        O: [61, 75]
+    };
 
-    if (ballEl) {
-        ballEl.textContent = data.label;
-        ballEl.className = `active-ball ball-${data.letter}`;
+    for (const [letter, range] of Object.entries(ranges)) {
+        const container = document.getElementById(`row-${letter}`);
+        if (!container) continue;
+
+        container.innerHTML = "";
+        for (let i = range[0]; i <= range[1]; i++) {
+            const cell = document.createElement("span");
+            cell.className = "board-cell";
+            cell.id = `cell-ball-${i}`;
+            cell.textContent = i;
+            container.appendChild(cell);
+        }
+    }
+}
+
+function renderDrawnBall(data) {
+    const letterEl = document.getElementById("currentBallLetter");
+    const numberEl = document.getElementById("currentBallNumber");
+    const historyList = document.getElementById("recentBallsList");
+    const callBadge = document.getElementById("callCountBadge");
+
+    if (letterEl) letterEl.textContent = data.letter || "-";
+    if (numberEl) numberEl.textContent = data.number || "--";
+    if (callBadge && data.call_count) callBadge.textContent = `Call ${data.call_count}`;
+
+    // 1-75 Board ላይ የደወለውን ቁጥር ማብራት
+    const activeCell = document.getElementById(`cell-ball-${data.number}`);
+    if (activeCell) {
+        activeCell.classList.add("called");
     }
 
-    if (historyContainer) {
-        const ballBadge = document.createElement("span");
-        ballBadge.className = `ball-badge ball-${data.letter}`;
-        ballBadge.textContent = data.label;
-        historyContainer.prepend(ballBadge);
+    // የቅርብ ጊዜ የወጡ ኳሶች ታሪክ (Recent Balls History)
+    if (historyList) {
+        const ballItem = document.createElement("div");
+        ballItem.className = `recent-ball-pill ball-${data.letter}`;
+        ballItem.textContent = `${data.letter}${data.number}`;
+        historyList.prepend(ballItem);
     }
 }
 
 function handleGameOver(data) {
     showMessage(
         "የጨዋታው ፍጻሜ!",
-        `${data.message}\nየአሸናፊነት ሽልማት፦ ${data.prize} ETB`,
+        `${data.message || "ጨዋታው ተጠናቋል"}\nየአሸናፊነት ሽልማት፦ ${data.prize || 0} ETB`,
         "🎉"
     );
     syncAndFetchUser();
@@ -283,7 +320,6 @@ function toggleCardSelection(element, cardNum) {
         selectedBingoCards.splice(index, 1);
         element.classList.remove("selected");
     } else {
-        // Option: allow buying single or multiple cards
         selectedBingoCards.push(cardNum);
         element.classList.add("selected");
     }
@@ -296,18 +332,14 @@ function toggleCardSelection(element, cardNum) {
 }
 
 function updateSelectedCardsUI() {
-    const countEl = document.getElementById("selectedCount");
-    const totalEl = document.getElementById("totalPrice");
-    const cardPrice = 10;
-
-    if (countEl) countEl.textContent = selectedBingoCards.length;
-    if (totalEl) totalEl.textContent = (selectedBingoCards.length * cardPrice).toFixed(2);
+    const countBtn = document.getElementById("mySelectedCount");
+    if (countBtn) countBtn.textContent = selectedBingoCards.length;
 }
 
 // Confirm Bingo Purchases
-document.getElementById("buyBingoCardsBtn")?.addEventListener("click", async () => {
+document.getElementById("confirmCardsBtn")?.addEventListener("click", async () => {
     if (selectedBingoCards.length === 0) {
-        showMessage("ካርድ አልመረቱም", "እባክዎን ለመጫወት ቢያንስ አንድ የቢንጎ ካርድ ይምረጡ!", "⚠️");
+        showMessage("ካርድ አልመረጡም", "እባክዎን ለመጫወት ቢያንስ አንድ የቢንጎ ካርድ ይምረጡ!", "⚠️");
         return;
     }
 
@@ -503,7 +535,7 @@ function hideAllViews() {
     if (homeView) homeView.hidden = true;
     if (profileView) profileView.hidden = true;
     if (bingoSelectionView) bingoSelectionView.hidden = true;
-    if (bingoLiveView) bingoLiveView.hidden = true;
+    if (bingoGameView) bingoGameView.hidden = true;
 }
 
 function showPage(pageName) {
@@ -522,7 +554,7 @@ function showPage(pageName) {
     } else if (pageName === "bingoSelection") {
         if (bingoSelectionView) bingoSelectionView.hidden = false;
     } else if (pageName === "bingoLive") {
-        if (bingoLiveView) bingoLiveView.hidden = false;
+        if (bingoGameView) bingoGameView.hidden = false;
     } else {
         if (homeView) homeView.hidden = false;
     }
