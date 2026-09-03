@@ -1,5 +1,4 @@
-from datetime import datetime
-
+from datetime import datetime, timezone
 from sqlalchemy import (
     Column,
     DateTime,
@@ -8,6 +7,7 @@ from sqlalchemy import (
     Integer,
     String,
     Text,
+    Boolean,
 )
 
 from app.database import Base
@@ -43,10 +43,7 @@ class User(Base):
         nullable=True
     )
 
-    # =====================================================
     # SHARED WALLET BALANCE
-    # =====================================================
-
     balance = Column(
         Float,
         default=0.0,
@@ -57,6 +54,12 @@ class User(Base):
     is_banned = Column(
         Integer,
         default=0,
+        nullable=False
+    )
+
+    is_bot = Column(
+        Boolean,
+        default=False,
         nullable=False
     )
 
@@ -114,14 +117,12 @@ class WalletTransaction(Base):
     )
 
     # Which game caused the transaction
-    # Example: bingo, slots, roulette
     game = Column(
         String(50),
         nullable=True,
         index=True
     )
 
-    # Optional reference
     reference = Column(
         String(255),
         nullable=True,
@@ -186,7 +187,6 @@ class Deposit(Base):
         nullable=False
     )
 
-    # pending / approved / rejected
     status = Column(
         String(50),
         default="pending",
@@ -236,7 +236,6 @@ class Withdrawal(Base):
         nullable=False
     )
 
-    # pending / approved / rejected
     status = Column(
         String(50),
         default="pending",
@@ -247,5 +246,184 @@ class Withdrawal(Base):
     created_at = Column(
         DateTime,
         default=datetime.utcnow,
+        nullable=False
+    )
+
+
+# =========================================================
+# BINGO GAME MODELS (ADDED FOR BINGO ENGINE)
+# =========================================================
+
+class Game(Base):
+    __tablename__ = "games"
+
+    id = Column(
+        Integer,
+        primary_key=True,
+        index=True
+    )
+
+    status = Column(
+        String(50),
+        default="waiting",
+        nullable=False,
+        index=True
+    )
+
+    started_at = Column(
+        DateTime,
+        default=lambda: datetime.now(timezone.utc),
+        nullable=False
+    )
+
+    finished_at = Column(
+        DateTime,
+        nullable=True
+    )
+
+    taken_cards = Column(
+        Text,
+        default="[]"
+    )
+
+    drawn_balls = Column(
+        Text,
+        default="[]"
+    )
+
+    winning_card = Column(
+        String(255),
+        nullable=True
+    )
+
+    winner_id = Column(
+        Integer,
+        nullable=True
+    )
+
+    prize = Column(
+        Float,
+        default=0.0
+    )
+
+    winners_info = Column(
+        Text,
+        default="[]"
+    )
+
+
+class Setting(Base):
+    __tablename__ = "settings"
+
+    id = Column(
+        Integer,
+        primary_key=True,
+        index=True
+    )
+
+    draw_interval = Column(
+        Float,
+        default=4.0
+    )
+
+    game_commission_percent = Column(
+        Float,
+        default=20.0
+    )
+
+    house_win_ratio = Column(
+        Integer,
+        default=3
+    )
+
+
+class AdminStats(Base):
+    __tablename__ = "admin_stats"
+
+    id = Column(
+        Integer,
+        primary_key=True,
+        index=True
+    )
+
+    house_balance = Column(
+        Float,
+        default=0.0
+    )
+
+    total_commission = Column(
+        Float,
+        default=0.0
+    )
+
+
+class Card(Base):
+    __tablename__ = "cards"
+
+    id = Column(
+        Integer,
+        primary_key=True,
+        index=True
+    )
+
+    card_number = Column(
+        Integer,
+        unique=True,
+        index=True,
+        nullable=False
+    )
+
+    data = Column(
+        Text,
+        nullable=False
+    )
+
+    is_taken = Column(
+        Boolean,
+        default=False
+    )
+
+    reserved_by = Column(
+        Integer,
+        nullable=True
+    )
+
+    current_game_id = Column(
+        Integer,
+        nullable=True
+    )
+
+
+class PlayerCard(Base):
+    __tablename__ = "player_cards"
+
+    id = Column(
+        Integer,
+        primary_key=True,
+        index=True
+    )
+
+    game_id = Column(
+        Integer,
+        ForeignKey("games.id"),
+        nullable=False,
+        index=True
+    )
+
+    user_id = Column(
+        Integer,
+        ForeignKey("users.id"),
+        nullable=False,
+        index=True
+    )
+
+    card_number = Column(
+        Integer,
+        nullable=False
+    )
+
+    bet_amount = Column(
+        Float,
+        default=10.0,
         nullable=False
     )
