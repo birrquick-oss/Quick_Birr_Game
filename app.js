@@ -1,6 +1,6 @@
 /* =========================================================
    QUICK_BIRR GAMES
-   Frontend Controller (Full Integration with Backend)
+   Frontend Controller (Full Integration with Backend & Bingo)
    ========================================================= */
 
 const tg = window.Telegram?.WebApp;
@@ -15,6 +15,8 @@ let userData = {
     username: "",
     balance: 0.00
 };
+
+let selectedBingoCards = [];
 
 if (tg) {
     tg.ready();
@@ -43,6 +45,8 @@ const profilePhoneEl = document.getElementById("profilePhone");
 
 const homeView = document.getElementById("homeView");
 const profileView = document.getElementById("profileView");
+const bingoSelectionView = document.getElementById("bingoSelectionView");
+const bingoLiveView = document.getElementById("bingoLiveView");
 
 const depositModal = document.getElementById("depositModal");
 const withdrawModal = document.getElementById("withdrawModal");
@@ -106,11 +110,8 @@ document.querySelectorAll(".game-card").forEach(card => {
         const game = card.dataset.game;
 
         if (game === "bingo") {
-            showMessage(
-                "QUICK BIRR BINGO",
-                "Bingo 1–1000 will be available here.",
-                "🎱"
-            );
+            showPage("bingoSelection");
+            render1000BingoCards();
             return;
         }
 
@@ -124,10 +125,100 @@ document.querySelectorAll(".game-card").forEach(card => {
 
         showMessage(
             names[game] || "Game",
-            "This game is coming soon.",
+            "ይህ ጨዋታ በቅርብ ቀን ይለቀቃል!",
             "🎮"
         );
     });
+});
+
+/* =========================
+   BINGO 1-1000 SELECTION & LOGIC
+========================= */
+function render1000BingoCards() {
+    const gridContainer = document.getElementById("cardsGrid");
+    if (!gridContainer) return;
+
+    gridContainer.innerHTML = "";
+    selectedBingoCards = [];
+    updateSelectedCardsUI();
+
+    // Generate 1 to 1000 buttons
+    const fragment = document.createDocumentFragment();
+    for (let i = 1; i <= 1000; i++) {
+        const cardBtn = document.createElement("div");
+        cardBtn.className = "card-item";
+        cardBtn.textContent = i;
+        cardBtn.dataset.cardNum = i;
+
+        cardBtn.addEventListener("click", () => toggleCardSelection(cardBtn, i));
+        fragment.appendChild(cardBtn);
+    }
+    gridContainer.appendChild(fragment);
+}
+
+function toggleCardSelection(element, cardNum) {
+    if (element.classList.contains("taken")) return;
+
+    const index = selectedBingoCards.indexOf(cardNum);
+    if (index > -1) {
+        selectedBingoCards.splice(index, 1);
+        element.classList.remove("selected");
+    } else {
+        selectedBingoCards.push(cardNum);
+        element.classList.add("selected");
+    }
+
+    if (window.Telegram?.WebApp?.HapticFeedback) {
+        window.Telegram.WebApp.HapticFeedback.selectionChanged();
+    }
+
+    updateSelectedCardsUI();
+}
+
+function updateSelectedCardsUI() {
+    const countEl = document.getElementById("selectedCount");
+    const totalEl = document.getElementById("totalPrice");
+    const cardPrice = 10; // 10 ETB per card
+
+    if (countEl) countEl.textContent = selectedBingoCards.length;
+    if (totalEl) totalEl.textContent = (selectedBingoCards.length * cardPrice).toFixed(2);
+}
+
+// Confirm Bingo Purchases
+document.getElementById("buyBingoCardsBtn")?.addEventListener("click", async () => {
+    if (selectedBingoCards.length === 0) {
+        showMessage("ካርድ አልመረጡም", "እባክዎን ለመጫወት ቢያንስ አንድ የቢንጎ ካርድ ይምረጡ!", "⚠️");
+        return;
+    }
+
+    const totalCost = selectedBingoCards.length * 10;
+    if (parseFloat(userData.balance) < totalCost) {
+        showMessage("በቂ ቀሪ ሂሳብ የለዎትም", "እባክዎን አስቀድመው ዲፖዚት ያድርጉ!", "💰");
+        return;
+    }
+
+    try {
+        const res = await fetch("/api/bingo/buy-cards", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                telegram_id: String(userData.telegram_id),
+                cards: selectedBingoCards
+            })
+        });
+
+        const data = await res.json();
+        if (data.success) {
+            showMessage("ተሳክቷል!", `${selectedBingoCards.length} ካርዶች ተገዝተዋል:: መልካም እድል!`, "🎉");
+            syncAndFetchUser();
+            showPage("bingoLive");
+        } else {
+            showMessage("ስህተት", data.message || "ካርድ መግዛት አልተቻለም", "❌");
+        }
+    } catch (err) {
+        console.error("Buy Cards Error:", err);
+        showMessage("ስህተት", "የካርድ መግዛት ጥያቄ ማስተላለፍ አልተቻለም!", "❌");
+    }
 });
 
 /* =========================
@@ -151,7 +242,6 @@ async function syncAndFetchUser() {
     if (!userData.telegram_id) return;
 
     try {
-        // 1. Get or Create user in Backend
         const userRes = await fetch('/api/users', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -187,7 +277,6 @@ document.getElementById("balanceButton")?.addEventListener("click", () => {
    FORM SUBMISSIONS (API CALLS)
 ========================= */
 function setupFormSubmitListeners() {
-    // Deposit Form Submit
     const depositForm = document.getElementById("deposit-form") || document.querySelector("#depositModal form");
     if (depositForm) {
         depositForm.addEventListener("submit", async (e) => {
@@ -232,7 +321,6 @@ function setupFormSubmitListeners() {
         });
     }
 
-    // Withdraw Form Submit
     const withdrawForm = document.getElementById("withdraw-form") || document.querySelector("#withdrawModal form");
     if (withdrawForm) {
         withdrawForm.addEventListener("submit", async (e) => {
@@ -266,7 +354,7 @@ function setupFormSubmitListeners() {
                     closeModals();
                     withdrawForm.reset();
                     showMessage("ተመዝግቧል!", data.message, "✅");
-                    syncAndFetchUser(); // refresh balance
+                    syncAndFetchUser();
                 } else {
                     showMessage("ስህተት", data.message, "❌");
                 }
@@ -281,6 +369,13 @@ function setupFormSubmitListeners() {
 /* =========================
    BOTTOM NAV & PAGE SWITCHING
 ========================= */
+function hideAllViews() {
+    if (homeView) homeView.hidden = true;
+    if (profileView) profileView.hidden = true;
+    if (bingoSelectionView) bingoSelectionView.hidden = true;
+    if (bingoLiveView) bingoLiveView.hidden = true;
+}
+
 function showPage(pageName) {
     document.querySelectorAll(".nav-item").forEach(nav => {
         if (nav.dataset.page === pageName) {
@@ -290,14 +385,19 @@ function showPage(pageName) {
         }
     });
 
+    hideAllViews();
+
     if (pageName === "profile") {
-        if (homeView) homeView.hidden = true;
         if (profileView) profileView.hidden = false;
-        window.scrollTo({ top: 0, behavior: "smooth" });
+    } else if (pageName === "bingoSelection") {
+        if (bingoSelectionView) bingoSelectionView.hidden = false;
+    } else if (pageName === "bingoLive") {
+        if (bingoLiveView) bingoLiveView.hidden = false;
     } else {
-        if (profileView) profileView.hidden = true;
         if (homeView) homeView.hidden = false;
     }
+
+    window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
 document.querySelectorAll(".nav-item").forEach(item => {
@@ -306,7 +406,6 @@ document.querySelectorAll(".nav-item").forEach(item => {
 
         if (page === "home") {
             showPage("home");
-            window.scrollTo({ top: 0, behavior: "smooth" });
         } else if (page === "games") {
             showPage("home");
             document.querySelector(".games-section")?.scrollIntoView({ behavior: "smooth" });
@@ -316,6 +415,16 @@ document.querySelectorAll(".nav-item").forEach(item => {
         } else if (page === "profile") {
             showPage("profile");
         }
+    });
+});
+
+/* =========================
+   COPY TO CLIPBOARD BINDINGS
+========================= */
+document.querySelectorAll(".account-item").forEach(accItem => {
+    accItem.addEventListener("click", () => {
+        const accNum = accItem.querySelector(".acc-num")?.innerText.trim();
+        if (accNum) copyToClipboard(accNum);
     });
 });
 
@@ -338,7 +447,7 @@ function loadTelegramUser() {
         syncAndFetchUser();
     } else {
         console.log("Running outside Telegram Mini App context.");
-        userData.telegram_id = "12345678"; // Test Telegram ID for Local Browser
+        userData.telegram_id = "12345678";
         if (profileNameEl) profileNameEl.textContent = "Guest User";
         if (profilePhoneEl) profilePhoneEl.textContent = "No Telegram ID";
         syncAndFetchUser();
@@ -364,7 +473,7 @@ function copyToClipboard(text) {
     if (navigator.clipboard && window.isSecureContext) {
         navigator.clipboard.writeText(text).then(() => {
             showCopyToast();
-        }).catch(err => {
+        }).catch(() => {
             fallbackCopyTextToClipboard(text);
         });
     } else {
