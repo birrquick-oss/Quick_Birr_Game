@@ -6,7 +6,7 @@ from fastapi import APIRouter, HTTPException, Query, BackgroundTasks
 from pydantic import BaseModel, Field
 from app.database import SessionLocal
 from app.models import User, Game, Card, PlayerCard
-⁠from app.websocket_manager import manager
+from app.websocket_manager import manager
 
 router = APIRouter(prefix="/api/cards", tags=["Cards"])
 
