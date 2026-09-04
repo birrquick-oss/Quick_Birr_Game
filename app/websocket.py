@@ -8,25 +8,19 @@ from app.websocket_manager import manager
 
 router = APIRouter(tags=["WebSocket"])
 
-BET_AMOUNT = 10.0  # 🎯 ለአዲሱ ፕሮጀክት 10 ብር ክፍል ብቻ
+BET_AMOUNT = 10.0
 
 
 @router.websocket("/ws/bingo")
 async def websocket_bingo_endpoint(websocket: WebSocket):
-    """
-    🌐 የቀጥታ ስርጭት የዌብሶኬት ግንኙነት፦
-    ለ 10 ብር ክፍል የተያዙ ካርዶችን፣ የ 60 ሰከንድ ቆጣሪን እና የቀጥታ የዕጣ ቁጥሮችን ያስተላልፋል።
-    """
     await manager.connect(websocket)
     db: Session = SessionLocal()
 
     try:
-        # 1. አክቲቭ የሆነውን ጨዋታ መፈለግ
         active_game = db.query(Game).filter(
             Game.status.in_(["running", "waiting"])
         ).order_by(Game.id.desc()).first()
 
-        # 2. በ 10 ብር ክፍል የተያዙ ካርዶችን ማውጣት
         taken_cards = []
         if active_game:
             player_cards = db.query(PlayerCard).filter(
@@ -35,7 +29,6 @@ async def websocket_bingo_endpoint(websocket: WebSocket):
             ).all()
             taken_cards = [pc.card_number for pc in player_cards]
 
-        # 3. አዲስ ለገባው ተጫዋች የመነሻ ሁኔታውን (Initial State) መላክ
         init_payload = {
             "type": "init_state",
             "game_id": active_game.id if active_game else None,
@@ -48,13 +41,11 @@ async def websocket_bingo_endpoint(websocket: WebSocket):
         }
         await websocket.send_text(json.dumps(init_payload))
 
-        # 4. ከተጫዋቹ የሚመጡ መልእክቶችን ማዳመጥ (Ping/Pong ወይም መረጃዎች)
         while True:
             raw_data = await websocket.receive_text()
             try:
                 data = json.loads(raw_data)
                 
-                # የተያዙ ካርዶችን ጥያቄ ሲልክ
                 if data.get("action") == "get_taken_cards":
                     current_game = db.query(Game).filter(
                         Game.status.in_(["running", "waiting"])
