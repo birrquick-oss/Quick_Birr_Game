@@ -759,3 +759,76 @@ button {
 }
 .btn-green { background: #10b981; }
 .btn-red { background: #f43f5e; }
+
+/* =========================================================
+   ADDITIONAL STYLES FOR DYNAMIC BINGO SLIDER & CARDS
+========================================================= */
+
+/* Recent Balls Pills Horizontal Scroll */
+.recent-ball-pill {
+    padding: 6px 10px;
+    border-radius: 12px;
+    color: #fff;
+    font-weight: bold;
+    font-size: 11px;
+    min-width: 38px;
+    text-align: center;
+    flex-shrink: 0;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    transition: transform 0.2s ease;
+}
+
+.recent-ball-pill.active {
+    transform: scale(1.15);
+    border: 2px solid #fff;
+    box-shadow: 0 0 10px var(--orange-glow);
+}
+
+/* Dynamic 5x5 Slider Navigation & Auto/Manual Buttons */
+.main-slider-layout {
+    background: #121925;
+    border: 2px solid var(--orange-border);
+    border-radius: 16px;
+    padding: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+}
+
+.side-nav-btn {
+    transition: all 0.2s ease;
+    user-select: none;
+}
+
+.side-nav-btn:active {
+    transform: scale(0.88);
+}
+
+/* 5x5 Bingo Cells Interactive States */
+.bingo-cell {
+    transition: background 0.2s ease, transform 0.1s ease;
+    user-select: none;
+}
+
+.bingo-cell:active {
+    transform: scale(0.92);
+}
+
+.bingo-cell.marked-auto {
+    animation: cellPop 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    box-shadow: 0 0 8px rgba(255, 255, 255, 0.4);
+}
+
+@keyframes cellPop {
+    0% { transform: scale(0.7); }
+    100% { transform: scale(1); }
+}
+
+/* Winners Modal Overlay Improvements */
+#winnerModal {
+    backdrop-filter: blur(8px);
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
