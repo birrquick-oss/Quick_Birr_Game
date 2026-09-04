@@ -9,10 +9,11 @@ from sqlalchemy.orm import Session
 from app.database import SessionLocal, initialize_database
 from app.models import User
 
-# Routerዎችን ማገናኘት
-from app.routes.games import router as games_router
-from app.routes.cards import router as cards_router
-from app.routes.users import router as users_router
+# Routerዎች - ትክክለኛው መንገድ (app.routers)
+from app.routers.games import router as games_router
+from app.routers.cards import router as cards_router
+from app.routers.users import router as users_router
+from app.routers.transactions import router as transactions_router
 from app.websocket import router as websocket_router
 from app.game_engine import engine
 
@@ -44,6 +45,7 @@ app.add_middleware(
 app.include_router(games_router)
 app.include_router(cards_router)
 app.include_router(users_router)
+app.include_router(transactions_router)
 app.include_router(websocket_router)
 
 
