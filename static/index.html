@@ -172,7 +172,7 @@
         </div>
 
         <!-- ========================================================= -->
-        <!-- 1. BINGO CARD SELECTION VIEW (1-1000 NUMBERS)              -->
+        <!-- 1. BINGO CARD SELECTION VIEW (PHASE 1: 1-1000 NUMBERS)    -->
         <!-- ========================================================= -->
         <div id="bingoSelectionView" class="page-view" hidden>
             <div class="bingo-header-stats">
@@ -200,7 +200,10 @@
             </div>
 
             <div class="bingo-banner orange-banner">
-                <span>QUICK BIRR BINGO</span>
+                <div class="banner-left">
+                    <span>QUICK BIRR BINGO</span>
+                    <small class="phase-game-id" id="phase1GameId">#---</small>
+                </div>
                 <span class="timer-badge" id="selectionTimer">60</span>
             </div>
 
@@ -215,14 +218,20 @@
         </div>
 
         <!-- ========================================================= -->
-        <!-- 2. BINGO LIVE GAMEPLAY VIEW (1-75 DRAWING BOARD & CARDS)  -->
+        <!-- 2. BINGO LIVE GAMEPLAY VIEW (PHASE 2: 1-75 DRAWING BOARD) -->
         <!-- ========================================================= -->
         <div id="bingoGameView" class="page-view" hidden>
             
             <div class="live-game-topbar">
-                <span class="game-call-badge" id="callCountBadge">Call 0</span>
-                <span class="derash-badge" id="liveDerashBadge">Derash: 0.00 ETB</span>
-                <span class="game-id-badge" id="gameIdBadge">Game #0</span>
+                <div class="topbar-info">
+                    <span class="game-call-badge" id="callCountBadge">Call 0</span>
+                    <span class="derash-badge" id="liveDerashBadge">ደራሽ 0.00</span>
+                    <span class="game-id-badge" id="gameIdBadge">Game #0</span>
+                </div>
+                <!-- SOUND TOGGLE BUTTON -->
+                <button class="sound-toggle-btn" id="soundToggleBtn" type="button" onclick="toggleSound()">
+                    🔊 <span id="soundStatusText">ON</span>
+                </button>
             </div>
 
             <!-- 1-75 Board Container -->
@@ -324,6 +333,45 @@
         </button>
     </nav>
 
+</div>
+
+<!-- ========================================================= -->
+<!-- WINNER OVERLAY MODAL (IMAGE 3 MATCH - ORANGE THEME)      -->
+<!-- ========================================================= -->
+<div class="custom-modal winner-modal" id="winnerModal" hidden>
+    <div class="modal-overlay"></div>
+    <div class="modal-card orange-border">
+        <div class="winner-header">
+            <h2>🎉 BINGO! 🎉</h2>
+            <p class="winner-subtitle">አሸናፊ: <span id="winnerUsername">user_---</span> (ካርቴላ #<span id="winnerCardNum">000</span>)</p>
+        </div>
+
+        <div class="winner-details-box">
+            <div class="detail-row">
+                <span>👤 ስም:</span>
+                <strong id="winnerNameText">---</strong>
+            </div>
+            <div class="detail-row">
+                <span>📞 ስልክ:</span>
+                <strong id="winnerPhoneText">---</strong>
+            </div>
+            <div class="detail-row">
+                <span>🎫 ካርድ:</span>
+                <strong id="winnerCardIdText">#000</strong>
+            </div>
+        </div>
+
+        <!-- 5x5 Winning Pattern Preview Grid -->
+        <div class="winner-grid-preview" id="winnerGridPreview">
+            <!-- Rendered via JS -->
+        </div>
+
+        <div class="prize-badge-box">
+            <span id="winnerPrizeAmount">+0 ETB</span>
+        </div>
+
+        <button class="submit-btn orange-btn" type="button" onclick="closeWinnerModalAndReset()">እሺ (ቀጥል)</button>
+    </div>
 </div>
 
 <!-- GENERAL MESSAGE MODAL -->
@@ -457,6 +505,16 @@
 
 <!-- UI HELPER SCRIPTS -->
 <script>
+    let isSoundOn = true;
+
+    function toggleSound() {
+        isSoundOn = !isSoundOn;
+        const soundText = document.getElementById('soundStatusText');
+        const soundBtn = document.getElementById('soundToggleBtn');
+        if (soundText) soundText.textContent = isSoundOn ? 'ON' : 'OFF';
+        if (soundBtn) soundBtn.style.opacity = isSoundOn ? '1' : '0.5';
+    }
+
     function openDepositModal() {
         document.getElementById('depositModal').hidden = false;
     }
