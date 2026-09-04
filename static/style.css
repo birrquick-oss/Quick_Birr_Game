@@ -331,6 +331,17 @@ button {
     letter-spacing: 1px;
 }
 
+.banner-left {
+    display: flex;
+    flex-direction: column;
+}
+
+.phase-game-id {
+    font-size: 10px;
+    opacity: 0.9;
+    font-weight: bold;
+}
+
 .timer-badge {
     background: #fff;
     color: #000;
@@ -350,17 +361,18 @@ button {
     background: #0d1119;
 }
 
+/* FIX 1: Background is WHITE, Text is BLACK */
 .card-item {
     aspect-ratio: 1;
-    background: #1b2432;
-    border: 1px solid #2d3a4e;
+    background: #ffffff !important;
+    border: 1px solid #e0e0e0;
     border-radius: 8px;
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 11px;
     font-weight: bold;
-    color: #fff;
+    color: #000000 !important;
     cursor: pointer;
     user-select: none;
     transition: all 0.15s ease;
@@ -368,19 +380,19 @@ button {
 
 .card-item:active { transform: scale(0.9); }
 
-/* Selected Card Style (Orange Accent) */
+/* Selected Card Style (ORANGE Background, BLACK Text) */
 .card-item.selected {
     background: var(--orange) !important;
-    color: #fff !important;
+    color: #000000 !important;
     border-color: var(--orange-border) !important;
     box-shadow: 0 0 8px var(--orange-glow);
 }
 
 /* Taken / Crossed-Out Card Style */
 .card-item.taken {
-    background: #202836 !important;
-    color: #5d6a7d !important;
-    border-color: #263143 !important;
+    background: #e2e8f0 !important;
+    color: #94a3b8 !important;
+    border-color: #cbd5e1 !important;
     text-decoration: line-through;
     cursor: not-allowed;
     opacity: 0.6;
@@ -410,16 +422,34 @@ button {
 
 
 /* =========================================================
-   2. LIVE BINGO GAMEPLAY STYLES (1-75 BOARD & 5x5 CARDS)
+   2. LIVE BINGO GAMEPLAY STYLES (1-75 BOARD & SOUND BUTTON)
 ========================================================= */
 
 .live-game-topbar {
     display: flex;
     justify-content: space-between;
+    align-items: center;
     padding: 8px 12px;
     background: #121925;
     font-size: 11px;
     font-weight: bold;
+}
+
+.topbar-info {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}
+
+.sound-toggle-btn {
+    background: #1b2432;
+    border: 1px solid var(--orange-border);
+    color: #fff;
+    padding: 4px 10px;
+    border-radius: 8px;
+    font-size: 11px;
+    font-weight: bold;
+    cursor: pointer;
 }
 
 .game-call-badge { background: #3b82f6; padding: 4px 8px; border-radius: 6px; }
@@ -610,6 +640,91 @@ button {
     box-shadow: 0 4px 20px var(--orange-glow);
 }
 
+/* =========================================================
+   3. WINNER MODAL STYLES (ORANGE ACCENTS)
+========================================================= */
+
+.winner-modal .modal-card.orange-border {
+    border: 2px solid var(--orange-border);
+    box-shadow: 0 0 25px var(--orange-glow);
+    text-align: center;
+}
+
+.winner-header h2 {
+    color: var(--orange);
+    font-size: 22px;
+    margin-bottom: 4px;
+}
+
+.winner-subtitle {
+    font-size: 12px;
+    color: var(--text);
+    margin-bottom: 12px;
+}
+
+.winner-details-box {
+    background: #0f172a;
+    padding: 10px;
+    border-radius: 10px;
+    margin-bottom: 12px;
+}
+
+.detail-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    margin-bottom: 4px;
+}
+
+.detail-row strong {
+    color: var(--orange);
+}
+
+/* WINNING ROW GRID (HIGHLIGHT IN ORANGE) */
+.winner-grid-preview {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 4px;
+    margin: 12px 0;
+    padding: 8px;
+    background: #0d1119;
+    border-radius: 10px;
+}
+
+.winner-cell {
+    aspect-ratio: 1;
+    background: #1b2432;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: bold;
+    color: #8d99aa;
+}
+
+/* FIX 3: Change Yellow to Orange */
+.winner-cell.winning-highlight {
+    background: var(--orange) !important;
+    color: #ffffff !important;
+    box-shadow: 0 0 10px var(--orange-glow);
+}
+
+.prize-badge-box {
+    background: linear-gradient(135deg, #10b981, #059669);
+    padding: 10px;
+    border-radius: 10px;
+    font-size: 18px;
+    font-weight: 900;
+    color: #fff;
+    margin-bottom: 12px;
+}
+
+.submit-btn.orange-btn {
+    background: linear-gradient(135deg, #ff7b00, #ff4500);
+    box-shadow: 0 4px 15px var(--orange-glow);
+}
+
 /* =========================
    BOTTOM NAV & MODALS
 ========================= */
@@ -760,49 +875,7 @@ button {
 .btn-green { background: #10b981; }
 .btn-red { background: #f43f5e; }
 
-/* =========================================================
-   ADDITIONAL STYLES FOR DYNAMIC BINGO SLIDER & CARDS
-========================================================= */
-
-/* Recent Balls Pills Horizontal Scroll */
-.recent-ball-pill {
-    padding: 6px 10px;
-    border-radius: 12px;
-    color: #fff;
-    font-weight: bold;
-    font-size: 11px;
-    min-width: 38px;
-    text-align: center;
-    flex-shrink: 0;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-    transition: transform 0.2s ease;
-}
-
-.recent-ball-pill.active {
-    transform: scale(1.15);
-    border: 2px solid #fff;
-    box-shadow: 0 0 10px var(--orange-glow);
-}
-
-/* Dynamic 5x5 Slider Navigation & Auto/Manual Buttons */
-.main-slider-layout {
-    background: #121925;
-    border: 2px solid var(--orange-border);
-    border-radius: 16px;
-    padding: 12px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
-}
-
-.side-nav-btn {
-    transition: all 0.2s ease;
-    user-select: none;
-}
-
-.side-nav-btn:active {
-    transform: scale(0.88);
-}
-
-/* 5x5 Bingo Cells Interactive States */
+/* Dynamic 5x5 Bingo Cells */
 .bingo-cell {
     transition: background 0.2s ease, transform 0.1s ease;
     user-select: none;
@@ -822,7 +895,6 @@ button {
     100% { transform: scale(1); }
 }
 
-/* Winners Modal Overlay Improvements */
 #winnerModal {
     backdrop-filter: blur(8px);
     animation: fadeIn 0.3s ease-in-out;
