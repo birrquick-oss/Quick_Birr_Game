@@ -6,15 +6,16 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
 
-from app.database import get_db, initialize_database
+from app.database import SessionLocal, initialize_database
 from app.models import User
-from app.routers.transactions import router as transactions_router
-from app.routers.bingo import router as bingo_router, engine  # 👈 engine እዚህ ጋር ተጨምሯል
 
+# Routerዎችን ማገናኘት
+from app.routes.games import router as games_router
+from app.routes.cards import router as cards_router
+from app.routes.users import router as users_router
+from app.websocket import router as websocket_router
+from app.game_engine import engine
 
-# =========================================================
-# QUICK_BIRR GAMES MAIN APPLICATION
-# =========================================================
 
 app = FastAPI(
     title="QUICK_BIRR GAMES",
@@ -24,15 +25,7 @@ app = FastAPI(
 
 
 # =========================================================
-# INCLUDE ROUTERS
-# =========================================================
-
-app.include_router(transactions_router)
-app.include_router(bingo_router)
-
-
-# =========================================================
-# CORS
+# CORS CONFIGURATION
 # =========================================================
 
 app.add_middleware(
@@ -45,10 +38,33 @@ app.add_middleware(
 
 
 # =========================================================
+# INCLUDE ROUTERS
+# =========================================================
+
+app.include_router(games_router)
+app.include_router(cards_router)
+app.include_router(users_router)
+app.include_router(websocket_router)
+
+
+# =========================================================
 # MOUNT STATIC FILES
 # =========================================================
 
-app.mount("/static", StaticFiles(directory="."), name="static")
+if os.path.exists("static"):
+    app.mount("/static", StaticFiles(directory="static"), name="static")
+
+
+# =========================================================
+# DEPENDENCY
+# =========================================================
+
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
 
 
 # =========================================================
@@ -57,9 +73,9 @@ app.mount("/static", StaticFiles(directory="."), name="static")
 
 @app.on_event("startup")
 async def startup_event():
-    # 1. የዳታቤዝ ቴብሎችን መፍጠር
+    # 1. የዳታቤዝ ቴብሎችን ማዘጋጀት
     initialize_database()
-    # 2. የቢንጎ ጌም ኢንጂኑን በጀርባ (Background) ማስጀመር
+    # 2. የቢንጎ ጨዋታ ኢንጂኑን በጀርባ (Background Task) ማስጀመር
     asyncio.create_task(engine.start_game())
 
 
@@ -69,7 +85,11 @@ async def startup_event():
 
 @app.get("/")
 def read_root():
-    return FileResponse("index.html")
+    if os.path.exists("static/index.html"):
+        return FileResponse("static/index.html")
+    elif os.path.exists("index.html"):
+        return FileResponse("index.html")
+    return {"message": "Quick Birr Games Server Running"}
 
 
 # =========================================================
@@ -86,7 +106,7 @@ def health_check():
 
 
 # =========================================================
-# ROOT API
+# API ROOT
 # =========================================================
 
 @app.get("/api")
@@ -94,94 +114,4 @@ def api_root():
     return {
         "message": "QUICK_BIRR GAMES API is running",
         "status": "online",
-    }
-
-
-# =========================================================
-# GET USER
-# =========================================================
-
-@app.get("/api/users/{telegram_id}")
-def get_user(
-    telegram_id: str,
-    db: Session = Depends(get_db),
-):
-    user = (
-        db.query(User)
-        .filter(User.telegram_id == str(telegram_id))
-        .first()
-    )
-
-    if not user:
-        return {
-            "success": False,
-            "message": "User not found",
-        }
-
-    return {
-        "success": True,
-        "user": {
-            "id": user.id,
-            "telegram_id": user.telegram_id,
-            "telegram_username": user.telegram_username,
-            "first_name": user.first_name,
-            "balance": round(user.balance or 0.0, 2),
-            "is_banned": bool(getattr(user, "is_banned", False)),
-        },
-    }
-
-
-# =========================================================
-# CREATE / GET USER
-# =========================================================
-
-@app.post("/api/users")
-def create_user(
-    telegram_id: str,
-    telegram_username: str | None = None,
-    first_name: str | None = None,
-    db: Session = Depends(get_db),
-):
-    existing_user = (
-        db.query(User)
-        .filter(User.telegram_id == str(telegram_id))
-        .first()
-    )
-
-    if existing_user:
-        return {
-            "success": True,
-            "created": False,
-            "message": "User already exists",
-            "user": {
-                "id": existing_user.id,
-                "telegram_id": existing_user.telegram_id,
-                "telegram_username": existing_user.telegram_username,
-                "first_name": existing_user.first_name,
-                "balance": round(existing_user.balance or 0.0, 2),
-            },
-        }
-
-    user = User(
-        telegram_id=str(telegram_id),
-        telegram_username=telegram_username,
-        first_name=first_name,
-        balance=0.0,
-    )
-
-    db.add(user)
-    db.commit()
-    db.refresh(user)
-
-    return {
-        "success": True,
-        "created": True,
-        "message": "User created",
-        "user": {
-            "id": user.id,
-            "telegram_id": user.telegram_id,
-            "telegram_username": user.telegram_username,
-            "first_name": user.first_name,
-            "balance": round(user.balance or 0.0, 2),
-        },
     }
