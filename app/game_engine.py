@@ -61,16 +61,20 @@ class GameEngine:
         bot = db.query(User).filter(User.telegram_id == "BOT_VIRTUAL_PLAYER").first()
         if not bot:
             default_bot_name = random.choice(BOT_NAMES)
+            # ✅ telegram_name ወደ telegram_username ተቀይሯል
             bot = User(
                 telegram_id="BOT_VIRTUAL_PLAYER",
-                telegram_name=default_bot_name,
+                telegram_username=default_bot_name,
                 first_name=default_bot_name,
-                balance=9999999.0,
-                wallet=0.0,
-                gift_coin=0.0
+                balance=9999999.0
             )
             if hasattr(bot, "is_bot"):
                 bot.is_bot = True
+            if hasattr(bot, "wallet"):
+                bot.wallet = 0.0
+            if hasattr(bot, "gift_coin"):
+                bot.gift_coin = 0.0
+
             db.add(bot)
             db.commit()
             db.refresh(bot)
@@ -80,19 +84,12 @@ class GameEngine:
         now = datetime.now(timezone.utc)
         hour = (now.hour + 3) % 24
 
-        # ከጠዋቱ 12:00 እስከ ቀኑ 7:00 (ከ6:00 እስከ 12:59)
         if 6 <= hour < 13:
             return random.randint(50, 100)
-
-        # ከቀኑ 7:00 እስከ ሌሊቱ 6:00 (ከ13:00 እስከ 23:59)
         elif 13 <= hour <= 23:
             return random.randint(100, 150)
-
-        # ከሌሊቱ 6:00 እስከ ሌሊቱ 9:00 (ከ0:00 እስከ 2:59)
         elif 0 <= hour < 3:
             return random.randint(40, 80)
-
-        # ከሌሊቱ 9:00 እስከ ጠዋቱ 12:00 (ከ3:00 እስከ 5:59)
         else:
             return random.randint(30, 60)
 
@@ -118,7 +115,6 @@ class GameEngine:
                 needed = target_count - bot_current_count
 
                 if needed > 0:
-                    # 1-1000 ካርቴላዎች እንዲሸፍን ተደርጓል
                     available_numbers = [num for num in range(1, 1001) if num not in taken_numbers]
                     if available_numbers:
                         cards_to_buy_count = min(needed, len(available_numbers))
@@ -222,7 +218,6 @@ class GameEngine:
                 db = SessionLocal()
                 settings = db.query(Setting).first()
 
-                # ቆጣሪው ወደ 60 ሰከንድ ተቀይሯል
                 countdown_seconds = settings.countdown_seconds if (settings and hasattr(settings, 'countdown_seconds')) else 60
                 draw_interval = settings.draw_interval if (settings and hasattr(settings, 'draw_interval')) else 4.0
 
@@ -352,7 +347,6 @@ class GameEngine:
             for pc in db.query(PlayerCard).filter(PlayerCard.game_id == saved_game_id).all():
                 bought_cards[pc.card_number] = {"user_id": pc.user_id, "bet_amount": pc.bet_amount}
 
-            # 1-1000 ካርቴላዎችን ይጭናል
             all_1000_cards = {}
             for c in db.query(Card).all():
                 card_data = json.loads(c.data) if isinstance(c.data, str) else c.data
@@ -386,8 +380,6 @@ class GameEngine:
                         room_status[fee] = "FORCE_HOUSE"
 
                 max_draw_balls = random.randint(13, 16)
-
-            winner_detected = False
 
             await self.safe_broadcast({
                 "type": "phase_change",
@@ -442,7 +434,11 @@ class GameEngine:
                             phone_number = random.choice(BOT_PHONE_NUMBERS)
                         else:
                             user_record = db.query(User).filter(User.id == w["winner_id"]).first()
-                            telegram_name = user_record.telegram_name if user_record and user_record.telegram_name else f"user_{w['winner_id']}"
+                            # ✅ telegram_username ወይም first_name እንዲጠቀም ተደርጓል
+                            if user_record:
+                                telegram_name = user_record.telegram_username or user_record.first_name or f"user_{w['winner_id']}"
+                            else:
+                                telegram_name = f"user_{w['winner_id']}"
                             
                             if user_record and hasattr(user_record, 'phone_number') and user_record.phone_number:
                                 phone_number = user_record.phone_number
@@ -491,7 +487,6 @@ class GameEngine:
                         "winning_reason": primary_winner["winning_reason"],
                         "winners": winners_data
                     })
-                    winner_detected = True
                     break
 
                 if call_count >= max_draw_balls and target_house_wins > 0:
@@ -563,7 +558,6 @@ class GameEngine:
                             "winning_reason": bot_win_info["winning_pattern"],
                             "winners": bot_winners_list
                         })
-                        winner_detected = True
                         break
 
                 await asyncio.sleep(draw_interval)
