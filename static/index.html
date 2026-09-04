@@ -1,1 +1,500 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#0d1119">
+    <title>QUICK_BIRR GAMES</title>
 
+    <!-- Telegram Mini App -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+    <!-- Main CSS -->
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+<div id="app">
+
+    <!-- TOP BAR -->
+    <header class="top-bar">
+        <div class="brand">
+            <div class="brand-logo">⚡</div>
+            <div>
+                <div class="brand-name">QUICK_BIRR</div>
+                <div class="brand-subtitle">GAMES</div>
+            </div>
+        </div>
+
+        <button class="balance-box" id="balanceButton" type="button">
+            <span class="balance-icon">💰</span>
+            <span id="balance">0.00 ETB</span>
+            <span class="refresh-icon">↻</span>
+        </button>
+    </header>
+
+    <!-- MAIN CONTENT -->
+    <main id="mainContent">
+
+        <!-- HOME PAGE VIEW -->
+        <div id="homeView" class="page-view">
+            <!-- HERO -->
+            <section class="hero">
+                <div class="hero-content">
+                    <span class="hero-badge">🎮 PLAY & WIN</span>
+                    <h1>Welcome to<br><strong>QUICK_BIRR GAMES</strong></h1>
+                    <p>Your favorite games, all in one place.</p>
+                    <button class="primary-button" id="playNowButton" type="button" onclick="showPage('bingoSelection'); render1000BingoCards();">🎮 PLAY NOW</button>
+                </div>
+                <div class="hero-decoration">🎰</div>
+            </section>
+
+            <!-- QUICK ACTIONS -->
+            <section class="quick-actions">
+                <button class="action-button withdraw" type="button" id="withdrawButton" onclick="openWithdrawModal()">
+                    <span>💸</span> Withdraw
+                </button>
+                <button class="action-button deposit" type="button" id="depositButton" onclick="openDepositModal()">
+                    <span>💰</span> Deposit
+                </button>
+            </section>
+
+            <!-- FEATURED GAMES -->
+            <section class="games-section">
+                <div class="section-header">
+                    <div>
+                        <h2>🎮 Featured Games</h2>
+                        <p>Choose your favorite game</p>
+                    </div>
+                    <button class="see-all" id="seeAllButton" type="button">See all →</button>
+                </div>
+
+                <div class="games-grid">
+                    <button class="game-card bingo-card" data-game="bingo" type="button" id="bingoGameCard" onclick="showPage('bingoSelection'); render1000BingoCards();">
+                        <div class="game-image">
+                            <span class="game-icon">🎱</span>
+                            <span class="game-star">★</span>
+                        </div>
+                        <div class="game-info">
+                            <h3>QUICK BIRR BINGO</h3>
+                            <p>1–1000 Numbers</p>
+                            <span class="game-price">10 ETB</span>
+                        </div>
+                    </button>
+
+                    <button class="game-card slots-card" data-game="slots" type="button">
+                        <div class="game-image">
+                            <span class="game-icon">🎰</span>
+                            <span class="game-star">★</span>
+                        </div>
+                        <div class="game-info">
+                            <h3>Lucky Slots</h3>
+                            <p>Spin & Win</p>
+                            <span class="game-price">Coming Soon</span>
+                        </div>
+                    </button>
+
+                    <button class="game-card plinko-card" data-game="plinko" type="button">
+                        <div class="game-image">
+                            <span class="game-icon">🟢</span>
+                            <span class="game-star">★</span>
+                        </div>
+                        <div class="game-info">
+                            <h3>Plinko</h3>
+                            <p>Drop & Win</p>
+                            <span class="game-price">Coming Soon</span>
+                        </div>
+                    </button>
+
+                    <button class="game-card roulette-card" data-game="roulette" type="button">
+                        <div class="game-image">
+                            <span class="game-icon">🎡</span>
+                            <span class="game-star">★</span>
+                        </div>
+                        <div class="game-info">
+                            <h3>Roulette</h3>
+                            <p>European Roulette</p>
+                            <span class="game-price">Coming Soon</span>
+                        </div>
+                    </button>
+
+                    <button class="game-card blackjack-card" data-game="blackjack" type="button">
+                        <div class="game-image">
+                            <span class="game-icon">🃏</span>
+                            <span class="game-star">★</span>
+                        </div>
+                        <div class="game-info">
+                            <h3>Blackjack</h3>
+                            <p>21</p>
+                            <span class="game-price">Coming Soon</span>
+                        </div>
+                    </button>
+
+                    <button class="game-card mines-card" data-game="mines" type="button">
+                        <div class="game-image">
+                            <span class="game-icon">💎</span>
+                            <span class="game-star">★</span>
+                        </div>
+                        <div class="game-info">
+                            <h3>Mines</h3>
+                            <p>Find the Gems</p>
+                            <span class="game-price">Coming Soon</span>
+                        </div>
+                    </button>
+                </div>
+            </section>
+
+            <!-- PROMO -->
+            <section class="promo-card">
+                <div class="promo-icon">🎁</div>
+                <div class="promo-content">
+                    <h2>More Games Coming Soon</h2>
+                    <p>New games and exciting features are on the way.</p>
+                </div>
+                <span class="promo-arrow">→</span>
+            </section>
+
+            <!-- STATS -->
+            <section class="stats-section">
+                <div class="stat-box">
+                    <strong id="playerCount">0</strong>
+                    <span>Players</span>
+                </div>
+                <div class="stat-box">
+                    <strong>6+</strong>
+                    <span>Games</span>
+                </div>
+                <div class="stat-box">
+                    <strong>24/7</strong>
+                    <span>Available</span>
+                </div>
+            </section>
+        </div>
+
+        <!-- ========================================================= -->
+        <!-- 1. BINGO CARD SELECTION VIEW (1-1000 NUMBERS)              -->
+        <!-- ========================================================= -->
+        <div id="bingoSelectionView" class="page-view" hidden>
+            <div class="bingo-header-stats">
+                <div class="stat-pill orange-glow">
+                    <span class="icon">🤖</span>
+                    <div>
+                        <small>PLAY</small>
+                        <strong id="betAmountText">10.00</strong>
+                    </div>
+                </div>
+
+                <div class="stat-pill center-stat">
+                    <small>ደራሽ</small>
+                    <strong id="jackpotAmountText">0.00</strong>
+                    <div class="sub-info">የተያዙ ካርዶች: <span id="takenCardsCount">0</span></div>
+                </div>
+
+                <div class="stat-pill orange-glow">
+                    <span class="icon">🏆</span>
+                    <div>
+                        <small>WIN</small>
+                        <strong id="winAmountText">0.00</strong>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bingo-banner orange-banner">
+                <span>QUICK BIRR BINGO</span>
+                <span class="timer-badge" id="selectionTimer">60</span>
+            </div>
+
+            <!-- 10 Columns Grid for Cards 1 to 1000 -->
+            <div class="cards-grid-10cols" id="cardsGrid"></div>
+
+            <div class="selection-footer-bar">
+                <button class="orange-action-btn" id="confirmCardsBtn" type="button">
+                    ካርቴላ አረጋግጥ (<span id="mySelectedCount">0</span>)
+                </button>
+            </div>
+        </div>
+
+        <!-- ========================================================= -->
+        <!-- 2. BINGO LIVE GAMEPLAY VIEW (1-75 DRAWING BOARD & CARDS)  -->
+        <!-- ========================================================= -->
+        <div id="bingoGameView" class="page-view" hidden>
+            
+            <div class="live-game-topbar">
+                <span class="game-call-badge" id="callCountBadge">Call 0</span>
+                <span class="derash-badge" id="liveDerashBadge">Derash: 0.00 ETB</span>
+                <span class="game-id-badge" id="gameIdBadge">Game #0</span>
+            </div>
+
+            <!-- 1-75 Board Container -->
+            <div class="bingo-board-container orange-theme">
+                <div class="board-row" data-row="B"><span class="row-label orange-text">B</span><div class="row-cells" id="row-B"></div></div>
+                <div class="board-row" data-row="I"><span class="row-label orange-text">I</span><div class="row-cells" id="row-I"></div></div>
+                <div class="board-row" data-row="N"><span class="row-label orange-text">N</span><div class="row-cells" id="row-N"></div></div>
+                <div class="board-row" data-row="G"><span class="row-label orange-text">G</span><div class="row-cells" id="row-G"></div></div>
+                <div class="board-row" data-row="O"><span class="row-label orange-text">O</span><div class="row-cells" id="row-O"></div></div>
+            </div>
+
+            <!-- Drawn Balls Display Section -->
+            <div class="balls-display-wrapper">
+                <div class="recent-balls-list" id="recentBallsList">
+                    <!-- History of called balls -->
+                </div>
+                <div class="current-ball-big orange-glow" id="currentBallBig">
+                    <span class="letter" id="currentBallLetter">-</span>
+                    <span class="number" id="currentBallNumber">--</span>
+                </div>
+            </div>
+
+            <!-- Selected Cards Slider Display (Dynamic 5x5 Card Container) -->
+            <div class="active-card-container" id="playerBingoCard">
+                <!-- Javascript (app.js) Slider is rendered here -->
+            </div>
+
+            <div class="live-action-footer">
+                <button class="orange-bingo-btn" id="claimBingoBtn" type="button">
+                    🔥 BINGO!
+                </button>
+            </div>
+        </div>
+
+        <!-- PROFILE VIEW -->
+        <div id="profileView" class="page-view" hidden>
+            <div class="profile-dashboard">
+                <div class="user-profile-header">
+                    <div class="profile-avatar">💼</div>
+                    <div class="user-details">
+                        <h3 id="profileName">Loading User...</h3>
+                        <p id="profilePhone">---</p>
+                    </div>
+                </div>
+
+                <div class="wallet-summary-grid">
+                    <div class="wallet-card">
+                        <div class="wallet-title">Balance ↻</div>
+                        <div class="wallet-amount" id="dashBalance">0.00 ETB</div>
+                    </div>
+                    <div class="wallet-card">
+                        <div class="wallet-title">Credit 🎁</div>
+                        <div class="wallet-amount">0.00 ETB</div>
+                    </div>
+                </div>
+
+                <div class="action-buttons-grid">
+                    <button class="action-btn btn-withdraw" id="dashWithdrawBtn" type="button" onclick="openWithdrawModal()">💸 Withdraw</button>
+                    <button class="action-btn btn-deposit" id="dashDepositBtn" type="button" onclick="openDepositModal()">💰 Deposit</button>
+                </div>
+
+                <div class="dashboard-banner promo-cashback">
+                    <div class="cashback-info">
+                        <h4>🔄 Daily Cashback</h4>
+                        <div class="countdown">03 : 37 : 54</div>
+                    </div>
+                    <div class="cashback-badge">CASHBACK</div>
+                </div>
+
+                <div class="dashboard-menu-grid">
+                    <button class="menu-tile" type="button">📊 Leaderboard ➔</button>
+                    <button class="menu-tile" type="button">👥 Affiliate ➔</button>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- BOTTOM NAV -->
+    <nav class="bottom-nav">
+        <button class="nav-item active" data-page="home" type="button">
+            <span>⌂</span>
+            <small>Home</small>
+        </button>
+
+        <button class="nav-item" data-page="games" type="button">
+            <span>🎮</span>
+            <small>Games</small>
+        </button>
+
+        <button class="nav-item" data-page="promo" type="button">
+            <span>🎁</span>
+            <small>Promo</small>
+        </button>
+
+        <button class="nav-item" data-page="profile" type="button">
+            <span>👤</span>
+            <small>Profile</small>
+        </button>
+    </nav>
+
+</div>
+
+<!-- GENERAL MESSAGE MODAL -->
+<div class="modal" id="messageModal" hidden>
+    <div class="modal-overlay"></div>
+    <div class="modal-box">
+        <button class="modal-close" id="modalClose" type="button" onclick="closeModals()">×</button>
+        <div class="modal-icon" id="modalIcon">🎮</div>
+        <h2 id="modalTitle">QUICK_BIRR GAMES</h2>
+        <p id="modalMessage">Coming soon.</p>
+        <button class="primary-button modal-button" id="modalButton" type="button" onclick="closeModals()">OK</button>
+    </div>
+</div>
+
+<!-- DEPOSIT MODAL -->
+<div class="custom-modal" id="depositModal" hidden>
+    <div class="modal-overlay" onclick="closeModals()"></div>
+    <div class="modal-card">
+        <div class="modal-header">
+            <h3>📥 ገንዘብ ማስገቢያ (Deposit)</h3>
+            <button class="close-modal-btn" type="button" onclick="closeModals()">✕</button>
+        </div>
+
+        <div class="instruction-box">
+            💡 <strong>ማሳሰቢያ:</strong> አካውንቶቹን ለመቅዳት የቁጥሩን ጽሁፍ ይጫኑት:: ብር ካስገቡ በኋላ SMS ከታች ባለው ሳጥን ላይ ይለጥፉት::
+        </div>
+
+        <div class="bank-accounts-list">
+            <div class="account-item" onclick="copyToClipboard('+251910032722')">
+                <span>📱 Telebirr:</span>
+                <span class="acc-num">+251910032722 <span class="copy-icon">📋</span></span>
+            </div>
+            <div class="account-item" onclick="copyToClipboard('+251910032722')">
+                <span>🔸 CBE Birr:</span>
+                <span class="acc-num">+251910032722 <span class="copy-icon">📋</span></span>
+            </div>
+            <div class="account-item" onclick="copyToClipboard('1000406099141')">
+                <span>🏦 CBE Bank:</span>
+                <span class="acc-num">1000406099141 <span class="copy-icon">📋</span></span>
+            </div>
+            <div class="account-item" onclick="copyToClipboard('214157098')">
+                <span>🦅 Abyssinia:</span>
+                <span class="acc-num">214157098 <span class="copy-icon">📋</span></span>
+            </div>
+            <div class="account-item" onclick="copyToClipboard('013201588359000')">
+                <span>🏛️ Awash Bank:</span>
+                <span class="acc-num">013201588359000 <span class="copy-icon">📋</span></span>
+            </div>
+        </div>
+
+        <!-- FORM WRAPPER -->
+        <form id="deposit-form">
+            <div class="form-group">
+                <label>የገንዘብ መጠን ይምረጡ (Deposit):</label>
+                <select class="form-control" id="deposit-amount" required>
+                    <option value="">-- የገንዘብ መጠን ይምረጡ --</option>
+                    <option value="50">50 ብር</option>
+                    <option value="100">100 ብር</option>
+                    <option value="200">200 ብር</option>
+                    <option value="300">300 ብር</option>
+                    <option value="500">500 ብር</option>
+                    <option value="1000">1,000 ብር</option>
+                    <option value="5000">5,000 ብር</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>ብር የላኩበት የባንክ አይነት:</label>
+                <select class="form-control" id="deposit-bank" required>
+                    <option value="Telebirr">Telebirr</option>
+                    <option value="CBE">CBE (የኢትዮጵያ ንግድ ባንክ)</option>
+                    <option value="Abyssinia">አቢሲንያ ባንክ</option>
+                    <option value="Awash">አዋሽ ባንክ</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>የባንክ ማረጋገጫ (SMS) እዚህ ይለጥፉ:</label>
+                <textarea class="form-control" id="deposit-sms" rows="3" placeholder="የባንኩን SMS ሙሉ በሙሉ እዚህ ላይ Paste ያድርጉ..." required></textarea>
+            </div>
+
+            <button class="submit-btn btn-green" type="submit">📩 የማስገቢያ ጥያቄ ላክ</button>
+        </form>
+    </div>
+</div>
+
+<!-- WITHDRAW MODAL -->
+<div class="custom-modal" id="withdrawModal" hidden>
+    <div class="modal-overlay" onclick="closeModals()"></div>
+    <div class="modal-card">
+        <div class="modal-header">
+            <h3>📬 ገንዘብ ማውጫ (Withdraw)</h3>
+            <button class="close-modal-btn" type="button" onclick="closeModals()">✕</button>
+        </div>
+
+        <!-- FORM WRAPPER -->
+        <form id="withdraw-form">
+            <div class="form-group">
+                <label>የምታወጡት የገንዘብ መጠን ይምረጡ (Withdraw):</label>
+                <select class="form-control" id="withdraw-amount" required>
+                    <option value="">-- የገንዘብ መጠን ይምረጡ --</option>
+                    <option value="100">100 ብር</option>
+                    <option value="200">200 ብር</option>
+                    <option value="300">300 ብር</option>
+                    <option value="400">400 ብር</option>
+                    <option value="500">500 ብር</option>
+                    <option value="1000">1,000 ብር</option>
+                    <option value="5000">5,000 ብር</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>ብር የሚገባበት የባንክ ስም:</label>
+                <select class="form-control" id="withdraw-bank" required>
+                    <option value="Telebirr">Telebirr</option>
+                    <option value="CBE">CBE (የኢትዮጵያ ንግድ ባንክ)</option>
+                    <option value="Abyssinia">አቢሲንያ ባንክ</option>
+                    <option value="Awash">አዋሽ ባንክ</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>የአካውንት ወይም የስልክ ቁጥር:</label>
+                <input type="text" class="form-control" id="withdraw-account" placeholder="የባንክ አካውንት ወይም ስልክ ቁጥር" required>
+            </div>
+
+            <button class="submit-btn btn-red" type="submit">📬 የማውጫ ጥያቄ ላክ</button>
+        </form>
+    </div>
+</div>
+
+<!-- UI HELPER SCRIPTS -->
+<script>
+    function openDepositModal() {
+        document.getElementById('depositModal').hidden = false;
+    }
+
+    function openWithdrawModal() {
+        document.getElementById('withdrawModal').hidden = false;
+    }
+
+    function closeModals() {
+        document.getElementById('depositModal').hidden = true;
+        document.getElementById('withdrawModal').hidden = true;
+        document.getElementById('messageModal').hidden = true;
+    }
+
+    function showToastMessage(text, type) {
+        const msgEl = document.getElementById('modalMessage');
+        const iconEl = document.getElementById('modalIcon');
+        if (msgEl) msgEl.textContent = text;
+        if (iconEl) iconEl.textContent = type === 'success' ? '✅' : '⚠️';
+        document.getElementById('messageModal').hidden = false;
+    }
+
+    function showMessage(title, text, icon) {
+        document.getElementById('modalTitle').textContent = title;
+        document.getElementById('modalMessage').textContent = text;
+        document.getElementById('modalIcon').textContent = icon || '🎮';
+        document.getElementById('messageModal').hidden = false;
+    }
+
+    function copyToClipboard(text) {
+        navigator.clipboard.writeText(text).then(() => {
+            showToastMessage(`አካውንት ቁጥር (${text}) ተኮፒ አድርጓል!`, 'success');
+        });
+    }
+</script>
+
+<!-- Main JavaScript -->
+<script src="/static/app.js"></script>
+
+</body>
+</html>
