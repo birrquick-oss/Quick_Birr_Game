@@ -186,7 +186,7 @@
 
                 <div class="stat-pill center-stat">
                     <small>ደራሽ</small>
-                    <strong id="jackpotAmountText">0.00</strong>
+                    <strong id="jackpotAmountText">0.00 ETB</strong>
                     <div class="sub-info">የተያዙ ካርዶች: <span id="takenCardsCount">0</span></div>
                 </div>
 
@@ -225,7 +225,7 @@
             <div class="live-game-topbar">
                 <div class="topbar-info">
                     <span class="game-call-badge" id="callCountBadge">Call 0</span>
-                    <span class="derash-badge" id="liveDerashBadge">ደራሽ 0.00</span>
+                    <span class="derash-badge" id="liveDerashText" style="background:#2ed573; color:#000; padding:4px 8px; border-radius:4px; font-weight:bold;">ደራሽ 0.00 ETB</span>
                     <span class="game-id-badge" id="gameIdBadge">Game #0</span>
                 </div>
                 <!-- SOUND TOGGLE BUTTON -->
@@ -336,41 +336,12 @@
 </div>
 
 <!-- ========================================================= -->
-<!-- WINNER OVERLAY MODAL (IMAGE 3 MATCH - ORANGE THEME)      -->
+<!-- WINNER OVERLAY MODAL (Supports Multiple Winners)          -->
 <!-- ========================================================= -->
 <div class="custom-modal winner-modal" id="winnerModal" hidden>
     <div class="modal-overlay"></div>
-    <div class="modal-card orange-border">
-        <div class="winner-header">
-            <h2>🎉 BINGO! 🎉</h2>
-            <p class="winner-subtitle">አሸናፊ: <span id="winnerUsername">user_---</span> (ካርቴላ #<span id="winnerCardNum">000</span>)</p>
-        </div>
-
-        <div class="winner-details-box">
-            <div class="detail-row">
-                <span>👤 ስም:</span>
-                <strong id="winnerNameText">---</strong>
-            </div>
-            <div class="detail-row">
-                <span>📞 ስልክ:</span>
-                <strong id="winnerPhoneText">---</strong>
-            </div>
-            <div class="detail-row">
-                <span>🎫 ካርድ:</span>
-                <strong id="winnerCardIdText">#000</strong>
-            </div>
-        </div>
-
-        <!-- 5x5 Winning Pattern Preview Grid -->
-        <div class="winner-grid-preview" id="winnerGridPreview">
-            <!-- Rendered via JS -->
-        </div>
-
-        <div class="prize-badge-box">
-            <span id="winnerPrizeAmount">+0 ETB</span>
-        </div>
-
-        <button class="submit-btn orange-btn" type="button" onclick="closeWinnerModalAndReset()">እሺ (ቀጥል)</button>
+    <div class="modal-card orange-border winner-modal-body" style="background:#131722; max-width:90%; border-radius:12px; padding:10px;">
+        <!-- Javascript (app.js) renders winner content dynamically here -->
     </div>
 </div>
 
@@ -505,16 +476,6 @@
 
 <!-- UI HELPER SCRIPTS -->
 <script>
-    let isSoundOn = true;
-
-    function toggleSound() {
-        isSoundOn = !isSoundOn;
-        const soundText = document.getElementById('soundStatusText');
-        const soundBtn = document.getElementById('soundToggleBtn');
-        if (soundText) soundText.textContent = isSoundOn ? 'ON' : 'OFF';
-        if (soundBtn) soundBtn.style.opacity = isSoundOn ? '1' : '0.5';
-    }
-
     function openDepositModal() {
         document.getElementById('depositModal').hidden = false;
     }
