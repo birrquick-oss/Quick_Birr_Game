@@ -2,9 +2,12 @@ fastapi
 uvicorn[standard]
 sqlalchemy
 psycopg2-binary
-pydantic
 python-dotenv
-httpx
 python-multipart
-pytz
+jinja2
+websockets
+httpx
 requests
+pyTelegramBotAPI
+apscheduler
+pytz
