@@ -1,6 +1,6 @@
 import os
 import asyncio
-from fastapi import Depends, FastAPI
+from fastapi import FastAPI, Request, Response, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
@@ -9,18 +9,18 @@ from sqlalchemy.orm import Session
 from app.database import SessionLocal, initialize_database
 from app.models import User
 
-# Routerዎች - ትክክለኛው መንገድ (app.routers)
+# Routerዎች
 from app.routers.games import router as games_router
 from app.routers.cards import router as cards_router
 from app.routers.users import router as users_router
 from app.routers.transactions import router as transactions_router
-from app.websocket import router as websocket_router
+from app.websocket import router as websocket_router, manager
 from app.game_engine import engine
 
 
 app = FastAPI(
     title="QUICK_BIRR GAMES",
-    description="Quick Birr Games API",
+    description="Quick Birr Games API & Telegram Mini App Backend",
     version="1.0.0",
 )
 
@@ -82,6 +82,24 @@ async def startup_event():
 
 
 # =========================================================
+# 🌐 WEBSOCKET ENDPOINT (ለ ቴሌግራም ሚኒ አፕ እና ፍሮንትኤንድ)
+# =========================================================
+
+@app.websocket("/ws")
+async def websocket_endpoint(websocket: WebSocket):
+    await manager.connect(websocket)
+    try:
+        while True:
+            # ከተጫዋቹ/ከቴሌግራም አፕ የሚመጡ መልእክቶችን መቀበያ
+            data = await websocket.receive_text()
+    except WebSocketDisconnect:
+        manager.disconnect(websocket)
+    except Exception as e:
+        print(f"⚠️ WebSocket connection error: {e}")
+        manager.disconnect(websocket)
+
+
+# =========================================================
 # ROOT ROUTE (Serves Front-end HTML)
 # =========================================================
 
@@ -95,7 +113,7 @@ def read_root():
 
 
 # =========================================================
-# HEALTH CHECK
+# HEALTH CHECK & API ROOT
 # =========================================================
 
 @app.get("/health")
@@ -104,12 +122,9 @@ def health_check():
         "status": "ok",
         "service": "QUICK_BIRR GAMES",
         "version": "1.0.0",
+        "game_engine_running": getattr(engine, "running", True)
     }
 
-
-# =========================================================
-# API ROOT
-# =========================================================
 
 @app.get("/api")
 def api_root():
