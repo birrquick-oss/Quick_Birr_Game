@@ -1,14 +1,12 @@
 import os
 import requests
-import uuid
-from datetime import datetime, date
-from typing import Optional, List
+from typing import Optional
 from pydantic import BaseModel
-from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.database import SessionLocal
-from app.models import User, Deposit, Withdrawal
+from app.models import User, Deposit, Withdrawal, WalletTransaction
 
 router = APIRouter(
     prefix="/api/users",
@@ -16,7 +14,7 @@ router = APIRouter(
 )
 
 # --------------------------------------------------------------------------
-# ⚙️ የቅንብር ክፍሎች
+# ⚙️ Configuration & Environment Variables
 # --------------------------------------------------------------------------
 BOT_TOKEN = os.getenv("BOT_TOKEN", os.getenv("TELEGRAM_BOT_TOKEN", ""))
 ADMIN_TELEGRAM_ID = str(os.getenv("ADMIN_TELEGRAM_ID", "")).strip()
@@ -109,22 +107,18 @@ def sync_or_register_user(data: UserSync, db: Session = Depends(get_db)):
     if not user:
         user = User(
             telegram_id=tg_id,
+            telegram_username=data.telegram_username,
             first_name=data.first_name,
             balance=0.0
         )
-        if hasattr(User, 'username'):
-            setattr(user, 'username', data.telegram_username)
-        if hasattr(User, 'phone_number'):
-            setattr(user, 'phone_number', data.phone_number)
-            
         db.add(user)
         db.commit()
         db.refresh(user)
     else:
         if data.first_name:
             user.first_name = data.first_name
-        if hasattr(user, 'phone_number') and data.phone_number:
-            setattr(user, 'phone_number', data.phone_number)
+        if data.telegram_username:
+            user.telegram_username = data.telegram_username
         db.commit()
 
     return {
@@ -132,7 +126,7 @@ def sync_or_register_user(data: UserSync, db: Session = Depends(get_db)):
         "user": {
             "id": user.id, 
             "telegram_id": user.telegram_id, 
-            "balance": getattr(user, 'balance', 0.0) or 0.0
+            "balance": user.balance
         }
     }
 
@@ -151,7 +145,7 @@ def get_user_profile(telegram_id: str, db: Session = Depends(get_db)):
             "id": user.id,
             "telegram_id": user.telegram_id,
             "first_name": user.first_name,
-            "balance": getattr(user, 'balance', 0.0) or 0.0
+            "balance": user.balance
         }
     }
 
@@ -170,23 +164,30 @@ def request_deposit(req: DepositRequest, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.telegram_id == tg_id).first()
     
     if not user:
-        user = User(telegram_id=tg_id, first_name=req.telegram_name, balance=0.0)
+        user = User(
+            telegram_id=tg_id, 
+            first_name=req.telegram_name, 
+            balance=0.0
+        )
         db.add(user)
         db.commit()
         db.refresh(user)
 
+    # In app/models.py: method maps to bank_name, sms_text maps to sms_data
     dep = Deposit(
         user_id=user.id, 
+        telegram_id=user.telegram_id,
+        telegram_name=req.telegram_name,
         amount=req.amount, 
-        bank_name=req.bank_name, 
-        sms_data=req.sms_data, 
-        status="PENDING"
+        method=req.bank_name, 
+        sms_text=req.sms_data, 
+        status="pending"
     )
     db.add(dep)
     db.commit()
     db.refresh(dep)
 
-    # Admin Notification with Inline Buttons
+    # Admin Notification
     msg = (
         f"💰 <b>NEW DEPOSIT REQUEST #{dep.id}</b>\n\n"
         f"👤 <b>User:</b> {req.telegram_name} ({req.telegram_id})\n"
@@ -211,23 +212,34 @@ def request_withdraw(req: WithdrawRequest, db: Session = Depends(get_db)):
     tg_id = str(req.telegram_id).strip()
     user = db.query(User).filter(User.telegram_id == tg_id).first()
     
-    current_balance = getattr(user, 'balance', 0.0) if user else 0.0
-    if not user or current_balance < req.amount:
+    if not user or user.balance < req.amount:
         return {"success": False, "message": "በቂ ባላንስ የሎትም!"}
 
-    # Lock Balance
-    user.balance = current_balance - req.amount
+    # Lock Balance pending approval
+    user.balance -= req.amount
     
+    # In app/models.py: method maps to bank_name
     withd = Withdrawal(
         user_id=user.id, 
         amount=req.amount, 
-        bank_name=req.bank_name, 
+        method=req.bank_name, 
         account_number=req.account_number, 
-        status="PENDING"
+        status="pending"
     )
     db.add(withd)
     db.commit()
     db.refresh(withd)
+
+    # Record Wallet Transaction
+    tx = WalletTransaction(
+        user_id=user.id,
+        transaction_type="withdrawal",
+        amount=-req.amount,
+        balance_after=user.balance,
+        description=f"Withdrawal request via {req.bank_name} ({req.account_number})"
+    )
+    db.add(tx)
+    db.commit()
 
     msg = (
         f"🔻 <b>NEW WITHDRAWAL REQUEST #{withd.id}</b>\n\n"
@@ -255,7 +267,7 @@ def admin_approve_deposit(data: AdminApproveAction, db: Session = Depends(get_db
         return {"success": False, "message": "Deposit ID is missing"}
 
     dep = db.query(Deposit).filter(Deposit.id == req_id).first()
-    if not dep or dep.status != "PENDING":
+    if not dep or dep.status != "pending":
         return {"success": False, "message": "ጥያቄው አልተገኘም ወይም አስቀድሞ ውሳኔ አግኝቷል!"}
 
     user = db.query(User).filter(User.id == dep.user_id).first()
@@ -263,12 +275,22 @@ def admin_approve_deposit(data: AdminApproveAction, db: Session = Depends(get_db
         return {"success": False, "message": "ተጫዋቹ አልተገኘም!"}
 
     if data.action.upper() == "APPROVE":
-        dep.status = "APPROVED"
-        user.balance = (getattr(user, 'balance', 0.0) or 0.0) + dep.amount
+        dep.status = "approved"
+        user.balance += dep.amount
+        
+        # Record Wallet Transaction
+        tx = WalletTransaction(
+            user_id=user.id,
+            transaction_type="deposit",
+            amount=dep.amount,
+            balance_after=user.balance,
+            description=f"Approved deposit #{dep.id} via {dep.method}"
+        )
+        db.add(tx)
         db.commit()
         notify_user(user.telegram_id, f"✅ የ {dep.amount} ETB ዲፖዚት ጥያቄዎ ጸድቋል! ባላንስዎ ተጨምሯል።")
     else:
-        dep.status = "REJECTED"
+        dep.status = "rejected"
         db.commit()
         notify_user(user.telegram_id, f"❌ የ {dep.amount} ETB ዲፖዚት ጥያቄዎ ውድቅ ተደርጓል።")
 
@@ -283,7 +305,7 @@ def admin_approve_withdraw(data: AdminApproveAction, db: Session = Depends(get_d
         return {"success": False, "message": "Withdrawal ID is missing"}
 
     withd = db.query(Withdrawal).filter(Withdrawal.id == req_id).first()
-    if not withd or withd.status != "PENDING":
+    if not withd or withd.status != "pending":
         return {"success": False, "message": "ጥያቄው አልተገኘም ወይም አስቀድሞ ውሳኔ አግኝቷል!"}
 
     user = db.query(User).filter(User.id == withd.user_id).first()
@@ -291,12 +313,22 @@ def admin_approve_withdraw(data: AdminApproveAction, db: Session = Depends(get_d
         return {"success": False, "message": "ተጫዋቹ አልተገኘም!"}
 
     if data.action.upper() == "APPROVE":
-        withd.status = "APPROVED"
+        withd.status = "approved"
         db.commit()
         notify_user(user.telegram_id, f"✅ የ {withd.amount} ETB ማውጫ ጥያቄዎ ተፈጽሟል።")
     else:
-        withd.status = "REJECTED"
-        user.balance = (getattr(user, 'balance', 0.0) or 0.0) + withd.amount  # Refund
+        withd.status = "rejected"
+        user.balance += withd.amount  # Refund
+        
+        # Record Refund Transaction
+        tx = WalletTransaction(
+            user_id=user.id,
+            transaction_type="refund",
+            amount=withd.amount,
+            balance_after=user.balance,
+            description=f"Refunded rejected withdrawal #{withd.id}"
+        )
+        db.add(tx)
         db.commit()
         notify_user(user.telegram_id, f"❌ የ {withd.amount} ETB ማውጫ ጥያቄዎ ውድቅ ተደርጓል፣ ገንዘቡ ወደ ባላንስዎ ተመልሷል።")
 
