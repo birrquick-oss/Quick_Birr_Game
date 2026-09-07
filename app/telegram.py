@@ -8,28 +8,28 @@ from telebot import TeleBot, types
 from telebot.apihelper import ApiTelegramException
 
 # --------------------------------------------------------------------------
-# ⚙️ የቅንብር ክፍሎች (Configurations)
+# ⚙️ Configuration & Environment Variables
 # --------------------------------------------------------------------------
 BOT_TOKEN = os.getenv("BOT_TOKEN", os.getenv("TELEGRAM_BOT_TOKEN", "YOUR_BOT_TOKEN_HERE"))
 BOT_USERNAME = os.getenv("TELEGRAM_BOT_USERNAME", "QuickBirrGamesBot").strip().replace("@", "")
 ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "123456789")
 ADMIN_TELEGRAM_ID = os.getenv("ADMIN_TELEGRAM_ID", "").strip()
 
-# 🔗 የባክኤንድ አድራሻ (Quick Birr Games)
+# 🔗 Backend & Mini App URL
 SERVER_URL = os.getenv("SERVER_URL", "https://web-production-30301.up.railway.app").rstrip('/')
 BACKEND_URL = SERVER_URL
 MINI_APP_URL = SERVER_URL
 
-# 🖼️ የማቀባበያ ምስል ሊንክ
+# 🖼️ Welcome Image URL
 WELCOME_IMAGE_URL = f"{SERVER_URL}/static/images/welcome.jpeg"
 
 bot = TeleBot(BOT_TOKEN)
 
 USER_REF_CACHE = {}
 
-print(f"🎰 የ Quick Birr Games ቦት (@{BOT_USERNAME}) ስራ ጀምሯል...")
+print(f"🎰 Quick Birr Games Bot (@{BOT_USERNAME}) is running...")
 
-# 👥 ጀርባ ላይ አዲስ ተጫዋች የሚመዘግብ Thread
+# 👥 Background User Registration Thread
 def register_user_background(telegram_id, telegram_name, first_name, phone_number=None, referred_by=None):
     register_api_url = f"{BACKEND_URL}/api/users"
     payload = {
@@ -46,9 +46,9 @@ def register_user_background(telegram_id, telegram_name, first_name, phone_numbe
     except Exception as e:
         print(f"❌ Failed to register user in background: {e}")
 
-# 📢 ማስታወቂያ ለሁሉም ተጠቃሚዎች መላኪያ ፋንክሽን
+# 📢 Broadcast Worker Thread
 def broadcast_worker(text_message, reply_markup=None):
-    print("📢 የማስታወቂያ ፕሮሞሽን ለተጠቃሚዎች መላክ ተጀምሯል...")
+    print("📢 Starting Broadcast Promotion...")
     
     user_ids = []
     try:
@@ -56,12 +56,12 @@ def broadcast_worker(text_message, reply_markup=None):
         if res.status_code == 200:
             data = res.json()
             user_ids = data if isinstance(data, list) else data.get("user_ids", [])
-            print(f"📊 በአጠቃላይ {len(user_ids)} ተጠቃሚዎች ተገኝተዋል")
+            print(f"📊 Total Users Found: {len(user_ids)}")
     except Exception as e:
-        print(f"❌ ከባክኤንድ ጋር መገናኘት አልተቻለም፦ {e}")
+        print(f"❌ Backend connection failed: {e}")
 
     if not user_ids:
-        print("⚠️ ምንም የሚላክላቸው ተጠቃሚዎች አልተገኙም!")
+        print("⚠️ No users found to broadcast.")
         return
 
     success_count, fail_count = 0, 0
@@ -77,11 +77,11 @@ def broadcast_worker(text_message, reply_markup=None):
                 disable_web_page_preview=True
             )
             success_count += 1
-            time.sleep(0.04)  # Rate limit
+            time.sleep(0.04)
         except Exception:
             fail_count += 1
 
-    print(f"🎉 ማስታወቂያ ተጠናቋል! ስኬታማ፦ {success_count}፣ ያልተላኩ፦ {fail_count}")
+    print(f"🎉 Broadcast finished! Success: {success_count}, Failed: {fail_count}")
 
 # 1️⃣ /start Command
 @bot.message_handler(commands=['start'])
@@ -147,7 +147,7 @@ def handle_contact(message):
     except Exception:
         bot.send_message(chat_id, welcome_text, parse_mode="HTML", reply_markup=markup)
 
-# 📢 4️⃣ ADMIN: /broadcast <message>
+# 4️⃣ ADMIN: /broadcast <message>
 @bot.message_handler(commands=['broadcast'])
 def handle_broadcast_command(message):
     if ADMIN_TELEGRAM_ID and str(message.from_user.id) != ADMIN_TELEGRAM_ID:
@@ -162,37 +162,68 @@ def handle_broadcast_command(message):
     bot.reply_to(message, "🚀 የማስታወቂያ መልእክቱ እየተላከ ነው...")
     threading.Thread(target=broadcast_worker, args=(parts[1], None), daemon=True).start()
 
-# 🛠️ Backend Admin Action Worker
+# 🛠️ Backend Admin Action Worker (Integrated with updated API endpoints)
 def send_admin_action_to_backend(call, url, payload, headers, target_id, action, tx_type):
     try:
         response = requests.post(url, json=payload, headers=headers, timeout=15)
-        res_data = response.json() if response.headers.get('content-type') == 'application/json' else {"success": response.ok}
+        
+        try:
+            res_data = response.json()
+        except:
+            res_data = {"success": response.ok}
 
         if response.status_code == 200 and res_data.get("success", True):
             status_emoji = "✅" if action == "approve" else "❌"
             status_text = "APPROVED" if action == "approve" else "REJECTED"
-            bot.answer_callback_query(call.id, text=f"{status_emoji} {tx_type.upper()} #{target_id} {status_text}", show_alert=True)
             
-            new_text = f"{call.message.text}\n\n{status_emoji} <b>{status_text} at {datetime.utcnow().strftime('%Y-%m-%d %H:%M')} UTC</b>"
-            bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text=new_text, parse_mode="HTML")
+            try:
+                bot.answer_callback_query(call.id, text=f"{status_emoji} {tx_type.upper()} #{target_id} {status_text}", show_alert=True)
+            except:
+                pass
+            
+            current_time = datetime.utcnow().strftime('%Y-%m-%d %H:%M')
+            new_text = f"{call.message.text}\n\n{status_emoji} <b>{status_text} at {current_time} UTC</b>"
+            
+            try:
+                bot.edit_message_text(
+                    chat_id=call.message.chat.id, 
+                    message_id=call.message.message_id, 
+                    text=new_text, 
+                    parse_mode="HTML",
+                    reply_markup=None # Removes the buttons after decision
+                )
+            except Exception as edit_err:
+                print(f"⚠️ Telegram message edit issue: {edit_err}")
         else:
-            bot.answer_callback_query(call.id, text=f"❌ ስህተት፦ {res_data.get('message', 'Failed')}", show_alert=True)
+            error_msg = res_data.get('message', 'Failed')
+            bot.answer_callback_query(call.id, text=f"❌ ስህተት፦ {error_msg}", show_alert=True)
     except Exception as e:
+        print(f"⚠️ Admin action error: {e}")
         bot.answer_callback_query(call.id, text="⚠️ ከሰርቨር ጋር መገናኘት አልተቻለም", show_alert=True)
 
-# 🛠️ Admin Deposit/Withdraw Approval Handlers
+# 🛠️ Admin Deposit/Withdraw Approval Callback Handler
 @bot.callback_query_handler(func=lambda call: call.data.startswith(('approve_dep_', 'reject_dep_', 'approve_with_', 'reject_with_')))
 def handle_admin_actions(call):
-    bot.answer_callback_query(call.id, text="⏳ ውሳኔዎ በሂደት ላይ ነው...")
+    try:
+        bot.answer_callback_query(call.id, text="⏳ ውሳኔዎ በሂደት ላይ ነው...")
+    except:
+        pass
     
     parts = call.data.split('_')
-    action, tx_type, target_id = parts[0], parts[1], int(parts[2])
+    action = parts[0]   # approve or reject
+    tx_type = parts[1]  # dep or with
+    target_id = int(parts[2])
+    
     backend_action = "APPROVE" if action == "approve" else "REJECT"
 
+    # Route mapping aligned with app/routers/users.py
     endpoint = "deposit" if tx_type == "dep" else "withdraw"
     url = f"{BACKEND_URL}/api/users/admin/{endpoint}/approve"
+    
     payload = {
         "request_id": target_id, 
+        "deposit_id": target_id if tx_type == "dep" else None,
+        "withdraw_id": target_id if tx_type == "with" else None,
         "action": backend_action,
         "admin_telegram_id": str(call.from_user.id),
         "admin_password": ADMIN_PASSWORD
