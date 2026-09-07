@@ -1,5 +1,7 @@
 import os
-import requests
+import json
+import urllib.request
+import urllib.parse
 from typing import Optional
 from pydantic import BaseModel
 from fastapi import APIRouter, Depends, HTTPException
@@ -33,8 +35,23 @@ def get_db():
 
 
 # --------------------------------------------------------------------------
-# 📢 Telegram Notification Helpers
+# 📢 Telegram Notification Helpers (Pure Standard Python Library)
 # --------------------------------------------------------------------------
+def send_telegram_request(url: str, payload: dict):
+    """ከማንኛውም የውጭ ላይብረሪ ነፃ በሆነው urllib ጥያቄዎችን የሚልክ ተግባር"""
+    try:
+        data = json.dumps(payload).encode('utf-8')
+        req = urllib.request.Request(
+            url, 
+            data=data, 
+            headers={'Content-Type': 'application/json'},
+            method='POST'
+        )
+        with urllib.request.urlopen(req, timeout=5) as response:
+            pass
+    except Exception as e:
+        print(f"⚠️ Telegram HTTP request error: {e}")
+
 def notify_admin(text: str, reply_markup: dict = None):
     if not BOT_TOKEN or not ADMIN_TELEGRAM_ID:
         return
@@ -46,19 +63,18 @@ def notify_admin(text: str, reply_markup: dict = None):
     }
     if reply_markup:
         payload["reply_markup"] = reply_markup
-    try:
-        requests.post(url, json=payload, timeout=5)
-    except Exception as e:
-        print(f"⚠️ Admin notification error: {e}")
+    send_telegram_request(url, payload)
 
 def notify_user(telegram_id: str, text: str):
     if not BOT_TOKEN or not telegram_id:
         return
     url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
-    try:
-        requests.post(url, json={"chat_id": str(telegram_id), "text": text, "parse_mode": "HTML"}, timeout=5)
-    except Exception as e:
-        print(f"⚠️ User notification error: {e}")
+    payload = {
+        "chat_id": str(telegram_id),
+        "text": text,
+        "parse_mode": "HTML"
+    }
+    send_telegram_request(url, payload)
 
 
 # --------------------------------------------------------------------------
@@ -173,7 +189,6 @@ def request_deposit(req: DepositRequest, db: Session = Depends(get_db)):
         db.commit()
         db.refresh(user)
 
-    # In app/models.py: method maps to bank_name, sms_text maps to sms_data
     dep = Deposit(
         user_id=user.id, 
         telegram_id=user.telegram_id,
@@ -218,7 +233,6 @@ def request_withdraw(req: WithdrawRequest, db: Session = Depends(get_db)):
     # Lock Balance pending approval
     user.balance -= req.amount
     
-    # In app/models.py: method maps to bank_name
     withd = Withdrawal(
         user_id=user.id, 
         amount=req.amount, 
@@ -267,7 +281,7 @@ def admin_approve_deposit(data: AdminApproveAction, db: Session = Depends(get_db
         return {"success": False, "message": "Deposit ID is missing"}
 
     dep = db.query(Deposit).filter(Deposit.id == req_id).first()
-    if not dep or dep.status != "pending":
+    if not dep or dep.status.lower() != "pending":
         return {"success": False, "message": "ጥያቄው አልተገኘም ወይም አስቀድሞ ውሳኔ አግኝቷል!"}
 
     user = db.query(User).filter(User.id == dep.user_id).first()
@@ -305,7 +319,7 @@ def admin_approve_withdraw(data: AdminApproveAction, db: Session = Depends(get_d
         return {"success": False, "message": "Withdrawal ID is missing"}
 
     withd = db.query(Withdrawal).filter(Withdrawal.id == req_id).first()
-    if not withd or withd.status != "pending":
+    if not withd or withd.status.lower() != "pending":
         return {"success": False, "message": "ጥያቄው አልተገኘም ወይም አስቀድሞ ውሳኔ አግኝቷል!"}
 
     user = db.query(User).filter(User.id == withd.user_id).first()
