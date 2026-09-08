@@ -481,7 +481,7 @@ document.getElementById("confirmCardsBtn")?.addEventListener("click", async () =
 });
 
 /* =========================================================
-   QUICK_BIRR GAMES - PART 3 / 3
+   QUICK_BIRR GAMES - PART 3 / 3 (FIXED TELEGRAM AUTH)
    ========================================================= */
 
 function autoMarkAllBoughtCards() {
@@ -625,7 +625,7 @@ document.getElementById("claimBingoBtn")?.addEventListener("click", () => {
 });
 
 /* =========================================================
-   GAME OVER & MULTIPLE WINNERS LOGIC (ምስል 3 ማስተካከያ)
+   GAME OVER & MULTIPLE WINNERS LOGIC
 ========================================================= */
 function handleGameOver(data) {
     const winnerModalEl = document.getElementById('winnerModal');
@@ -695,7 +695,6 @@ function handleGameOver(data) {
         winnerModalEl.hidden = false;
     }
 
-    // ከ 5 ሰከንድ በኋላ በራሱ እንዲዘጋ የሚደረግ Timer
     if (winnerAutoCloseTimer) clearTimeout(winnerAutoCloseTimer);
     winnerAutoCloseTimer = setTimeout(() => {
         closeWinnerModalAndReset();
@@ -715,7 +714,7 @@ function closeWinnerModalAndReset() {
 }
 
 async function syncAndFetchUser() {
-    if (!userData.telegram_id) return;
+    if (!userData.telegram_id || userData.telegram_id === "12345678") return;
 
     try {
         const userRes = await fetch('/api/users', {
@@ -763,9 +762,17 @@ function setupFormSubmitListeners() {
                 return;
             }
 
+            // Get live Telegram user ID
+            const activeTgUser = (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe && window.Telegram.WebApp.initDataUnsafe.user)
+                ? window.Telegram.WebApp.initDataUnsafe.user
+                : null;
+
+            const finalTgId = activeTgUser ? String(activeTgUser.id) : String(userData.telegram_id || "");
+            const finalTgName = activeTgUser ? (activeTgUser.first_name || "User") : (userData.first_name || "ተጫዋች");
+
             const payload = {
-                telegram_id: String(userData.telegram_id),
-                telegram_name: userData.first_name,
+                telegram_id: finalTgId,
+                telegram_name: finalTgName,
                 amount: amount,
                 bank_name: bankName,
                 sms_data: smsData
@@ -782,7 +789,7 @@ function setupFormSubmitListeners() {
                 if (data.success) {
                     closeModals();
                     depositForm.reset();
-                    showMessage("ተልኳል!", data.message || "የዲፖዚት ጥያቄዎ አስተዳዳሪው ዘንድ ደርሷል!", "✅");
+                    showMessage("ተልኳል!", data.message || "የዲፖዚት ጥያቄዎ ለአድሚን ደርሷል!", "✅");
                 } else {
                     showMessage("ስህተት", data.message || "ጥያቄውን ማስተናገድ አልተቻለም", "❌");
                 }
@@ -807,8 +814,14 @@ function setupFormSubmitListeners() {
                 return;
             }
 
+            const activeTgUser = (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe && window.Telegram.WebApp.initDataUnsafe.user)
+                ? window.Telegram.WebApp.initDataUnsafe.user
+                : null;
+
+            const finalTgId = activeTgUser ? String(activeTgUser.id) : String(userData.telegram_id || "");
+
             const payload = {
-                telegram_id: String(userData.telegram_id),
+                telegram_id: finalTgId,
                 amount: amount,
                 bank_name: bankName,
                 account_number: accountNumber
@@ -880,13 +893,21 @@ document.querySelectorAll(".nav-item").forEach(item => {
     });
 });
 
+// 🔄 Fixed Telegram User Loader
 function loadTelegramUser() {
-    if (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) {
-        const user = tg.initDataUnsafe.user;
-        userData.telegram_id = user.id;
-        userData.first_name = user.first_name || "User";
-        userData.last_name = user.last_name || "";
-        userData.username = user.username ? `@${user.username}` : "";
+    const webApp = window.Telegram?.WebApp;
+    if (webApp) {
+        webApp.ready();
+        webApp.expand();
+    }
+
+    const tgUser = webApp?.initDataUnsafe?.user;
+
+    if (tgUser && tgUser.id) {
+        userData.telegram_id = String(tgUser.id);
+        userData.first_name = tgUser.first_name || "User";
+        userData.last_name = tgUser.last_name || "";
+        userData.username = tgUser.username ? `@${tgUser.username}` : "";
 
         const fullName = `${userData.first_name} ${userData.last_name}`.trim();
 
@@ -895,10 +916,16 @@ function loadTelegramUser() {
 
         syncAndFetchUser();
     } else {
-        userData.telegram_id = "12345678";
-        if (profileNameEl) profileNameEl.textContent = "Guest User";
-        if (profilePhoneEl) profilePhoneEl.textContent = "No Telegram ID";
-        syncAndFetchUser();
+        console.warn("Telegram WebApp user not found, retrying...");
+        setTimeout(() => {
+            const retryUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
+            if (retryUser && retryUser.id) {
+                userData.telegram_id = String(retryUser.id);
+                userData.first_name = retryUser.first_name || "User";
+                userData.username = retryUser.username ? `@${retryUser.username}` : "";
+                syncAndFetchUser();
+            }
+        }, 1000);
     }
 }
 
