@@ -1,5 +1,6 @@
 import os
 import asyncio
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request, Response, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
@@ -18,10 +19,29 @@ from app.websocket import router as websocket_router, manager
 from app.game_engine import engine
 
 
+# =========================================================
+# STARTUP & SHUTDOWN LIFESPAN EVENT
+# =========================================================
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # 1. የዳታቤዝ ቴብሎችን ማዘጋጀት
+    initialize_database()
+    
+    # 2. የቢንጎ ጨዋታ ኢንጂኑን በጀርባ (Background Task) ማስጀመር
+    engine_task = asyncio.create_task(engine.start_game())
+    
+    yield  # አፕሊኬሽኑ በስራ ላይ የሚቆይበት ጊዜ
+    
+    # Shutdown ሲሆን ታስኩን ማቆም (Clean up)
+    engine_task.cancel()
+
+
 app = FastAPI(
     title="QUICK_BIRR GAMES",
     description="Quick Birr Games API & Telegram Mini App Backend",
     version="1.0.0",
+    lifespan=lifespan
 )
 
 
@@ -70,18 +90,6 @@ def get_db():
 
 
 # =========================================================
-# STARTUP (Database Init & Game Engine Background Loop)
-# =========================================================
-
-@app.on_event("startup")
-async def startup_event():
-    # 1. የዳታቤዝ ቴብሎችን ማዘጋጀት
-    initialize_database()
-    # 2. የቢንጎ ጨዋታ ኢንጂኑን በጀርባ (Background Task) ማስጀመር
-    asyncio.create_task(engine.start_game())
-
-
-# =========================================================
 # 🌐 WEBSOCKET ENDPOINT (ለ ቴሌግራም ሚኒ አፕ እና ፍሮንትኤንድ)
 # =========================================================
 
@@ -103,7 +111,7 @@ async def websocket_endpoint(websocket: WebSocket):
 # ROOT ROUTE (Serves Front-end HTML)
 # =========================================================
 
-@app.get("/")
+@get("/")
 def read_root():
     if os.path.exists("static/index.html"):
         return FileResponse("static/index.html")
