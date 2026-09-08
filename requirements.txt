@@ -7,7 +7,7 @@ python-multipart
 jinja2
 websockets
 httpx
-requests
 pyTelegramBotAPI
 apscheduler
 pytz
+requests>=2.31.0
