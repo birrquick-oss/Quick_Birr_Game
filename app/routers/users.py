@@ -303,18 +303,18 @@ def admin_approve_deposit(data: AdminApproveAction, db: Session = Depends(get_db
         return {"success": False, "message": "Deposit ID is missing"}
 
     dep = db.query(Deposit).filter(Deposit.id == req_id).first()
-    if not dep or dep.status.lower() != "pending":
+    if not dep or str(dep.status).lower() != "pending":
         return {"success": False, "message": "ጥያቄው አልተገኘም ወይም አስቀድሞ ውሳኔ አግኝቷል!"}
 
     user = db.query(User).filter(User.id == dep.user_id).first()
     if not user:
         return {"success": False, "message": "ተጫዋቹ አልተገኘም!"}
 
-    if data.action.upper() == "APPROVE":
+    if str(data.action).upper() == "APPROVE":
         dep.status = "approved"
-        user.balance += dep.amount
+        user.balance = float(user.balance or 0.0) + float(dep.amount)
         
-        # Record Wallet Transaction
+        # Record Wallet Transaction Log
         tx = WalletTransaction(
             user_id=user.id,
             transaction_type="deposit",
@@ -324,13 +324,14 @@ def admin_approve_deposit(data: AdminApproveAction, db: Session = Depends(get_db
         )
         db.add(tx)
         db.commit()
-        notify_user(user.telegram_id, f"✅ የ {dep.amount} ETB ዲፖዚት ጥያቄዎ ጸድቋል! ባላንስዎ ተጨምሯል።")
+        db.refresh(user)
+        notify_user(user.telegram_id, f"✅ የ {dep.amount} ETB ዲፖዚት ጥያቄዎ ጸድቋል! አዲሱ ባላንስዎ: {user.balance} ETB")
     else:
         dep.status = "rejected"
         db.commit()
         notify_user(user.telegram_id, f"❌ የ {dep.amount} ETB ዲፖዚት ጥያቄዎ ውድቅ ተደርጓል።")
 
-    return {"success": True}
+    return {"success": True, "message": f"Deposit #{dep.id} marked as {dep.status}"}
 
 
 # 7️⃣ Admin Withdrawal Action
@@ -341,20 +342,20 @@ def admin_approve_withdraw(data: AdminApproveAction, db: Session = Depends(get_d
         return {"success": False, "message": "Withdrawal ID is missing"}
 
     withd = db.query(Withdrawal).filter(Withdrawal.id == req_id).first()
-    if not withd or withd.status.lower() != "pending":
+    if not withd or str(withd.status).lower() != "pending":
         return {"success": False, "message": "ጥያቄው አልተገኘም ወይም አስቀድሞ ውሳኔ አግኝቷል!"}
 
     user = db.query(User).filter(User.id == withd.user_id).first()
     if not user:
         return {"success": False, "message": "ተጫዋቹ አልተገኘም!"}
 
-    if data.action.upper() == "APPROVE":
+    if str(data.action).upper() == "APPROVE":
         withd.status = "approved"
         db.commit()
         notify_user(user.telegram_id, f"✅ የ {withd.amount} ETB ማውጫ ጥያቄዎ ተፈጽሟል።")
     else:
         withd.status = "rejected"
-        user.balance += withd.amount  # Refund
+        user.balance = float(user.balance or 0.0) + float(withd.amount)  # Refund back
         
         # Record Refund Transaction
         tx = WalletTransaction(
@@ -366,6 +367,7 @@ def admin_approve_withdraw(data: AdminApproveAction, db: Session = Depends(get_d
         )
         db.add(tx)
         db.commit()
+        db.refresh(user)
         notify_user(user.telegram_id, f"❌ የ {withd.amount} ETB ማውጫ ጥያቄዎ ውድቅ ተደርጓል፣ ገንዘቡ ወደ ባላንስዎ ተመልሷል።")
 
-    return {"success": True}
+    return {"success": True, "message": f"Withdrawal #{withd.id} marked as {withd.status}"}
