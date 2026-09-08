@@ -43,6 +43,16 @@ class User(Base):
         nullable=True
     )
 
+    phone_number = Column(
+        String(50),
+        nullable=True
+    )
+
+    referred_by = Column(
+        String(64),
+        nullable=True
+    )
+
     # SHARED WALLET BALANCE
     balance = Column(
         Float,
@@ -65,14 +75,14 @@ class User(Base):
 
     created_at = Column(
         DateTime,
-        default=datetime.utcnow,
+        default=lambda: datetime.now(timezone.utc),
         nullable=False
     )
 
     updated_at = Column(
         DateTime,
-        default=datetime.utcnow,
-        onupdate=datetime.utcnow,
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
         nullable=False
     )
 
@@ -97,7 +107,7 @@ class WalletTransaction(Base):
         index=True
     )
 
-    # deposit / withdrawal / game_bet / game_win / refund
+    # deposit / withdrawal / game_stake_bingo / game_win_bingo
     transaction_type = Column(
         String(50),
         nullable=False,
@@ -136,7 +146,7 @@ class WalletTransaction(Base):
 
     created_at = Column(
         DateTime,
-        default=datetime.utcnow,
+        default=lambda: datetime.now(timezone.utc),
         nullable=False,
         index=True
     )
@@ -196,7 +206,7 @@ class Deposit(Base):
 
     created_at = Column(
         DateTime,
-        default=datetime.utcnow,
+        default=lambda: datetime.now(timezone.utc),
         nullable=False
     )
 
@@ -245,13 +255,13 @@ class Withdrawal(Base):
 
     created_at = Column(
         DateTime,
-        default=datetime.utcnow,
+        default=lambda: datetime.now(timezone.utc),
         nullable=False
     )
 
 
 # =========================================================
-# BINGO GAME MODELS (ADDED FOR BINGO ENGINE)
+# BINGO GAME MODELS
 # =========================================================
 
 class Game(Base):
