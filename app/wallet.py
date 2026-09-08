@@ -17,7 +17,8 @@ def process_game_stake(db: Session, user_id: int, amount: float, game_name: str)
             detail="Stake amount must be greater than zero."
         )
 
-    user = db.query(User).filter(User.id == user_id).first()
+    # 🔒 Race Condition ለመከላከል Row-level locking (with_for_update) መጠቀም
+    user = db.query(User).filter(User.id == user_id).with_for_update().first()
     if not user:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -33,10 +34,11 @@ def process_game_stake(db: Session, user_id: int, amount: float, game_name: str)
     # Balance Deduction
     user.balance -= amount
 
-    # Audit Transaction Log
+    # Audit Transaction Log (balance_after ተጨምሯል)
     txn = WalletTransaction(
         user_id=user.id,
         amount=-amount,
+        balance_after=user.balance,
         transaction_type=f"game_stake_{game_name.lower()}",
         description=f"Stake for {game_name}"
     )
@@ -54,7 +56,8 @@ def process_game_win(db: Session, user_id: int, amount: float, game_name: str) -
     if amount <= 0:
         return db.query(User).filter(User.id == user_id).first()
 
-    user = db.query(User).filter(User.id == user_id).first()
+    # 🔒 Row-level locking for secure update
+    user = db.query(User).filter(User.id == user_id).with_for_update().first()
     if not user:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -64,10 +67,11 @@ def process_game_win(db: Session, user_id: int, amount: float, game_name: str) -
     # Add Winnings
     user.balance += amount
 
-    # Audit Transaction Log
+    # Audit Transaction Log (balance_after ተጨምሯል)
     txn = WalletTransaction(
         user_id=user.id,
         amount=amount,
+        balance_after=user.balance,
         transaction_type=f"game_win_{game_name.lower()}",
         description=f"Winnings from {game_name}"
     )
