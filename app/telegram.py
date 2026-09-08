@@ -3,7 +3,7 @@ import sys
 import time
 import requests
 import threading
-from datetime import datetime
+from datetime import datetime, timezone
 from telebot import TeleBot, types
 from telebot.apihelper import ApiTelegramException
 
@@ -13,7 +13,7 @@ from telebot.apihelper import ApiTelegramException
 BOT_TOKEN = os.getenv("BOT_TOKEN", os.getenv("TELEGRAM_BOT_TOKEN", "YOUR_BOT_TOKEN_HERE"))
 BOT_USERNAME = os.getenv("TELEGRAM_BOT_USERNAME", "QuickBirrGamesBot").strip().replace("@", "")
 ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "123456789")
-ADMIN_TELEGRAM_ID = os.getenv("ADMIN_TELEGRAM_ID", "").strip()
+ADMIN_TELEGRAM_ID = str(os.getenv("ADMIN_TELEGRAM_ID", "")).strip()
 
 # 🔗 Backend & Mini App URL
 SERVER_URL = os.getenv("SERVER_URL", "https://web-production-30301.up.railway.app").rstrip('/')
@@ -23,17 +23,26 @@ MINI_APP_URL = SERVER_URL
 # 🖼️ Welcome Image URL
 WELCOME_IMAGE_URL = f"{SERVER_URL}/static/images/welcome.jpeg"
 
+# 🛑 Invalid / Dummy Telegram IDs
+INVALID_TG_IDS = {"12345678", "null", "undefined", "", "none"}
+
 bot = TeleBot(BOT_TOKEN)
 
 USER_REF_CACHE = {}
 
 print(f"🎰 Quick Birr Games Bot (@{BOT_USERNAME}) is running...")
 
+
 # 👥 Background User Registration Thread
 def register_user_background(telegram_id, telegram_name, first_name, phone_number=None, referred_by=None):
+    tg_str = str(telegram_id).strip()
+    if not tg_str or tg_str in INVALID_TG_IDS:
+        print(f"⚠️ Registration skipped for invalid ID: {tg_str}")
+        return
+
     register_api_url = f"{BACKEND_URL}/api/users"
     payload = {
-        "telegram_id": str(telegram_id),
+        "telegram_id": tg_str,
         "telegram_username": telegram_name,
         "first_name": first_name,
         "phone_number": str(phone_number) if phone_number else None,
@@ -45,6 +54,7 @@ def register_user_background(telegram_id, telegram_name, first_name, phone_numbe
         print(f"📡 Backend Register Response: {response.json()}")
     except Exception as e:
         print(f"❌ Failed to register user in background: {e}")
+
 
 # 📢 Broadcast Worker Thread
 def broadcast_worker(text_message, reply_markup=None):
@@ -66,11 +76,12 @@ def broadcast_worker(text_message, reply_markup=None):
 
     success_count, fail_count = 0, 0
     for u_id in user_ids:
-        if not u_id:
+        u_str = str(u_id).strip()
+        if not u_str or u_str in INVALID_TG_IDS:
             continue
         try:
             bot.send_message(
-                str(u_id).strip(), 
+                u_str, 
                 text_message, 
                 parse_mode="HTML", 
                 reply_markup=reply_markup, 
@@ -83,6 +94,7 @@ def broadcast_worker(text_message, reply_markup=None):
 
     print(f"🎉 Broadcast finished! Success: {success_count}, Failed: {fail_count}")
 
+
 # 1️⃣ /start Command
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
@@ -92,7 +104,7 @@ def send_welcome(message):
     if len(msg_parts) > 1:
         ref_arg = msg_parts[1]
         referred_by = ref_arg.replace("ref_", "").strip() if ref_arg.startswith("ref_") else ref_arg.strip()
-        if str(referred_by) != str(telegram_id):
+        if str(referred_by) != str(telegram_id) and str(referred_by) not in INVALID_TG_IDS:
             USER_REF_CACHE[telegram_id] = referred_by
 
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
@@ -104,12 +116,14 @@ def send_welcome(message):
     )
     bot.send_message(message.chat.id, welcome_msg, reply_markup=markup)
 
+
 # 2️⃣ Ask Phone
 @bot.message_handler(func=lambda message: message.text == "📝 Register Now")
 def ask_contact(message):
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
     markup.add(types.KeyboardButton("📱 Share Contact", request_contact=True))
     bot.send_message(message.chat.id, "📱 ለመመዝገብ ከታች 'Share Contact' የሚለውን ይጫኑ", reply_markup=markup)
+
 
 # 3️⃣ Contact Received
 @bot.message_handler(content_types=['contact'])
@@ -147,6 +161,7 @@ def handle_contact(message):
     except Exception:
         bot.send_message(chat_id, welcome_text, parse_mode="HTML", reply_markup=markup)
 
+
 # 4️⃣ ADMIN: /broadcast <message>
 @bot.message_handler(commands=['broadcast'])
 def handle_broadcast_command(message):
@@ -162,14 +177,15 @@ def handle_broadcast_command(message):
     bot.reply_to(message, "🚀 የማስታወቂያ መልእክቱ እየተላከ ነው...")
     threading.Thread(target=broadcast_worker, args=(parts[1], None), daemon=True).start()
 
-# 🛠️ Backend Admin Action Worker (Integrated with updated API endpoints)
+
+# 🛠️ Backend Admin Action Worker
 def send_admin_action_to_backend(call, url, payload, headers, target_id, action, tx_type):
     try:
         response = requests.post(url, json=payload, headers=headers, timeout=15)
         
         try:
             res_data = response.json()
-        except:
+        except Exception:
             res_data = {"success": response.ok}
 
         if response.status_code == 200 and res_data.get("success", True):
@@ -178,10 +194,10 @@ def send_admin_action_to_backend(call, url, payload, headers, target_id, action,
             
             try:
                 bot.answer_callback_query(call.id, text=f"{status_emoji} {tx_type.upper()} #{target_id} {status_text}", show_alert=True)
-            except:
+            except Exception:
                 pass
             
-            current_time = datetime.utcnow().strftime('%Y-%m-%d %H:%M')
+            current_time = datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M')
             new_text = f"{call.message.text}\n\n{status_emoji} <b>{status_text} at {current_time} UTC</b>"
             
             try:
@@ -201,12 +217,21 @@ def send_admin_action_to_backend(call, url, payload, headers, target_id, action,
         print(f"⚠️ Admin action error: {e}")
         bot.answer_callback_query(call.id, text="⚠️ ከሰርቨር ጋር መገናኘት አልተቻለም", show_alert=True)
 
+
 # 🛠️ Admin Deposit/Withdraw Approval Callback Handler
 @bot.callback_query_handler(func=lambda call: call.data.startswith(('approve_dep_', 'reject_dep_', 'approve_with_', 'reject_with_')))
 def handle_admin_actions(call):
+    # 🔒 የአድሚን ማረጋገጫ
+    if ADMIN_TELEGRAM_ID and str(call.from_user.id) != ADMIN_TELEGRAM_ID:
+        try:
+            bot.answer_callback_query(call.id, text="⛔ ይህንን ማድረግ የሚችለው አድሚን ብቻ ነው!", show_alert=True)
+        except Exception:
+            pass
+        return
+
     try:
         bot.answer_callback_query(call.id, text="⏳ ውሳኔዎ በሂደት ላይ ነው...")
-    except:
+    except Exception:
         pass
     
     parts = call.data.split('_')
