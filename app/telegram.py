@@ -17,7 +17,7 @@ ADMIN_TELEGRAM_ID = str(os.getenv("ADMIN_TELEGRAM_ID", "")).strip()
 
 # 🔗 Backend & Mini App URL
 SERVER_URL = os.getenv("SERVER_URL", "https://web-production-30301.up.railway.app").rstrip('/')
-BACKEND_URL = SERVER_URL
+BACKEND_URL = os.getenv("BACKEND_URL", SERVER_URL).rstrip('/')
 MINI_APP_URL = SERVER_URL
 
 # 🖼️ Welcome Image URL
@@ -178,7 +178,7 @@ def handle_broadcast_command(message):
     threading.Thread(target=broadcast_worker, args=(parts[1], None), daemon=True).start()
 
 
-# 🛠️ Backend Admin Action Worker
+# 🛠️ Backend Admin Action Worker (ተስተካክሏል)
 def send_admin_action_to_backend(call, url, payload, headers, target_id, action, tx_type):
     try:
         response = requests.post(url, json=payload, headers=headers, timeout=15)
@@ -206,19 +206,19 @@ def send_admin_action_to_backend(call, url, payload, headers, target_id, action,
                     message_id=call.message.message_id, 
                     text=new_text, 
                     parse_mode="HTML",
-                    reply_markup=None # Removes the buttons after decision
+                    reply_markup=None # ውሳኔ ከተሰጠ በኋላ አዝራሮቹን ያጠፋቸዋል
                 )
             except Exception as edit_err:
                 print(f"⚠️ Telegram message edit issue: {edit_err}")
         else:
-            error_msg = res_data.get('message', 'Failed')
+            error_msg = res_data.get('message', 'ተግባሩ አልተሳካም')
             bot.answer_callback_query(call.id, text=f"❌ ስህተት፦ {error_msg}", show_alert=True)
     except Exception as e:
         print(f"⚠️ Admin action error: {e}")
         bot.answer_callback_query(call.id, text="⚠️ ከሰርቨር ጋር መገናኘት አልተቻለም", show_alert=True)
 
 
-# 🛠️ Admin Deposit/Withdraw Approval Callback Handler
+# 🛠️ Admin Deposit/Withdraw Approval Callback Handler (ተስተካክሏል)
 @bot.callback_query_handler(func=lambda call: call.data.startswith(('approve_dep_', 'reject_dep_', 'approve_with_', 'reject_with_')))
 def handle_admin_actions(call):
     # 🔒 የአድሚን ማረጋገጫ
@@ -245,6 +245,7 @@ def handle_admin_actions(call):
     endpoint = "deposit" if tx_type == "dep" else "withdraw"
     url = f"{BACKEND_URL}/api/users/admin/{endpoint}/approve"
     
+    # Payload schema የተስተካከለ
     payload = {
         "request_id": target_id, 
         "deposit_id": target_id if tx_type == "dep" else None,
