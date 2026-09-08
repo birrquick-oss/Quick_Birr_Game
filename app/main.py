@@ -111,7 +111,7 @@ async def websocket_endpoint(websocket: WebSocket):
 # ROOT ROUTE (Serves Front-end HTML)
 # =========================================================
 
-@get("/")
+@app.get("/")
 def read_root():
     if os.path.exists("static/index.html"):
         return FileResponse("static/index.html")
