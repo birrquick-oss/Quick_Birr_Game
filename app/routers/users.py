@@ -22,6 +22,9 @@ BOT_TOKEN = os.getenv("BOT_TOKEN", os.getenv("TELEGRAM_BOT_TOKEN", ""))
 ADMIN_TELEGRAM_ID = str(os.getenv("ADMIN_TELEGRAM_ID", "")).strip()
 ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "123456789")
 
+# 🛑 ወደ ባክኤንድ እንዳይገቡ የተከለከሉ ተቀባይነት የሌላቸው/የሞከራ Telegram IDዎች
+INVALID_TG_IDS = {"12345678", "null", "undefined", "", "none"}
+
 
 # --------------------------------------------------------------------------
 # 🔗 Database Dependency
@@ -35,7 +38,7 @@ def get_db():
 
 
 # --------------------------------------------------------------------------
-# 📢 Telegram Notification Helpers (Pure Standard Python Library)
+# 📢 Telegram Notification Helpers
 # --------------------------------------------------------------------------
 def send_telegram_request(url: str, payload: dict):
     """ከማንኛውም የውጭ ላይብረሪ ነፃ በሆነው urllib ጥያቄዎችን የሚልክ ተግባር"""
@@ -66,7 +69,7 @@ def notify_admin(text: str, reply_markup: dict = None):
     send_telegram_request(url, payload)
 
 def notify_user(telegram_id: str, text: str):
-    if not BOT_TOKEN or not telegram_id:
+    if not BOT_TOKEN or not telegram_id or str(telegram_id).lower() in INVALID_TG_IDS:
         return
     url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
     payload = {
@@ -117,12 +120,18 @@ class AdminApproveAction(BaseModel):
 @router.post("")
 @router.post("/register")
 def sync_or_register_user(data: UserSync, db: Session = Depends(get_db)):
-    tg_id = str(data.telegram_id).strip()
-    user = db.query(User).filter(User.telegram_id == tg_id).first()
+    tg_id = str(data.telegram_id).strip().lower()
+
+    # 🛑 Dummy/Invalid ID ከሆነ ውድቅ ማድረግ
+    if not tg_id or tg_id in INVALID_TG_IDS:
+        return {"success": False, "message": "Invalid Telegram ID"}
+
+    orig_tg_id = str(data.telegram_id).strip()
+    user = db.query(User).filter(User.telegram_id == orig_tg_id).first()
     
     if not user:
         user = User(
-            telegram_id=tg_id,
+            telegram_id=orig_tg_id,
             telegram_username=data.telegram_username,
             first_name=data.first_name,
             balance=0.0
@@ -151,6 +160,9 @@ def sync_or_register_user(data: UserSync, db: Session = Depends(get_db)):
 @router.get("/{telegram_id}")
 def get_user_profile(telegram_id: str, db: Session = Depends(get_db)):
     tg_id = str(telegram_id).strip()
+    if not tg_id or tg_id.lower() in INVALID_TG_IDS:
+        raise HTTPException(status_code=400, detail="Invalid Telegram ID")
+
     user = db.query(User).filter(User.telegram_id == tg_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
@@ -170,13 +182,18 @@ def get_user_profile(telegram_id: str, db: Session = Depends(get_db)):
 @router.get("/all_ids")
 def get_all_user_ids(db: Session = Depends(get_db)):
     users = db.query(User.telegram_id).all()
-    return [str(u[0]).strip() for u in users if u[0]]
+    return [str(u[0]).strip() for u in users if u[0] and str(u[0]).strip().lower() not in INVALID_TG_IDS]
 
 
 # 4️⃣ Request Deposit
 @router.post("/deposit")
 def request_deposit(req: DepositRequest, db: Session = Depends(get_db)):
     tg_id = str(req.telegram_id).strip()
+
+    # 🛑 Dummy/Invalid ID ጥያቄ እንዳይሰራ መከልከል
+    if not tg_id or tg_id.lower() in INVALID_TG_IDS:
+        return {"success": False, "message": "የቴሌግራም ማንነት ማረጋገጥ አልተቻለም! እባክዎን አፑን በቦቱ በኩል ይክፈቱት።"}
+
     user = db.query(User).filter(User.telegram_id == tg_id).first()
     
     if not user:
@@ -225,6 +242,11 @@ def request_deposit(req: DepositRequest, db: Session = Depends(get_db)):
 @router.post("/withdraw")
 def request_withdraw(req: WithdrawRequest, db: Session = Depends(get_db)):
     tg_id = str(req.telegram_id).strip()
+
+    # 🛑 Dummy/Invalid ID ጥያቄ እንዳይሰራ መከልከል
+    if not tg_id or tg_id.lower() in INVALID_TG_IDS:
+        return {"success": False, "message": "የቴሌግራም ማንነት ማረጋገጥ አልተቻለም! እባክዎን አፑን በቦቱ በኩል ይክፈቱት።"}
+
     user = db.query(User).filter(User.telegram_id == tg_id).first()
     
     if not user or user.balance < req.amount:
