@@ -625,6 +625,150 @@ document.getElementById("claimBingoBtn")?.addEventListener("click", () => {
 });
 
 /* =========================================================
+   QUICK_BIRR GAMES - PART 3 / 3 (FIXED TELEGRAM AUTH)
+   ========================================================= */
+
+function autoMarkAllBoughtCards() {
+    if (!selectedBingoCards || selectedBingoCards.length === 0) return;
+    const drawnNumbers = recentBallsList.map(b => b.num);
+
+    selectedBingoCards.forEach(cardNum => {
+        if (!markedCellsMap[cardNum]) markedCellsMap[cardNum] = new Set();
+        drawnNumbers.forEach(num => markedCellsMap[cardNum].add(num));
+    });
+}
+
+async function renderMyBoughtCards() {
+    const container = document.getElementById("playerBingoCard");
+    if (!container) return;
+    container.innerHTML = "";
+
+    if (selectedBingoCards.length === 0) {
+        container.innerHTML = "<div style='color:white; text-align:center; padding:20px;'>በዚህ ዙር ምንም ካርቴላ አልገዙም!</div>";
+        return;
+    }
+    const activeCardNum = selectedBingoCards[currentCardIndex];
+
+    if (!markedCellsMap[activeCardNum]) markedCellsMap[activeCardNum] = new Set();
+
+    if (isAutoMark) {
+        recentBallsList.forEach(b => markedCellsMap[activeCardNum].add(b.num));
+    }
+
+    try {
+        const res = await fetch(`/api/cards/get_matrix?card_number=${activeCardNum}`);
+        const data = await res.json();
+        const matrix = data.matrix;
+
+        const mainSliderLayout = document.createElement("div");
+        mainSliderLayout.className = "main-slider-layout";
+        mainSliderLayout.style.cssText = "display: flex; align-items: center; justify-content: space-between; width: 100%; gap: 10px;";
+
+        let html = `
+            <button class="side-nav-btn" onclick="moveSlider(-1)" style="background:#1e272e; color:#00ffcc; border:1px solid #00ffcc; padding:10px; border-radius:8px; font-weight:bold; cursor:pointer;">◀</button>
+            <div class="card-display-center" style="flex-grow:1;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <div class="card-title-label" style="color: #ffd700; font-weight: bold; font-size: 14px;">
+                        ካርድ #${activeCardNum} (${currentCardIndex + 1}/${selectedBingoCards.length})
+                    </div>
+                    <button id="toggleMarkBtn" onclick="toggleMarkingMode()" style="background: ${isAutoMark ? '#2ed573' : '#718093'}; color: white; border: none; padding: 4px 8px; font-size: 11px; font-weight: bold; border-radius: 4px; cursor:pointer;">
+                        ${isAutoMark ? "🤖 Auto: ON" : "🖐 Manual"}
+                    </button>
+                </div>
+                <div class="bingo-header-letters" style="display:grid; grid-template-columns: repeat(5, 1fr); gap: 4px; text-align:center; font-weight:bold; margin-bottom: 5px;">
+                    <span style="background:${getBingoColor('B')}; border-radius:4px;">B</span>
+                    <span style="background:${getBingoColor('I')}; border-radius:4px;">I</span>
+                    <span style="background:${getBingoColor('N')}; border-radius:4px;">N</span>
+                    <span style="background:${getBingoColor('G')}; border-radius:4px;">G</span>
+                    <span style="background:${getBingoColor('O')}; border-radius:4px;">O</span>
+                </div>
+                <div class="bingo-card-grid-5x5" style="display:grid; grid-template-columns: repeat(5, 1fr); gap:6px;">
+        `;
+
+        matrix.forEach(row => {
+            row.forEach(cell => {
+                if (cell === "FREE" || cell === 0) {
+                    html += `<div class="bingo-cell free-star" style="background:#ffbc00; color:#000; display:flex; justify-content:center; align-items:center; aspect-ratio:1; border-radius:6px; font-weight:bold;">★</div>`;
+                } else {
+                    const isMarkedInState = markedCellsMap[activeCardNum].has(cell);
+                    const isAlreadyDrawn = recentBallsList.some(b => b.num === cell);
+
+                    if (isMarkedInState || (isAlreadyDrawn && isAutoMark)) {
+                        let letterPrefix = cell <= 15 ? 'B' : cell <= 30 ? 'I' : cell <= 45 ? 'N' : cell <= 60 ? 'G' : 'O';
+                        const savedColor = getBingoColor(letterPrefix);
+                        markedCellsMap[activeCardNum].add(cell);
+
+                        html += `<div class="bingo-cell cell-${cell} marked-auto" style="background:${savedColor} !important; color:#fff; display:flex; justify-content:center; align-items:center; aspect-ratio:1; border-radius:6px; font-weight:bold; cursor:pointer;" onclick="handleManualCellClick(this, ${cell}, ${activeCardNum})">${cell}</div>`;
+                    } else {
+                        html += `<div class="bingo-cell cell-${cell}" style="background:#252634; color:#fff; display:flex; justify-content:center; align-items:center; aspect-ratio:1; border-radius:6px; font-weight:bold; cursor:pointer;" onclick="handleManualCellClick(this, ${cell}, ${activeCardNum})">${cell}</div>`;
+                    }
+                }
+            });
+        });
+        html += `</div></div><button class="side-nav-btn" onclick="moveSlider(1)" style="background:#1e272e; color:#00ffcc; border:1px solid #00ffcc; padding:10px; border-radius:8px; font-weight:bold; cursor:pointer;">▶</button>`;
+        mainSliderLayout.innerHTML = html;
+        container.appendChild(mainSliderLayout);
+    } catch (e) {
+        console.error("Matrix load error", e);
+    }
+}
+
+function moveSlider(direction) {
+    if (selectedBingoCards.length <= 1) return;
+    currentCardIndex += direction;
+    if (currentCardIndex < 0) currentCardIndex = selectedBingoCards.length - 1;
+    if (currentCardIndex >= selectedBingoCards.length) currentCardIndex = 0;
+    renderMyBoughtCards();
+}
+
+function toggleMarkingMode() {
+    isAutoMark = !isAutoMark;
+    if (isAutoMark) autoMarkAllBoughtCards();
+    renderMyBoughtCards(); 
+}
+
+function handleManualCellClick(cellElement, cellNumber, activeCardNum) {
+    if (!activeCardNum) activeCardNum = selectedBingoCards[currentCardIndex];
+    if (!markedCellsMap[activeCardNum]) markedCellsMap[activeCardNum] = new Set();
+
+    const isBallDrawn = recentBallsList.some(b => b.num === cellNumber);
+
+    if (isBallDrawn) {
+        markedCellsMap[activeCardNum].add(cellNumber);
+        let letterPrefix = cellNumber <= 15 ? 'B' : cellNumber <= 30 ? 'I' : cellNumber <= 45 ? 'N' : cellNumber <= 60 ? 'G' : 'O';
+        const ballColor = getBingoColor(letterPrefix);
+        cellElement.style.background = ballColor;
+        cellElement.style.color = "#fff";
+    } else {
+        const oldBg = cellElement.style.background;
+        cellElement.style.background = "#ff4757";
+        setTimeout(() => { cellElement.style.background = oldBg; }, 250);
+    }
+}
+
+document.getElementById("claimBingoBtn")?.addEventListener("click", () => {
+    if (!bingoSocket || bingoSocket.readyState !== WebSocket.OPEN) {
+        showToastMessage("⚠️ WebSocket አልተገናኘም!", "error");
+        return;
+    }
+
+    if (selectedBingoCards.length === 0) {
+        showToastMessage("⚠️ ምንም የተገዛ ካርቴላ የለም!", "error");
+        return;
+    }
+
+    const currentCard = selectedBingoCards[currentCardIndex];
+    bingoSocket.send(JSON.stringify({
+        type: "claim_bingo",
+        telegram_id: String(userData.telegram_id),
+        card_number: currentCard,
+        game_id: currentGameId
+    }));
+
+    showToastMessage("🔥 የ BINGO ጥያቄ ተልኳል! በመፈተሽ ላይ...", "success");
+});
+
+/* =========================================================
    GAME OVER & MULTIPLE WINNERS LOGIC
 ========================================================= */
 function handleGameOver(data) {
@@ -714,6 +858,7 @@ function closeWinnerModalAndReset() {
 }
 
 async function syncAndFetchUser() {
+    // 🛑 Fake ID ወይም ባዶ ከሆነ ወደ ሰርቨር አያልፍም
     if (!userData.telegram_id || userData.telegram_id === "12345678") return;
 
     try {
@@ -721,7 +866,7 @@ async function syncAndFetchUser() {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                telegram_id: String(userData.telegram_id),
+                telegram_id: String(userData.userData ? userData.telegram_id : userData.telegram_id),
                 telegram_username: userData.username,
                 first_name: userData.first_name
             })
@@ -747,6 +892,7 @@ function updateBalanceUI(amount) {
 
 document.getElementById("balanceButton")?.addEventListener("click", syncAndFetchUser);
 
+// 🛠️ የተስተካከለ FORM SUBMISSION LOGIC
 function setupFormSubmitListeners() {
     const depositForm = document.getElementById("deposit-form") || document.querySelector("#depositModal form");
     if (depositForm) {
@@ -762,13 +908,16 @@ function setupFormSubmitListeners() {
                 return;
             }
 
-            // Get live Telegram user ID
-            const activeTgUser = (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe && window.Telegram.WebApp.initDataUnsafe.user)
-                ? window.Telegram.WebApp.initDataUnsafe.user
-                : null;
+            // 🟢 በቅጽበት ከ Telegram WebApp ኤስ.ዲ.ኬ ማረጋገጥ
+            const activeTgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
+            const finalTgId = activeTgUser?.id ? String(activeTgUser.id) : String(userData.telegram_id || "");
+            const finalTgName = activeTgUser?.first_name || userData.first_name || "ተጫዋች";
 
-            const finalTgId = activeTgUser ? String(activeTgUser.id) : String(userData.telegram_id || "");
-            const finalTgName = activeTgUser ? (activeTgUser.first_name || "User") : (userData.first_name || "ተጫዋች");
+            // 🛑 '12345678' ወይም ባዶ ከሆነ ጥያቄውን መግታት
+            if (!finalTgId || finalTgId === "12345678" || finalTgId === "null" || finalTgId === "undefined") {
+                showMessage("የቴሌግራም ችግር", "እባክዎን አፕሊኬሽኑን በቴሌግራም ቦት በኩል 'Play Now' በማለት እንደገና ይክፈቱት!", "⚠️");
+                return;
+            }
 
             const payload = {
                 telegram_id: finalTgId,
@@ -814,11 +963,13 @@ function setupFormSubmitListeners() {
                 return;
             }
 
-            const activeTgUser = (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe && window.Telegram.WebApp.initDataUnsafe.user)
-                ? window.Telegram.WebApp.initDataUnsafe.user
-                : null;
+            const activeTgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
+            const finalTgId = activeTgUser?.id ? String(activeTgUser.id) : String(userData.telegram_id || "");
 
-            const finalTgId = activeTgUser ? String(activeTgUser.id) : String(userData.telegram_id || "");
+            if (!finalTgId || finalTgId === "12345678" || finalTgId === "null" || finalTgId === "undefined") {
+                showMessage("የቴሌግራም ችግር", "እባክዎን አፕሊኬሽኑን በቴሌግራም ቦት በኩል እንደገና ይክፈቱት!", "⚠️");
+                return;
+            }
 
             const payload = {
                 telegram_id: finalTgId,
@@ -893,7 +1044,7 @@ document.querySelectorAll(".nav-item").forEach(item => {
     });
 });
 
-// 🔄 Fixed Telegram User Loader
+// 🔄 የተስተካከለ TELEGRAM USER LOADER
 function loadTelegramUser() {
     const webApp = window.Telegram?.WebApp;
     if (webApp) {
@@ -925,7 +1076,7 @@ function loadTelegramUser() {
                 userData.username = retryUser.username ? `@${retryUser.username}` : "";
                 syncAndFetchUser();
             }
-        }, 1000);
+        }, 500);
     }
 }
 
