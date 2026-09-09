@@ -11,7 +11,7 @@ from telebot.apihelper import ApiTelegramException
 # ⚙️ Configuration & Environment Variables
 # --------------------------------------------------------------------------
 BOT_TOKEN = os.getenv("BOT_TOKEN", os.getenv("TELEGRAM_BOT_TOKEN", "YOUR_BOT_TOKEN_HERE"))
-BOT_USERNAME = os.getenv("TELEGRAM_BOT_USERNAME", "QuickBirrGamesBot").strip().replace("@", "")
+BOT_USERNAME = os.getenv("TELEGRAM_BOT_USERNAME", "QuickBirr_Games_Bot").strip().replace("@", "")
 ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "123456789")
 ADMIN_TELEGRAM_ID = str(os.getenv("ADMIN_TELEGRAM_ID", "")).strip()
 
@@ -231,7 +231,7 @@ def handle_admin_actions(call):
     print(f"🔘 Callback Clicked by User ID: {user_id_str} | Data: {call.data}")
 
     # 🔒 የአድሚን ማረጋገጫ
-    if ADMIN_TELEGRAM_ID and user_id_str != ADMIN_TELEGRAM_ID:
+    if ADMIN_TELEGRAM_ID and str(user_id_str).strip() != str(ADMIN_TELEGRAM_ID).strip():
         print(f"🚫 Unauthorized attempt by {user_id_str}. Expected: {ADMIN_TELEGRAM_ID}")
         try:
             bot.answer_callback_query(call.id, text="⛔ ይህንን ማድረግ የሚችለው አድሚን ብቻ ነው!", show_alert=True)
