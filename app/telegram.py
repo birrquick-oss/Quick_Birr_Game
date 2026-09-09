@@ -194,6 +194,7 @@ def send_admin_action_to_backend(call, url, payload, headers, target_id, action,
         except Exception:
             res_data = {"success": response.ok}
 
+        # 200 OK ከተመለሰ
         if response.status_code == 200 and res_data.get("success", True):
             status_emoji = "✅" if action == "approve" else "❌"
             status_text = "APPROVED" if action == "approve" else "REJECTED"
@@ -217,8 +218,9 @@ def send_admin_action_to_backend(call, url, payload, headers, target_id, action,
             except Exception as edit_err:
                 print(f"⚠️ Telegram message edit issue: {edit_err}")
         else:
-            error_msg = res_data.get('message', 'ተግባሩ አልተሳካም')
-            bot.answer_callback_query(call.id, text=f"❌ ስህተት፦ {error_msg}", show_alert=True)
+            # ስህተት ከተፈጠረ የችግሩን ምክንያት በስልኩ Alert ላይ ያሳያል
+            err_msg = res_data.get('detail', res_data.get('message', f'Status Code: {response.status_code}'))
+            bot.answer_callback_query(call.id, text=f"❌ ስህተት፦ {err_msg}", show_alert=True)
     except Exception as e:
         print(f"❌ Admin Action Exception Error: {e}")
         bot.answer_callback_query(call.id, text="⚠️ ከሰርቨር ጋር መገናኘት አልተቻለም", show_alert=True)
@@ -255,22 +257,25 @@ def handle_admin_actions(call):
     endpoint = "deposit" if tx_type == "dep" else "withdraw"
     url = f"{BACKEND_URL}/api/users/admin/{endpoint}/approve"
     
-    # Payload schema
-    payload = {
-        "request_id": target_id, 
-        "deposit_id": target_id if tx_type == "dep" else None,
-        "withdraw_id": target_id if tx_type == "with" else None,
-        "action": backend_action,
-        "admin_telegram_id": user_id_str,
-        "admin_password": ADMIN_PASSWORD
-    }
+    # 🎯 Clean Payload (ከ FastAPI Pydantic Schema ጋር 100% የሚስማማ)
+    if tx_type == "dep":
+        payload = {
+            "deposit_id": target_id,
+            "action": backend_action,
+            "admin_password": ADMIN_PASSWORD
+        }
+    else:
+        payload = {
+            "withdraw_id": target_id,
+            "action": backend_action,
+            "admin_password": ADMIN_PASSWORD
+        }
 
     threading.Thread(
         target=send_admin_action_to_backend, 
         args=(call, url, payload, {"Content-Type": "application/json"}, target_id, action, tx_type),
         daemon=True
     ).start()
-
 
 # 🚀 Bot Start Polling Loop
 if __name__ == "__main__":
