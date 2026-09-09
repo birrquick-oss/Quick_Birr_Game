@@ -339,7 +339,7 @@ function renderDrawnBall(data) {
 
     if (soundEnabled && data.number) {
         try {
-            let audio = new Audio(`/static/sounds/${data.number}.mp3`);
+            let audio = new Audio(`/static/sounds/${data.number}.mp3`.mp3`);
             audio.play().catch(e => console.log("Sound playback prevented:", e));
         } catch (err) {
             console.error("Audio error:", err);
