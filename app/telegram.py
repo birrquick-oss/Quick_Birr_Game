@@ -41,7 +41,7 @@ def register_user_background(telegram_id, telegram_name, first_name, phone_numbe
         print(f"⚠️ Registration skipped for invalid ID: {tg_str}")
         return
 
-    register_api_url = f"{BACKEND_URL}/api/users"
+    register_api_url = f"{BACKEND_URL}/api/users/register"
     payload = {
         "telegram_id": tg_str,
         "telegram_username": telegram_name,
@@ -230,7 +230,7 @@ def handle_admin_actions(call):
     user_id_str = str(call.from_user.id).strip()
     print(f"🔘 Callback Clicked by User ID: {user_id_str} | Data: {call.data}")
 
-    # 🔒 የአድሚን ማረጋገጫ (ADMIN_TELEGRAM_ID ካልተዘጋጀ ወይም ከተዛመደ ያልፋል)
+    # 🔒 የአድሚን ማረጋገጫ
     if ADMIN_TELEGRAM_ID and user_id_str != ADMIN_TELEGRAM_ID:
         print(f"🚫 Unauthorized attempt by {user_id_str}. Expected: {ADMIN_TELEGRAM_ID}")
         try:
@@ -251,7 +251,7 @@ def handle_admin_actions(call):
     
     backend_action = "APPROVE" if action == "approve" else "REJECT"
 
-    # 🎯 ትክክለኛው URL Route Mapping
+    # 🎯 Route Mapping (users.py Endpoint ጋር ይስማማል)
     endpoint = "deposit" if tx_type == "dep" else "withdraw"
     url = f"{BACKEND_URL}/api/users/admin/{endpoint}/approve"
     
