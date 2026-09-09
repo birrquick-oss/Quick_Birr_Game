@@ -187,8 +187,14 @@ class Deposit(Base):
         nullable=False
     )
 
+    bank_name = Column(
+        String(100),
+        nullable=True
+    )
+
     method = Column(
         String(100),
+        default="Bank Transfer",
         nullable=False
     )
 
@@ -236,8 +242,14 @@ class Withdrawal(Base):
         nullable=False
     )
 
+    bank_name = Column(
+        String(100),
+        nullable=True
+    )
+
     method = Column(
         String(100),
+        default="Bank Transfer",
         nullable=False
     )
 
