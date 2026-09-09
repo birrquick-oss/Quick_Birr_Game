@@ -17,7 +17,7 @@ ADMIN_TELEGRAM_ID = str(os.getenv("ADMIN_TELEGRAM_ID", "")).strip()
 
 # 🔗 Backend & Mini App URL
 SERVER_URL = os.getenv("SERVER_URL", "https://web-production-30301.up.railway.app").rstrip('/')
-BACKEND_URL = os.getenv("BACKEND_URL", SERVER_URL).rstrip('/')
+BACKEND_URL = os.getenv("BACKEND_URL", "http://127.0.0.1:8000" if os.getenv("RAILWAY_ENVIRONMENT") else SERVER_URL).rstrip('/')
 MINI_APP_URL = SERVER_URL
 
 # 🖼️ Welcome Image URL
@@ -31,6 +31,7 @@ bot = TeleBot(BOT_TOKEN)
 USER_REF_CACHE = {}
 
 print(f"🎰 Quick Birr Games Bot (@{BOT_USERNAME}) is running...")
+print(f"⚙️ Configured Admin Telegram ID: '{ADMIN_TELEGRAM_ID}'")
 
 
 # 👥 Background User Registration Thread
@@ -178,15 +179,15 @@ def handle_broadcast_command(message):
     threading.Thread(target=broadcast_worker, args=(parts[1], None), daemon=True).start()
 
 
-# 🛠️ Backend Admin Action Worker (የህትመት እና የሎግ ማስተካከያ የተደረገበት)
+# 🛠️ Backend Admin Action Worker
 def send_admin_action_to_backend(call, url, payload, headers, target_id, action, tx_type):
     try:
-        print(f"📡 Sending Admin Action Request to: {url}")
-        print(f"📦 Payload Data: {payload}")
+        print(f"📡 [ADMIN ACTION START] Sending Request to: {url}")
+        print(f"📦 [PAYLOAD]: {payload}")
 
         response = requests.post(url, json=payload, headers=headers, timeout=15)
-        print(f"📥 Server Response Code: {response.status_code}")
-        print(f"📥 Server Response Text: {response.text}")
+        print(f"📥 [SERVER RESPONSE STATUS]: {response.status_code}")
+        print(f"📥 [SERVER RESPONSE BODY]: {response.text}")
         
         try:
             res_data = response.json()
@@ -226,8 +227,12 @@ def send_admin_action_to_backend(call, url, payload, headers, target_id, action,
 # 🛠️ Admin Deposit/Withdraw Approval Callback Handler
 @bot.callback_query_handler(func=lambda call: call.data.startswith(('approve_dep_', 'reject_dep_', 'approve_with_', 'reject_with_')))
 def handle_admin_actions(call):
-    # 🔒 የአድሚን ማረጋገጫ
-    if ADMIN_TELEGRAM_ID and str(call.from_user.id) != ADMIN_TELEGRAM_ID:
+    user_id_str = str(call.from_user.id).strip()
+    print(f"🔘 Callback Clicked by User ID: {user_id_str} | Data: {call.data}")
+
+    # 🔒 የአድሚን ማረጋገጫ (ADMIN_TELEGRAM_ID ካልተዘጋጀ ወይም ከተዛመደ ያልፋል)
+    if ADMIN_TELEGRAM_ID and user_id_str != ADMIN_TELEGRAM_ID:
+        print(f"🚫 Unauthorized attempt by {user_id_str}. Expected: {ADMIN_TELEGRAM_ID}")
         try:
             bot.answer_callback_query(call.id, text="⛔ ይህንን ማድረግ የሚችለው አድሚን ብቻ ነው!", show_alert=True)
         except Exception:
@@ -246,7 +251,7 @@ def handle_admin_actions(call):
     
     backend_action = "APPROVE" if action == "approve" else "REJECT"
 
-    # 🎯 ትክክለኛው URL Route Mapping በ app/routers/users.py መሰረት
+    # 🎯 ትክክለኛው URL Route Mapping
     endpoint = "deposit" if tx_type == "dep" else "withdraw"
     url = f"{BACKEND_URL}/api/users/admin/{endpoint}/approve"
     
@@ -256,7 +261,7 @@ def handle_admin_actions(call):
         "deposit_id": target_id if tx_type == "dep" else None,
         "withdraw_id": target_id if tx_type == "with" else None,
         "action": backend_action,
-        "admin_telegram_id": str(call.from_user.id),
+        "admin_telegram_id": user_id_str,
         "admin_password": ADMIN_PASSWORD
     }
 
