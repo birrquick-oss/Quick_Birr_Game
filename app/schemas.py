@@ -23,7 +23,7 @@ class UserResponse(BaseModel):
     # Shared wallet
     balance: float
 
-    is_banned: bool
+    is_banned: int  # በ models.py ከተቀመጠው Integer ጋር እንዲመሳሰል
 
     created_at: datetime
 
@@ -62,7 +62,7 @@ class DepositCreate(BaseModel):
     telegram_name: Optional[str] = None
     amount: float = Field(..., gt=0, le=1_000_000)
     bank_name: str = Field(..., min_length=1, max_length=100)
-    sms_data: str = Field(..., min_length=1)
+    sms_text: str = Field(..., min_length=1)  # ከ models.py sms_text ጋር ተጣጥሟል
 
 
 class WithdrawCreate(BaseModel):
@@ -70,6 +70,31 @@ class WithdrawCreate(BaseModel):
     amount: float = Field(..., gt=0, le=1_000_000)
     bank_name: str = Field(..., min_length=1, max_length=100)
     account_number: str = Field(..., min_length=1, max_length=255)
+
+
+class DepositResponse(BaseModel):
+    id: int
+    user_id: int
+    amount: float
+    bank_name: Optional[str] = None
+    status: str
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class WithdrawResponse(BaseModel):
+    id: int
+    user_id: int
+    amount: float
+    bank_name: Optional[str] = None
+    account_number: str
+    status: str
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
 
 
 class DepositRequest(BaseModel):
