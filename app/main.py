@@ -1,5 +1,6 @@
 import os
 import asyncio
+import threading  # 👈 ቦቱን በጀርባ Background Thread ለማስነሳት
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request, Response, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
@@ -17,6 +18,22 @@ from app.routers.users import router as users_router
 from app.websocket import router as websocket_router, manager
 from app.game_engine import engine
 
+# 🤖 የቴሌግራም ቦቱን ከ app/telegram.py Import ማድረግ
+from app.telegram import bot
+
+
+# =========================================================
+# 🤖 TELEGRAM BOT RUNNER
+# =========================================================
+
+def run_telegram_bot():
+    """ቦቱን በጀርባ Thread ላይ የማስነሻ ተግባር"""
+    print("🤖 Telegram Bot Polling ተጀምሯል...")
+    try:
+        bot.infinity_polling(skip_pending=True)
+    except Exception as e:
+        print(f"❌ Telegram Bot Polling Error: {e}")
+
 
 # =========================================================
 # STARTUP & SHUTDOWN LIFESPAN EVENT
@@ -29,6 +46,10 @@ async def lifespan(app: FastAPI):
     
     # 2. የቢንጎ ጨዋታ ኢንጂኑን በጀርባ (Background Task) ማስጀመር
     engine_task = asyncio.create_task(engine.start_game())
+    
+    # 3. 🤖 የቴሌግራም ቦቱን በ Background Thread ማስጀመር
+    bot_thread = threading.Thread(target=run_telegram_bot, daemon=True)
+    bot_thread.start()
     
     yield  # አፕሊኬሽኑ በስራ ላይ የሚቆይበት ጊዜ
     
