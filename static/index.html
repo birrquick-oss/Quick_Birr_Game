@@ -44,17 +44,17 @@
                     <span class="hero-badge">🎮 PLAY & WIN</span>
                     <h1>Welcome to<br><strong>QUICK_BIRR GAMES</strong></h1>
                     <p>Your favorite games, all in one place.</p>
-                    <button class="primary-button" id="playNowButton" type="button" onclick="showPage('bingoSelection'); render1000BingoCards();">🎮 PLAY NOW</button>
+                    <button class="primary-button" id="playNowButton" type="button" onclick="showPage('bingoSelection')">🎮 PLAY NOW</button>
                 </div>
                 <div class="hero-decoration">🎰</div>
             </section>
 
             <!-- QUICK ACTIONS -->
             <section class="quick-actions">
-                <button class="action-button withdraw" type="button" id="withdrawButton" onclick="openWithdrawModal()">
+                <button class="action-button withdraw" type="button" id="withdrawButton">
                     <span>💸</span> Withdraw
                 </button>
-                <button class="action-button deposit" type="button" id="depositButton" onclick="openDepositModal()">
+                <button class="action-button deposit" type="button" id="depositButton">
                     <span>💰</span> Deposit
                 </button>
             </section>
@@ -70,7 +70,7 @@
                 </div>
 
                 <div class="games-grid">
-                    <button class="game-card bingo-card" data-game="bingo" type="button" id="bingoGameCard" onclick="showPage('bingoSelection'); render1000BingoCards();">
+                    <button class="game-card bingo-card" data-game="bingo" type="button" id="bingoGameCard" onclick="showPage('bingoSelection')">
                         <div class="game-image">
                             <span class="game-icon">🎱</span>
                             <span class="game-star">★</span>
@@ -224,7 +224,7 @@
                     <span class="derash-badge" id="liveDerashText" style="background:#2ed573; color:#000; padding:4px 8px; border-radius:4px; font-weight:bold;">ደራሽ 0.00 ETB</span>
                     <span class="game-id-badge" id="gameIdBadge">Game #0</span>
                 </div>
-                <button class="sound-toggle-btn" id="soundToggleBtn" type="button" onclick="toggleSound()">
+                <button class="sound-toggle-btn" id="soundToggleBtn" type="button">
                     🔊 <span id="soundStatusText">ON</span>
                 </button>
             </div>
@@ -262,7 +262,7 @@
         <div class="modal" id="winnerModal" hidden>
             <div class="modal-overlay"></div>
             <div class="winner-modal-body" style="background:#1e1e2e; padding:15px; border-radius:16px; width:90%; max-width:360px; border:2px solid #ffbc00; max-height:90vh; overflow-y:auto; margin:auto; position:relative; z-index:999999;">
-        <!-- Javascript በ dynamic መረጃውን እዚህ ይሞላዋል -->
+                <!-- Javascript በ dynamic መረጃውን እዚህ ይሞላዋል -->
             </div>
         </div>
 
@@ -289,8 +289,8 @@
                 </div>
 
                 <div class="action-buttons-grid">
-                    <button class="action-btn btn-withdraw" id="dashWithdrawBtn" type="button" onclick="openWithdrawModal()">💸 Withdraw</button>
-                    <button class="action-btn btn-deposit" id="dashDepositBtn" type="button" onclick="openDepositModal()">💰 Deposit</button>
+                    <button class="action-btn btn-withdraw" id="dashWithdrawBtn" type="button">💸 Withdraw</button>
+                    <button class="action-btn btn-deposit" id="dashDepositBtn" type="button">💰 Deposit</button>
                 </div>
 
                 <div class="dashboard-banner promo-cashback">
@@ -339,21 +339,21 @@
 <div class="modal" id="messageModal" hidden>
     <div class="modal-overlay"></div>
     <div class="modal-box">
-        <button class="modal-close" id="modalClose" type="button" onclick="closeModals()">×</button>
+        <button class="modal-close" id="modalClose" type="button">×</button>
         <div class="modal-icon" id="modalIcon">🎮</div>
         <h2 id="modalTitle">QUICK_BIRR GAMES</h2>
         <p id="modalMessage">Coming soon.</p>
-        <button class="primary-button modal-button" id="modalButton" type="button" onclick="closeModals()">OK</button>
+        <button class="primary-button modal-button" id="modalButton" type="button">OK</button>
     </div>
 </div>
 
 <!-- DEPOSIT MODAL -->
 <div class="custom-modal" id="depositModal" hidden>
-    <div class="modal-overlay" onclick="closeModals()"></div>
+    <div class="modal-overlay"></div>
     <div class="modal-card">
         <div class="modal-header">
             <h3>📥 ገንዘብ ማስገቢያ (Deposit)</h3>
-            <button class="close-modal-btn" type="button" onclick="closeModals()">✕</button>
+            <button class="close-modal-btn" type="button">✕</button>
         </div>
 
         <div class="instruction-box">
@@ -421,11 +421,11 @@
 
 <!-- WITHDRAW MODAL -->
 <div class="custom-modal" id="withdrawModal" hidden>
-    <div class="modal-overlay" onclick="closeModals()"></div>
+    <div class="modal-overlay"></div>
     <div class="modal-card">
         <div class="modal-header">
             <h3>📬 ገንዘብ ማውጫ (Withdraw)</h3>
-            <button class="close-modal-btn" type="button" onclick="closeModals()">✕</button>
+            <button class="close-modal-btn" type="button">✕</button>
         </div>
 
         <!-- FORM WRAPPER -->
@@ -464,41 +464,18 @@
     </div>
 </div>
 
-<!-- UI HELPER SCRIPTS -->
+<!-- COPY HELPER ONLY -->
 <script>
-    function openDepositModal() {
-        document.getElementById('depositModal').hidden = false;
-    }
-
-    function openWithdrawModal() {
-        document.getElementById('withdrawModal').hidden = false;
-    }
-
-    function closeModals() {
-        document.getElementById('depositModal').hidden = true;
-        document.getElementById('withdrawModal').hidden = true;
-        document.getElementById('messageModal').hidden = true;
-    }
-
-    function showToastMessage(text, type) {
-        const msgEl = document.getElementById('modalMessage');
-        const iconEl = document.getElementById('modalIcon');
-        if (msgEl) msgEl.textContent = text;
-        if (iconEl) iconEl.textContent = type === 'success' ? '✅' : '⚠️';
-        document.getElementById('messageModal').hidden = false;
-    }
-
-    function showMessage(title, text, icon) {
-        document.getElementById('modalTitle').textContent = title;
-        document.getElementById('modalMessage').textContent = text;
-        document.getElementById('modalIcon').textContent = icon || '🎮';
-        document.getElementById('messageModal').hidden = false;
-    }
-
     function copyToClipboard(text) {
-        navigator.clipboard.writeText(text).then(() => {
-            showToastMessage(`አካውንት ቁጥር (${text}) ተኮፒ አድርጓል!`, 'success');
-        });
+        if (navigator.clipboard) {
+            navigator.clipboard.writeText(text).then(() => {
+                if (typeof showToastMessage === "function") {
+                    showToastMessage(`አካውንት ቁጥር (${text}) ተኮፒ አድርጓል!`, "success");
+                } else {
+                    alert(`አካውንት ቁጥር (${text}) ተኮፒ አድርጓል!`);
+                }
+            });
+        }
     }
 </script>
 
