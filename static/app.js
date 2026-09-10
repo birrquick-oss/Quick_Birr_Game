@@ -137,6 +137,37 @@ function closeModals() {
     if (modal) modal.hidden = true;
 }
 
+function hideAllViews() {
+    if (homeView) homeView.hidden = true;
+    if (profileView) profileView.hidden = true;
+    if (bingoSelectionView) bingoSelectionView.hidden = true;
+    if (bingoGameView) bingoGameView.hidden = true;
+}
+
+function showPage(pageName) {
+    document.querySelectorAll(".nav-item").forEach(nav => {
+        if (nav.dataset.page === pageName) {
+            nav.classList.add("active");
+        } else {
+            nav.classList.remove("active");
+        }
+    });
+
+    hideAllViews();
+
+    if (pageName === "profile") {
+        if (profileView) profileView.hidden = false;
+    } else if (pageName === "bingoSelection") {
+        if (bingoSelectionView) bingoSelectionView.hidden = false;
+    } else if (pageName === "bingoLive") {
+        if (bingoGameView) bingoGameView.hidden = false;
+    } else {
+        if (homeView) homeView.hidden = false;
+    }
+
+    window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
 document.getElementById("modalClose")?.addEventListener("click", closeMessage);
 document.getElementById("modalButton")?.addEventListener("click", closeMessage);
 
@@ -895,37 +926,6 @@ function setupFormSubmitListeners() {
             }
         });
     }
-}
-
-function hideAllViews() {
-    if (homeView) homeView.hidden = true;
-    if (profileView) profileView.hidden = true;
-    if (bingoSelectionView) bingoSelectionView.hidden = true;
-    if (bingoGameView) bingoGameView.hidden = true;
-}
-
-function showPage(pageName) {
-    document.querySelectorAll(".nav-item").forEach(nav => {
-        if (nav.dataset.page === pageName) {
-            nav.classList.add("active");
-        } else {
-            nav.classList.remove("active");
-        }
-    });
-
-    hideAllViews();
-
-    if (pageName === "profile") {
-        if (profileView) profileView.hidden = false;
-    } else if (pageName === "bingoSelection") {
-        if (bingoSelectionView) bingoSelectionView.hidden = false;
-    } else if (pageName === "bingoLive") {
-        if (bingoGameView) bingoGameView.hidden = false;
-    } else {
-        if (homeView) homeView.hidden = false;
-    }
-
-    window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
 document.querySelectorAll(".nav-item").forEach(item => {
