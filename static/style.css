@@ -50,6 +50,9 @@ button {
     padding-bottom: 90px;
 }
 
+/* =========================================================
+   TOP BAR & BRAND
+========================================================= */
 .top-bar {
     height: 70px;
     display: flex;
@@ -112,6 +115,9 @@ button {
 .balance-icon { font-size: 15px; }
 .refresh-icon { color: #8e9bad; font-size: 17px; }
 
+/* =========================================================
+   HERO & QUICK ACTIONS
+========================================================= */
 .hero {
     margin: 14px;
     min-height: 205px;
@@ -195,6 +201,9 @@ button {
 .withdraw { background: #334154; }
 .deposit { background: linear-gradient(135deg, #2996ff, #146bc9); }
 
+/* =========================================================
+   GAMES GRID
+========================================================= */
 .games-section { padding: 12px 14px; }
 .section-header {
     display: flex;
@@ -350,18 +359,19 @@ button {
     font-size: 12px;
 }
 
-/* 10 COLUMNS GRID FOR 1-1000 NUMBERS */
+/* 10 COLUMNS GRID FOR 1-1000 NUMBERS WITH SMOOTH SCROLL */
 .cards-grid-10cols {
     display: grid;
     grid-template-columns: repeat(10, 1fr);
     gap: 5px;
     padding: 10px;
-    max-height: 60vh;
+    max-height: 55vh;
     overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
     background: #0d1119;
 }
 
-/* FIX 1: Background is WHITE, Text is BLACK */
+/* Card item styling */
 .card-item {
     aspect-ratio: 1;
     background: #ffffff !important;
@@ -380,7 +390,7 @@ button {
 
 .card-item:active { transform: scale(0.9); }
 
-/* Selected Card Style (ORANGE Background, BLACK Text) */
+/* Selected Card Style */
 .card-item.selected {
     background: var(--orange) !important;
     color: #000000 !important;
@@ -403,6 +413,7 @@ button {
     background: #121925;
     position: sticky;
     bottom: 70px;
+    z-index: 10;
 }
 
 .orange-action-btn {
@@ -420,9 +431,8 @@ button {
 
 .orange-action-btn:active { transform: scale(0.98); }
 
-
 /* =========================================================
-   2. LIVE BINGO GAMEPLAY STYLES (1-75 BOARD & SOUND BUTTON)
+   2. LIVE BINGO GAMEPLAY STYLES (1-75 BOARD)
 ========================================================= */
 
 .live-game-topbar {
@@ -557,52 +567,26 @@ button {
 .current-ball-big .letter { font-size: 10px; font-weight: 900; line-height: 1; }
 .current-ball-big .number { font-size: 20px; font-weight: 900; line-height: 1; }
 
-/* 5x5 MATRIX CARD */
-.active-card-container { padding: 10px 14px; }
-.card-navigation {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 8px;
+/* 5x5 MATRIX PLAYER CARD */
+.player-card-wrapper {
+    padding: 10px 14px;
 }
 
-.nav-arrow {
-    background: #1b2432;
-    border: 1px solid #2d3a4e;
-    color: var(--orange);
-    padding: 6px 14px;
-    border-radius: 8px;
-    font-size: 14px;
-    cursor: pointer;
-}
-
-.card-title-info { font-weight: bold; font-size: 13px; }
-
-.bingo-matrix-card.orange-border {
+.player-bingo-card {
     background: #121925;
     border: 2px solid var(--orange-border);
-    border-radius: 14px;
-    padding: 10px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    border-radius: 16px;
+    padding: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
 }
 
-.matrix-header {
-    display: grid;
-    grid-template-columns: repeat(5, 1fr);
-    text-align: center;
-    font-weight: 900;
-    color: var(--orange);
-    font-size: 16px;
-    margin-bottom: 6px;
-}
-
-.matrix-grid {
+.bingo-matrix-grid {
     display: grid;
     grid-template-columns: repeat(5, 1fr);
     gap: 6px;
 }
 
-.matrix-cell {
+.bingo-cell {
     aspect-ratio: 1;
     background: #1b2432;
     border-radius: 8px;
@@ -613,15 +597,30 @@ button {
     font-weight: bold;
     color: #fff;
     border: 1px solid #2d3a4e;
+    cursor: pointer;
+    transition: background 0.2s ease, transform 0.1s ease;
+    user-select: none;
 }
 
-.matrix-cell.free-space { background: #2a3649; color: var(--gold); font-size: 18px; }
+.bingo-cell:active { transform: scale(0.92); }
 
-.matrix-cell.marked {
+.bingo-cell.free-space {
+    background: #2a3649;
+    color: var(--gold);
+    font-size: 16px;
+}
+
+.bingo-cell.marked, .bingo-cell.marked-auto {
     background: var(--orange) !important;
-    color: #fff !important;
+    color: #ffffff !important;
     border-color: var(--orange-border) !important;
-    box-shadow: 0 0 8px var(--orange-glow);
+    box-shadow: 0 0 10px var(--orange-glow);
+    animation: cellPop 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes cellPop {
+    0% { transform: scale(0.7); }
+    100% { transform: scale(1); }
 }
 
 .live-action-footer { padding: 10px 14px; }
@@ -640,94 +639,201 @@ button {
     box-shadow: 0 4px 20px var(--orange-glow);
 }
 
+.orange-bingo-btn:active { transform: scale(0.98); }
+
 /* =========================================================
-   3. WINNER MODAL STYLES (ORANGE ACCENTS)
+   3. WINNER MODAL & GENERAL MODALS
 ========================================================= */
 
-.winner-modal .modal-card.orange-border {
-    border: 2px solid var(--orange-border);
-    box-shadow: 0 0 25px var(--orange-glow);
-    text-align: center;
-}
-
-.winner-header h2 {
-    color: var(--orange);
-    font-size: 22px;
-    margin-bottom: 4px;
-}
-
-.winner-subtitle {
-    font-size: 12px;
-    color: var(--text);
-    margin-bottom: 12px;
-}
-
-.winner-details-box {
-    background: #0f172a;
-    padding: 10px;
-    border-radius: 10px;
-    margin-bottom: 12px;
-}
-
-.detail-row {
-    display: flex;
-    justify-content: space-between;
-    font-size: 12px;
-    margin-bottom: 4px;
-}
-
-.detail-row strong {
-    color: var(--orange);
-}
-
-/* WINNING ROW GRID (HIGHLIGHT IN ORANGE) */
-.winner-grid-preview {
-    display: grid;
-    grid-template-columns: repeat(5, 1fr);
-    gap: 4px;
-    margin: 12px 0;
-    padding: 8px;
-    background: #0d1119;
-    border-radius: 10px;
-}
-
-.winner-cell {
-    aspect-ratio: 1;
-    background: #1b2432;
-    border-radius: 6px;
+.modal[hidden] { display: none !important; }
+.modal {
+    position: fixed;
+    inset: 0;
+    z-index: 2000;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 11px;
-    font-weight: bold;
-    color: #8d99aa;
+    padding: 20px;
 }
 
-/* FIX 3: Change Yellow to Orange */
-.winner-cell.winning-highlight {
-    background: var(--orange) !important;
-    color: #ffffff !important;
-    box-shadow: 0 0 10px var(--orange-glow);
+.modal-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(4px);
 }
 
-.prize-badge-box {
-    background: linear-gradient(135deg, #10b981, #059669);
+.modal-box {
+    position: relative;
+    z-index: 2001;
+    width: 100%;
+    max-width: 340px;
+    padding: 25px 20px;
+    text-align: center;
+    border-radius: 20px;
+    background: #1b2432;
+    border: 1px solid #354156;
+    box-shadow: 0 20px 50px rgba(0,0,0,.5);
+}
+
+.modal-close {
+    position: absolute;
+    right: 12px;
+    top: 9px;
+    border: none;
+    background: transparent;
+    color: #8995a7;
+    font-size: 28px;
+    cursor: pointer;
+}
+
+.modal-icon { font-size: 48px; }
+.modal-box h2 { margin-top: 10px; font-size: 18px; }
+.modal-box p { margin-top: 8px; color: var(--muted); font-size: 12px; line-height: 1.5; }
+.modal-button { width: 100%; margin-top: 12px; }
+
+/* CUSTOM POPUP MODALS (DEPOSIT / WITHDRAW) */
+.custom-modal[hidden] { display: none !important; }
+.custom-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 2000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.modal-card {
+    position: relative;
+    background: #172033;
+    border: 1.5px solid #eab308;
+    border-radius: 16px;
+    width: 90%;
+    max-width: 420px;
+    max-height: 85vh;
+    overflow-y: auto;
+    padding: 18px;
+    z-index: 2001;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+}
+
+.modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+.close-modal-btn { background: none; border: none; color: #ef4444; font-size: 20px; font-weight: bold; cursor: pointer; }
+
+.instruction-box {
+    background: #0f172a;
+    border-left: 3px solid #eab308;
     padding: 10px;
-    border-radius: 10px;
-    font-size: 18px;
-    font-weight: 900;
-    color: #fff;
+    font-size: 12px;
+    color: #cbd5e1;
     margin-bottom: 12px;
+    border-radius: 4px;
 }
 
-.submit-btn.orange-btn {
-    background: linear-gradient(135deg, #ff7b00, #ff4500);
-    box-shadow: 0 4px 15px var(--orange-glow);
+.bank-accounts-list {
+    background: #0f172a;
+    padding: 12px;
+    border-radius: 10px;
+    border-left: 4px solid #10b981;
+    margin-bottom: 14px;
 }
 
-/* =========================
-   BOTTOM NAV & MODALS
-========================= */
+.account-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 8px;
+    margin-bottom: 6px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.account-item:hover { background: #1e293b; }
+.account-item span { font-size: 13px; color: #cbd5e1; }
+
+.acc-num {
+    background: #090d16;
+    color: #22c55e !important;
+    font-weight: bold;
+    padding: 4px 8px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: monospace;
+    font-size: 13px !important;
+}
+
+.copy-icon { font-size: 12px; opacity: 0.8; }
+.form-group { margin-bottom: 12px; }
+.form-group label { display: block; font-size: 12px; color: #eab308; margin-bottom: 6px; }
+
+.form-control {
+    width: 100%;
+    background: #0f172a;
+    border: 1px solid #334155;
+    color: #fff;
+    padding: 10px;
+    border-radius: 8px;
+    font-size: 13px;
+}
+
+.form-control:focus { border-color: #2563eb; outline: none; }
+
+.submit-btn {
+    width: 100%;
+    padding: 12px;
+    border: none;
+    border-radius: 8px;
+    font-weight: bold;
+    color: #fff;
+    margin-top: 8px;
+    cursor: pointer;
+}
+
+.btn-green { background: #10b981; }
+.btn-red { background: #f43f5e; }
+
+/* =========================================================
+   PROFILE DASHBOARD UI
+========================================================= */
+.page-view[hidden] { display: none !important; }
+
+.profile-dashboard { padding: 16px; }
+.user-profile-header {
+    display: flex; align-items: center; gap: 12px;
+    background: #172033; padding: 14px; border-radius: 12px; margin-bottom: 12px;
+}
+
+.profile-avatar { font-size: 24px; background: #2563eb; padding: 10px; border-radius: 10px; }
+.wallet-summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+.wallet-card { background: #172033; padding: 14px; border-radius: 10px; }
+.wallet-title { font-size: 12px; color: #94a3b8; margin-bottom: 6px; }
+.wallet-amount { font-weight: bold; font-size: 16px; }
+
+.action-buttons-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+.action-btn { padding: 12px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
+.btn-withdraw { background: #334155; color: #fff; }
+.btn-deposit { background: #2563eb; color: #fff; }
+
+.dashboard-banner {
+    background: linear-gradient(135deg, #1d4ed8, #3b82f6);
+    padding: 16px; border-radius: 12px;
+    display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;
+}
+
+.cashback-badge { background: #f59e0b; color: #000; font-weight: bold; padding: 6px 10px; border-radius: 6px; font-size: 12px; }
+
+.dashboard-menu-grid { display: flex; flex-direction: column; gap: 8px; }
+.menu-tile {
+    background: #172033; border: none; color: #fff;
+    padding: 14px; border-radius: 8px; text-align: left; font-weight: 500;
+}
+
+/* =========================================================
+   BOTTOM NAV
+========================================================= */
 .bottom-nav {
     position: fixed;
     z-index: 100;
@@ -758,149 +864,10 @@ button {
 .nav-item small { font-size: 9px; font-weight: 700; }
 .nav-item.active { color: var(--blue); }
 
-.modal[hidden] { display: none; }
-.modal {
-    position: fixed; inset: 0; z-index: 500;
-    display: flex; align-items: center; justify-content: center; padding: 20px;
-}
-.modal-overlay { position: absolute; inset: 0; background: rgba(0,0,0,.72); }
-.modal-box {
-    position: relative; z-index: 2;
-    width: 100%; max-width: 340px; padding: 25px 20px;
-    text-align: center; border-radius: 20px;
-    background: #1b2432; border: 1px solid #354156;
-    box-shadow: 0 20px 50px rgba(0,0,0,.45);
-}
-.modal-close {
-    position: absolute; right: 12px; top: 9px;
-    border: none; background: transparent; color: #8995a7;
-    font-size: 28px; cursor: pointer;
-}
-.modal-icon { font-size: 48px; }
-.modal-box h2 { margin-top: 10px; font-size: 18px; }
-.modal-box p { margin-top: 8px; color: var(--muted); font-size: 12px; line-height: 1.5; }
-.modal-button { width: 100%; }
-
 @media (max-width: 360px) {
     .brand-name { font-size: 14px; }
     .balance-box { font-size: 10px; padding: 8px; }
     .hero h1, .hero h1 strong { font-size: 21px; }
     .game-image { height: 125px; }
     .game-icon { font-size: 55px; }
-}
-
-.page-view[hidden] { display: none !important; }
-
-/* PROFILE DASHBOARD UI */
-.profile-dashboard { padding: 16px; }
-.user-profile-header {
-    display: flex; align-items: center; gap: 12px;
-    background: #172033; padding: 14px; border-radius: 12px; margin-bottom: 12px;
-}
-.profile-avatar { font-size: 24px; background: #2563eb; padding: 10px; border-radius: 10px; }
-.wallet-summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
-.wallet-card { background: #172033; padding: 14px; border-radius: 10px; }
-.wallet-title { font-size: 12px; color: #94a3b8; margin-bottom: 6px; }
-.wallet-amount { font-weight: bold; font-size: 16px; }
-
-.action-buttons-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
-.action-btn { padding: 12px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
-.btn-withdraw { background: #334155; color: #fff; }
-.btn-deposit { background: #2563eb; color: #fff; }
-
-.dashboard-banner {
-    background: linear-gradient(135deg, #1d4ed8, #3b82f6);
-    padding: 16px; border-radius: 12px;
-    display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;
-}
-.cashback-badge { background: #f59e0b; color: #000; font-weight: bold; padding: 6px 10px; border-radius: 6px; font-size: 12px; }
-
-.dashboard-menu-grid { display: flex; flex-direction: column; gap: 8px; }
-.menu-tile {
-    background: #172033; border: none; color: #fff;
-    padding: 14px; border-radius: 8px; text-align: left; font-weight: 500;
-}
-
-/* CUSTOM POPUP MODALS */
-.custom-modal {
-    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    z-index: 1000; display: flex; justify-content: center; align-items: center;
-}
-.custom-modal[hidden] { display: none !important; }
-.modal-overlay { position: absolute; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.75); }
-.modal-card {
-    position: relative; background: #172033; border: 1.5px solid #eab308;
-    border-radius: 16px; width: 90%; max-width: 420px; max-height: 85vh;
-    overflow-y: auto; padding: 18px; z-index: 1001;
-}
-.modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-.close-modal-btn { background: none; border: none; color: #ef4444; font-size: 18px; font-weight: bold; cursor: pointer; }
-
-.instruction-box {
-    background: #0f172a; border-left: 3px solid #eab308;
-    padding: 10px; font-size: 12px; color: #cbd5e1; margin-bottom: 12px; border-radius: 4px;
-}
-
-.bank-accounts-list {
-    background: #0f172a; padding: 12px; border-radius: 10px;
-    border-left: 4px solid #10b981; margin-bottom: 14px;
-}
-
-.account-item {
-    display: flex; justify-content: space-between; align-items: center;
-    padding: 6px 8px; margin-bottom: 6px; border-radius: 6px; cursor: pointer; transition: background 0.2s ease;
-}
-.account-item:hover { background: #1e293b; }
-.account-item span { font-size: 13px; color: #cbd5e1; }
-
-.acc-num {
-    background: #090d16; color: #22c55e !important; font-weight: bold;
-    padding: 4px 8px; border-radius: 6px; display: flex; align-items: center;
-    gap: 6px; font-family: monospace; font-size: 14px !important;
-}
-
-.copy-icon { font-size: 12px; opacity: 0.8; }
-.form-group { margin-bottom: 12px; }
-.form-group label { display: block; font-size: 12px; color: #eab308; margin-bottom: 6px; }
-.form-control {
-    width: 100%; background: #0f172a; border: 1px solid #334155;
-    color: #fff; padding: 10px; border-radius: 8px; font-size: 13px;
-}
-.form-control:focus { border-color: #2563eb; outline: none; }
-
-.submit-btn {
-    width: 100%; padding: 12px; border: none; border-radius: 8px;
-    font-weight: bold; color: #fff; margin-top: 8px; cursor: pointer;
-}
-.btn-green { background: #10b981; }
-.btn-red { background: #f43f5e; }
-
-/* Dynamic 5x5 Bingo Cells */
-.bingo-cell {
-    transition: background 0.2s ease, transform 0.1s ease;
-    user-select: none;
-}
-
-.bingo-cell:active {
-    transform: scale(0.92);
-}
-
-.bingo-cell.marked-auto {
-    animation: cellPop 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    box-shadow: 0 0 8px rgba(255, 255, 255, 0.4);
-}
-
-@keyframes cellPop {
-    0% { transform: scale(0.7); }
-    100% { transform: scale(1); }
-}
-
-#winnerModal {
-    backdrop-filter: blur(8px);
-    animation: fadeIn 0.3s ease-in-out;
-}
-
-@keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
 }
