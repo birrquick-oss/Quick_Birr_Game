@@ -1,225 +1,272 @@
 /* =========================================================
-QUICK_BIRR GAMES - PART 3 / 3 (PART A)
-========================================================= */
+   QUICK_BIRR GAMES - MAIN APPLICATION SCRIPT (PART 1)
+   ========================================================= */
 
-// 1. Auto-mark process for all purchased cards
+// --- GLOBAL STATE VARIABLES ---
+let userData = {
+    telegram_id: "12345678",
+    first_name: "Guest",
+    last_name: "",
+    username: "@guest",
+    balance: "0.00",
+    db_user_id: null
+};
+
+let selectedBingoCards = [];
+let temporarilySelectedCards = [];
+let currentCardIndex = 0;
+let markedCellsMap = {};
+let recentBallsList = [];
+let isAutoMark = true;
+let soundEnabled = true;
+let bingoSocket = null;
+let currentGameId = null;
+let winnerAutoCloseTimer = null;
+
+// --- DOM ELEMENTS ---
+const homeView = document.getElementById("homeView");
+const profileView = document.getElementById("profileView");
+const bingoSelectionView = document.getElementById("bingoSelectionView");
+const bingoGameView = document.getElementById("bingoGameView");
+
+const profileNameEl = document.getElementById("profileName");
+const profilePhoneEl = document.getElementById("profilePhone");
+const balanceEl = document.getElementById("balance");
+const dashBalanceEl = document.getElementById("dashBalance");
+
+// --- UTILITY FUNCTIONS ---
+function getBingoColor(letter) {
+    switch (letter) {
+        case 'B': return '#ff4757';
+        case 'I': return '#2ed573';
+        case 'N': return '#ffa502';
+        case 'G': return '#1e90ff';
+        case 'O': return '#9b59b6';
+        default: return '#2f3542';
+    }
+}
+
+function toggleSound() {
+    soundEnabled = !soundEnabled;
+    const soundText = document.getElementById("soundStatusText");
+    if (soundText) soundText.textContent = soundEnabled ? "ON" : "OFF";
+}
+
+function playWinSound() {
+    try {
+        const audio = new Audio('/static/sounds/win.mp3');
+        audio.play().catch(e => console.log("Sound play error:", e));
+    } catch(e){}
+}
+
+/* =========================================================
+   BINGO CARD SELECTION & GAME BOARD RENDER
+   ========================================================= */
+
 function autoMarkAllBoughtCards() {
-  if (!Array.isArray(selectedBingoCards) || selectedBingoCards.length === 0) return;
-  if (!Array.isArray(recentBallsList)) return;
+    if (!Array.isArray(selectedBingoCards) || selectedBingoCards.length === 0) return;
+    if (!Array.isArray(recentBallsList)) return;
 
-  const drawnNumbers = recentBallsList.map(b => b.num);
-
-  selectedBingoCards.forEach(cardNum => {
-    if (!markedCellsMap[cardNum]) {
-      markedCellsMap[cardNum] = new Set();
-    }
-    drawnNumbers.forEach(num => markedCellsMap[cardNum].add(num));
-  });
-}
-
-// 2. Render active bought card UI
-async function renderMyBoughtCards() {
-  const container = document.getElementById("playerBingoCard");
-  if (!container) return;
-
-  container.innerHTML = "";
-
-  // Check if player has purchased cards
-  if (!Array.isArray(selectedBingoCards) || selectedBingoCards.length === 0) {
-    container.innerHTML = `
-      <div style="color:white; text-align:center; padding:20px;">
-        በዚህ ዙር ምንም ካርቴላ አልገዙም!
-      </div>`;
-    return;
-  }
-
-  // Bound index safety
-  if (currentCardIndex < 0) currentCardIndex = 0;
-  if (currentCardIndex >= selectedBingoCards.length) currentCardIndex = selectedBingoCards.length - 1;
-
-  const activeCardNum = selectedBingoCards[currentCardIndex];
-  if (!markedCellsMap[activeCardNum]) {
-    markedCellsMap[activeCardNum] = new Set();
-  }
-
-  // Auto-mark logic for current card if mode is active
-  if (typeof isAutoMark !== "undefined" && isAutoMark && Array.isArray(recentBallsList)) {
-    recentBallsList.forEach(b => markedCellsMap[activeCardNum].add(b.num));
-  }
-
-  try {
-    const res = await fetch(`/api/cards/get_matrix?card_number=${activeCardNum}`);
-    if (!res.ok) throw new Error(`HTTP error! Status: ${res.status}`);
-
-    const data = await res.json();
-    const matrix = data.matrix;
-
-    if (!matrix || !Array.isArray(matrix)) {
-      throw new Error("Invalid card matrix data received");
-    }
-
-    const mainSliderLayout = document.createElement("div");
-    mainSliderLayout.className = "main-slider-layout";
-    mainSliderLayout.style.cssText = "display: flex; align-items: center; justify-content: space-between; width: 100%; gap: 10px;";
-
-    let html = `
-      <button class="side-nav-btn" onclick="moveSlider(-1)" style="background:#1e272e; color:#00ffcc; border:1px solid #00ffcc; padding:10px; border-radius:8px; font-weight:bold; cursor:pointer;">◀</button>
-      
-      <div class="card-display-center" style="flex-grow:1;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-          <div class="card-title-label" style="color: #ffd700; font-weight: bold; font-size: 14px;">
-            ካርድ #${activeCardNum} (${currentCardIndex + 1}/${selectedBingoCards.length})
-          </div>
-          <button id="toggleMarkBtn" onclick="toggleMarkingMode()" style="background: ${isAutoMark ? '#2ed573' : '#718093'}; color: white; border: none; padding: 4px 8px; font-size: 11px; font-weight: bold; border-radius: 4px; cursor:pointer;">
-            ${isAutoMark ? "🤖 Auto: ON" : "🖐 Manual"}
-          </button>
-        </div>
-        
-        <div class="bingo-header-letters" style="display:grid; grid-template-columns: repeat(5, 1fr); gap: 4px; text-align:center; font-weight:bold; margin-bottom: 5px;">
-          <span style="background:${getBingoColor('B')}; border-radius:4px; color:#fff;">B</span>
-          <span style="background:${getBingoColor('I')}; border-radius:4px; color:#fff;">I</span>
-          <span style="background:${getBingoColor('N')}; border-radius:4px; color:#fff;">N</span>
-          <span style="background:${getBingoColor('G')}; border-radius:4px; color:#fff;">G</span>
-          <span style="background:${getBingoColor('O')}; border-radius:4px; color:#fff;">O</span>
-        </div>
-        
-        <div class="bingo-card-grid-5x5" style="display:grid; grid-template-columns: repeat(5, 1fr); gap:6px;">
-    `;
-
-    matrix.forEach(row => {
-      row.forEach(cell => {
-        if (cell === "FREE" || cell === 0) {
-          html += `
-            <div class="bingo-cell free-star" style="background:#ffbc00; color:#000; display:flex; justify-content:center; align-items:center; aspect-ratio:1; border-radius:6px; font-weight:bold;">★</div>`;
-        } else {
-          const isMarkedInState = markedCellsMap[activeCardNum].has(cell);
-          const isAlreadyDrawn = Array.isArray(recentBallsList) && recentBallsList.some(b => b.num === cell);
-
-          if (isMarkedInState || (isAlreadyDrawn && isAutoMark)) {
-            const letterPrefix = cell <= 15 ? 'B' : cell <= 30 ? 'I' : cell <= 45 ? 'N' : cell <= 60 ? 'G' : 'O';
-            const savedColor = getBingoColor(letterPrefix);
-            markedCellsMap[activeCardNum].add(cell);
-
-            html += `
-              <div class="bingo-cell cell-${cell} marked-auto" style="background:${savedColor} !important; color:#fff; display:flex; justify-content:center; align-items:center; aspect-ratio:1; border-radius:6px; font-weight:bold; cursor:pointer;" onclick="handleManualCellClick(this, ${cell}, ${activeCardNum})">
-                ${cell}
-              </div>`;
-          } else {
-            html += `
-              <div class="bingo-cell cell-${cell}" style="background:#252634; color:#fff; display:flex; justify-content:center; align-items:center; aspect-ratio:1; border-radius:6px; font-weight:bold; cursor:pointer;" onclick="handleManualCellClick(this, ${cell}, ${activeCardNum})">
-                ${cell}
-              </div>`;
-          }
-        }
-      });
+    const drawnNumbers = recentBallsList.map(b => b.num);
+    selectedBingoCards.forEach(cardNum => {
+        if (!markedCellsMap[cardNum]) markedCellsMap[cardNum] = new Set();
+        drawnNumbers.forEach(num => markedCellsMap[cardNum].add(num));
     });
-
-    html += `
-        </div>
-      </div>
-      
-      <button class="side-nav-btn" onclick="moveSlider(1)" style="background:#1e272e; color:#00ffcc; border:1px solid #00ffcc; padding:10px; border-radius:8px; font-weight:bold; cursor:pointer;">▶</button>
-    `;
-
-    mainSliderLayout.innerHTML = html;
-    container.appendChild(mainSliderLayout);
-
-  } catch (e) {
-    console.error("Matrix load error:", e);
-    container.innerHTML = `
-      <div style="color:#ff4757; text-align:center; padding:20px; font-weight:bold;">
-        ⚠️ ካርቴላውን መጫን አልተቻለም! እባክዎ ገጹን ያድሱ።
-      </div>`;
-  }
 }
 
-// 3. Carousel navigation controls
+function render1000BingoCards() {
+    const cardsGrid = document.getElementById("cardsGrid");
+    if (!cardsGrid) return;
+    cardsGrid.innerHTML = "";
+
+    for (let i = 1; i <= 1000; i++) {
+        const btn = document.createElement("button");
+        btn.className = "card-select-btn";
+        btn.style.cssText = "padding:10px; margin:2px; border-radius:6px; border:1px solid #333; background:#1e1e2e; color:#fff; cursor:pointer;";
+        btn.textContent = `#${i}`;
+        
+        if (temporarilySelectedCards.includes(i)) {
+            btn.style.background = "#2ed573";
+            btn.style.color = "#000";
+        }
+
+        btn.onclick = () => {
+            if (temporarilySelectedCards.includes(i)) {
+                temporarilySelectedCards = temporarilySelectedCards.filter(c => c !== i);
+                btn.style.background = "#1e1e2e";
+                btn.style.color = "#fff";
+            } else {
+                temporarilySelectedCards.push(i);
+                btn.style.background = "#2ed573";
+                btn.style.color = "#000";
+            }
+            const countEl = document.getElementById("mySelectedCount");
+            if (countEl) countEl.textContent = temporarilySelectedCards.length;
+        };
+        cardsGrid.appendChild(btn);
+    }
+}
+
+document.getElementById("confirmCardsBtn")?.addEventListener("click", () => {
+    if (temporarilySelectedCards.length === 0) {
+        showToastMessage("እባክዎን ቢያንስ አንድ ካርቴላ ይምረጡ!", "error");
+        return;
+    }
+    selectedBingoCards = [...temporarilySelectedCards];
+    showPage("bingoLive");
+    renderMyBoughtCards();
+});
+
+async function renderMyBoughtCards() {
+    const container = document.getElementById("playerBingoCard");
+    if (!container) return;
+    container.innerHTML = "";
+
+    if (!Array.isArray(selectedBingoCards) || selectedBingoCards.length === 0) {
+        container.innerHTML = `<div style="color:white; text-align:center; padding:20px;">በዚህ ዙር ምንም ካርቴላ አልገዙም!</div>`;
+        return;
+    }
+
+    if (currentCardIndex < 0) currentCardIndex = 0;
+    if (currentCardIndex >= selectedBingoCards.length) currentCardIndex = selectedBingoCards.length - 1;
+
+    const activeCardNum = selectedBingoCards[currentCardIndex];
+    if (!markedCellsMap[activeCardNum]) markedCellsMap[activeCardNum] = new Set();
+
+    if (isAutoMark && Array.isArray(recentBallsList)) {
+        recentBallsList.forEach(b => markedCellsMap[activeCardNum].add(b.num));
+    }
+
+    try {
+        const res = await fetch(`/api/cards/get_matrix?card_number=${activeCardNum}`);
+        if (!res.ok) throw new Error(`HTTP error! Status: ${res.status}`);
+
+        const data = await res.json();
+        const matrix = data.matrix;
+
+        const mainSliderLayout = document.createElement("div");
+        mainSliderLayout.className = "main-slider-layout";
+        mainSliderLayout.style.cssText = "display: flex; align-items: center; justify-content: space-between; width: 100%; gap: 10px;";
+
+        let html = `
+          <button class="side-nav-btn" onclick="moveSlider(-1)" style="background:#1e272e; color:#00ffcc; border:1px solid #00ffcc; padding:10px; border-radius:8px; font-weight:bold; cursor:pointer;">◀</button>
+          
+          <div class="card-display-center" style="flex-grow:1;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+              <div class="card-title-label" style="color: #ffd700; font-weight: bold; font-size: 14px;">
+                ካርድ #${activeCardNum} (${currentCardIndex + 1}/${selectedBingoCards.length})
+              </div>
+              <button id="toggleMarkBtn" onclick="toggleMarkingMode()" style="background: ${isAutoMark ? '#2ed573' : '#718093'}; color: white; border: none; padding: 4px 8px; font-size: 11px; font-weight: bold; border-radius: 4px; cursor:pointer;">
+                ${isAutoMark ? "🤖 Auto: ON" : "🖐 Manual"}
+              </button>
+            </div>
+            
+            <div class="bingo-header-letters" style="display:grid; grid-template-columns: repeat(5, 1fr); gap: 4px; text-align:center; font-weight:bold; margin-bottom: 5px;">
+              <span style="background:${getBingoColor('B')}; border-radius:4px; color:#fff;">B</span>
+              <span style="background:${getBingoColor('I')}; border-radius:4px; color:#fff;">I</span>
+              <span style="background:${getBingoColor('N')}; border-radius:4px; color:#fff;">N</span>
+              <span style="background:${getBingoColor('G')}; border-radius:4px; color:#fff;">G</span>
+              <span style="background:${getBingoColor('O')}; border-radius:4px; color:#fff;">O</span>
+            </div>
+            
+            <div class="bingo-card-grid-5x5" style="display:grid; grid-template-columns: repeat(5, 1fr); gap:6px;">
+        `;
+
+        matrix.forEach(row => {
+            row.forEach(cell => {
+                if (cell === "FREE" || cell === 0) {
+                    html += `<div class="bingo-cell free-star" style="background:#ffbc00; color:#000; display:flex; justify-content:center; align-items:center; aspect-ratio:1; border-radius:6px; font-weight:bold;">★</div>`;
+                } else {
+                    const isMarkedInState = markedCellsMap[activeCardNum].has(cell);
+                    const isAlreadyDrawn = Array.isArray(recentBallsList) && recentBallsList.some(b => b.num === cell);
+
+                    if (isMarkedInState || (isAlreadyDrawn && isAutoMark)) {
+                        const letterPrefix = cell <= 15 ? 'B' : cell <= 30 ? 'I' : cell <= 45 ? 'N' : cell <= 60 ? 'G' : 'O';
+                        const savedColor = getBingoColor(letterPrefix);
+                        markedCellsMap[activeCardNum].add(cell);
+
+                        html += `<div class="bingo-cell cell-${cell} marked-auto" style="background:${savedColor} !important; color:#fff; display:flex; justify-content:center; align-items:center; aspect-ratio:1; border-radius:6px; font-weight:bold; cursor:pointer;" onclick="handleManualCellClick(this, ${cell}, ${activeCardNum})">${cell}</div>`;
+                    } else {
+                        html += `<div class="bingo-cell cell-${cell}" style="background:#252634; color:#fff; display:flex; justify-content:center; align-items:center; aspect-ratio:1; border-radius:6px; font-weight:bold; cursor:pointer;" onclick="handleManualCellClick(this, ${cell}, ${activeCardNum})">${cell}</div>`;
+                    }
+                }
+            });
+        });
+
+        html += `
+            </div>
+          </div>
+          <button class="side-nav-btn" onclick="moveSlider(1)" style="background:#1e272e; color:#00ffcc; border:1px solid #00ffcc; padding:10px; border-radius:8px; font-weight:bold; cursor:pointer;">▶</button>
+        `;
+
+        mainSliderLayout.innerHTML = html;
+        container.appendChild(mainSliderLayout);
+
+    } catch (e) {
+        console.error("Matrix load error:", e);
+        container.innerHTML = `<div style="color:#ff4757; text-align:center; padding:20px; font-weight:bold;">⚠️ ካርቴላውን መጫን አልተቻለም!</div>`;
+    }
+}
+
 function moveSlider(direction) {
-  if (!Array.isArray(selectedBingoCards) || selectedBingoCards.length <= 1) return;
-
-  currentCardIndex += direction;
-  if (currentCardIndex < 0) {
-    currentCardIndex = selectedBingoCards.length - 1;
-  } else if (currentCardIndex >= selectedBingoCards.length) {
-    currentCardIndex = 0;
-  }
-
-  renderMyBoughtCards();
+    if (!Array.isArray(selectedBingoCards) || selectedBingoCards.length <= 1) return;
+    currentCardIndex += direction;
+    if (currentCardIndex < 0) currentCardIndex = selectedBingoCards.length - 1;
+    else if (currentCardIndex >= selectedBingoCards.length) currentCardIndex = 0;
+    renderMyBoughtCards();
 }
 
-// 4. Toggle marking mode (Auto vs Manual)
 function toggleMarkingMode() {
-  isAutoMark = !isAutoMark;
-  if (isAutoMark) {
-    autoMarkAllBoughtCards();
-  }
-  renderMyBoughtCards();
+    isAutoMark = !isAutoMark;
+    if (isAutoMark) autoMarkAllBoughtCards();
+    renderMyBoughtCards();
 }
 
-// 5. Handle manual cell click by player
 function handleManualCellClick(cellElement, cellNumber, activeCardNum) {
-  if (!activeCardNum && Array.isArray(selectedBingoCards)) {
-    activeCardNum = selectedBingoCards[currentCardIndex];
-  }
+    if (!activeCardNum && Array.isArray(selectedBingoCards)) activeCardNum = selectedBingoCards[currentCardIndex];
+    if (!markedCellsMap[activeCardNum]) markedCellsMap[activeCardNum] = new Set();
 
-  if (!markedCellsMap[activeCardNum]) {
-    markedCellsMap[activeCardNum] = new Set();
-  }
+    const isBallDrawn = Array.isArray(recentBallsList) && recentBallsList.some(b => b.num === cellNumber);
 
-  const isBallDrawn = Array.isArray(recentBallsList) && recentBallsList.some(b => b.num === cellNumber);
-
-  if (isBallDrawn) {
-    markedCellsMap[activeCardNum].add(cellNumber);
-    const letterPrefix = cellNumber <= 15 ? 'B' : cellNumber <= 30 ? 'I' : cellNumber <= 45 ? 'N' : cellNumber <= 60 ? 'G' : 'O';
-    const ballColor = getBingoColor(letterPrefix);
-    
-    cellElement.style.background = ballColor;
-    cellElement.style.color = "#fff";
-  } else {
-    // Flash red animation if cell was not drawn
-    const originalBg = cellElement.style.background;
-    cellElement.style.background = "#ff4757";
-    setTimeout(() => {
-      cellElement.style.background = originalBg || "#252634";
-    }, 250);
-  }
+    if (isBallDrawn) {
+        markedCellsMap[activeCardNum].add(cellNumber);
+        const letterPrefix = cellNumber <= 15 ? 'B' : cellNumber <= 30 ? 'I' : cellNumber <= 45 ? 'N' : cellNumber <= 60 ? 'G' : 'O';
+        cellElement.style.background = getBingoColor(letterPrefix);
+        cellElement.style.color = "#fff";
+    } else {
+        const originalBg = cellElement.style.background;
+        cellElement.style.background = "#ff4757";
+        setTimeout(() => { cellElement.style.background = originalBg || "#252634"; }, 250);
+    }
 }
 
-// 6. Claim Bingo button action handler
 document.getElementById("claimBingoBtn")?.addEventListener("click", () => {
-  if (typeof bingoSocket === "undefined" || !bingoSocket || bingoSocket.readyState !== WebSocket.OPEN) {
-    showToastMessage("⚠️ WebSocket አልተገናኘም!", "error");
-    return;
-  }
+    if (typeof bingoSocket === "undefined" || !bingoSocket || bingoSocket.readyState !== WebSocket.OPEN) {
+        showToastMessage("⚠️ WebSocket አልተገናኘም!", "error");
+        return;
+    }
+    if (!Array.isArray(selectedBingoCards) || selectedBingoCards.length === 0) {
+        showToastMessage("⚠️ ምንም የተገዛ ካርቴላ የለም!", "error");
+        return;
+    }
 
-  if (!Array.isArray(selectedBingoCards) || selectedBingoCards.length === 0) {
-    showToastMessage("⚠️ ምንም የተገዛ ካርቴላ የለም!", "error");
-    return;
-  }
+    const currentCard = selectedBingoCards[currentCardIndex];
+    bingoSocket.send(JSON.stringify({
+        type: "claim_bingo",
+        telegram_id: String(userData.telegram_id),
+        card_number: currentCard,
+        game_id: currentGameId
+    }));
 
-  const currentCard = selectedBingoCards[currentCardIndex];
-  const telegramId = (typeof userData !== "undefined" && userData?.telegram_id) ? String(userData.telegram_id) : "";
-
-  bingoSocket.send(JSON.stringify({
-    type: "claim_bingo",
-    telegram_id: telegramId,
-    card_number: currentCard,
-    game_id: typeof currentGameId !== "undefined" ? currentGameId : null
-  }));
-
-  showToastMessage("🔥 የ BINGO ጥያቄ ተልኳል! በመፈተሽ ላይ...", "success");
+    showToastMessage("🔥 የ BINGO ጥያቄ ተልኳል! በመፈተሽ ላይ...", "success");
 });
 
 /* =========================================================
-   QUICK_BIRR GAMES - PART 3 / 3 (PART B)
+   QUICK_BIRR GAMES - MAIN APPLICATION SCRIPT (PART 2)
    ========================================================= */
 
-let winnerAutoCloseTimer = null;
-
 function handleGameOver(data) {
-    if (typeof soundEnabled !== "undefined" && soundEnabled && typeof playWinSound === "function") {
-        playWinSound();
-    }
+    if (soundEnabled && typeof playWinSound === "function") playWinSound();
 
     const winnersList = data?.winners || [];
     const titleText = winnersList.length > 1 ? `🎉 ${winnersList.length} አሸናፊዎች! 🎉` : "🎉 BINGO! 🎉";
@@ -229,7 +276,6 @@ function handleGameOver(data) {
 
     const renderCardGrid = (cardMatrixNumbers = [], winningNumbers = []) => {
         if (!Array.isArray(cardMatrixNumbers) || cardMatrixNumbers.length !== 25) return "";
-
         let gridHtml = `<div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin: 15px auto; max-width: 250px; background: #111; padding: 10px; border-radius: 10px;">`;
         cardMatrixNumbers.forEach((num) => {
             const isWinningNum = winningNumbers.includes(num);
@@ -301,24 +347,20 @@ function handleGameOver(data) {
                 <h2 style="color:#ffbc00; margin:0 0 5px 0; font-size:24px; font-weight:900;">${titleText}</h2>
                 <p style="font-size:12px; color:#aaa; margin: 0 0 10px 0;">${messageText}</p>
                 <hr style="border-color:#2a2b3d; margin:5px 0 15px 0; width:100%;">
-                
-                <div style="overflow-y: auto; flex-grow: 1; padding-right: 5px; margin-bottom: 15px; scrollbar-width: thin;">
+                <div style="overflow-y: auto; flex-grow: 1; padding-right: 5px; margin-bottom: 15px;">
                     ${allWinnersHtml}
                 </div>
-
-                <button onclick="closeWinnerModalAndReset()" style="background:#ffbc00; color:black; border:none; padding:14px; font-size:16px; font-weight:bold; border-radius:10px; width:100%; cursor:pointer; flex-shrink: 0;">እሺ (ቀጥል)</button>
+                <button onclick="closeWinnerModalAndReset()" style="background:#ffbc00; color:black; border:none; padding:14px; font-size:16px; font-weight:bold; border-radius:10px; width:100%; cursor:pointer;">እሺ (ቀጥል)</button>
             </div>
         </div>
     `;
     document.body.insertAdjacentHTML('beforeend', modalHtml);
 
     if (winnerAutoCloseTimer) clearTimeout(winnerAutoCloseTimer);
-    winnerAutoCloseTimer = setTimeout(() => {
-        closeWinnerModalAndReset();
-    }, 5000);
+    winnerAutoCloseTimer = setTimeout(() => { closeWinnerModalAndReset(); }, 5000);
 
-    if (typeof selectedBingoCards !== "undefined") selectedBingoCards = [];
-    if (typeof temporarilySelectedCards !== "undefined") temporarilySelectedCards = [];
+    selectedBingoCards = [];
+    temporarilySelectedCards = [];
     syncAndFetchUser();
 }
 
@@ -328,13 +370,11 @@ function closeWinnerModalAndReset() {
     if (winnerModalEl) winnerModalEl.remove();
     
     showPage('bingoSelection');
-    if (typeof render1000BingoCards === "function") {
-        render1000BingoCards();
-    }
+    render1000BingoCards();
 }
 
 async function syncAndFetchUser() {
-    if (typeof userData === "undefined" || !userData.telegram_id || userData.telegram_id === "12345678") return;
+    if (!userData.telegram_id || userData.telegram_id === "12345678") return;
 
     try {
         const userRes = await fetch('/api/users', {
@@ -361,9 +401,6 @@ async function syncAndFetchUser() {
 
 function updateBalanceUI(amount) {
     const formatted = `${amount} ETB`;
-    const balanceEl = document.getElementById("balanceEl");
-    const dashBalanceEl = document.getElementById("dashBalanceEl");
-
     if (balanceEl) balanceEl.textContent = formatted;
     if (dashBalanceEl) dashBalanceEl.textContent = formatted;
 }
@@ -371,118 +408,86 @@ function updateBalanceUI(amount) {
 document.getElementById("balanceButton")?.addEventListener("click", syncAndFetchUser);
 
 function setupFormSubmitListeners() {
-    const depositForm = document.getElementById("deposit-form") || document.querySelector("#depositModal form");
+    const depositForm = document.getElementById("deposit-form");
     if (depositForm) {
         depositForm.addEventListener("submit", async (e) => {
             e.preventDefault();
-
             const bankName = document.getElementById("deposit-bank")?.value || "CBE";
             const amount = parseFloat(document.getElementById("deposit-amount")?.value);
             const smsData = document.getElementById("deposit-sms")?.value;
 
             if (!amount || amount < 50 || !smsData) {
-                if (typeof showMessage === "function") showMessage("የተሳሳተ መረጃ", "እባክዎን አነስተኛውን 50 ETB እና የባንክ SMS መረጃውን በትክክል ይሙሉ!", "⚠️");
+                showMessage("የተሳሳተ መረጃ", "እባክዎን አነስተኛውን 50 ETB እና የባንክ SMS መረጃውን በትክክል ይሙሉ!", "⚠️");
                 return;
             }
-
-            const activeTgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
-            const finalTgId = activeTgUser?.id ? String(activeTgUser.id) : String(userData?.telegram_id || "");
-            const finalTgName = activeTgUser?.first_name || userData?.first_name || "ተጫዋች";
-
-            if (!finalTgId || finalTgId === "12345678" || finalTgId === "null" || finalTgId === "undefined") {
-                if (typeof showMessage === "function") showMessage("የቴሌግራም ችግር", "እባክዎን አፕሊኬሽኑን በቴሌግራም ቦት በኩል 'Play Now' በማለት እንደገና ይክፈቱት!", "⚠️");
-                return;
-            }
-
-            const payload = {
-                telegram_id: finalTgId,
-                telegram_name: finalTgName,
-                amount: amount,
-                bank_name: bankName,
-                sms_data: smsData
-            };
 
             try {
                 const res = await fetch("/api/users/deposit", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(payload)
+                    body: JSON.stringify({
+                        telegram_id: String(userData.telegram_id),
+                        telegram_name: userData.first_name,
+                        amount: amount,
+                        bank_name: bankName,
+                        sms_data: smsData
+                    })
                 });
                 const data = await res.json();
-
                 if (data.success) {
-                    if (typeof closeModals === "function") closeModals();
+                    closeModals();
                     depositForm.reset();
-                    if (typeof showMessage === "function") showMessage("ተልኳል!", data.message || "የዲፖዚት ጥያቄዎ ለአድሚን ደርሷል!", "✅");
+                    showMessage("ተልኳል!", data.message || "የዲፖዚት ጥያቄዎ ለአድሚን ደርሷል!", "✅");
                 } else {
-                    if (typeof showMessage === "function") showMessage("ስህተት", data.message || "ጥያቄውን ማስተናገድ አልተቻለም", "❌");
+                    showMessage("ስህተት", data.message || "ጥያቄውን ማስተናገድ አልተቻለም", "❌");
                 }
             } catch (err) {
-                console.error("Deposit Error:", err);
-                if (typeof showMessage === "function") showMessage("ስህተት", "የዲፖዚት ጥያቄ መላክ አልተቻለም!", "❌");
+                showMessage("ስህተት", "የዲፖዚት ጥያቄ መላክ አልተቻለም!", "❌");
             }
         });
     }
 
-    const withdrawForm = document.getElementById("withdraw-form") || document.querySelector("#withdrawModal form");
+    const withdrawForm = document.getElementById("withdraw-form");
     if (withdrawForm) {
         withdrawForm.addEventListener("submit", async (e) => {
             e.preventDefault();
-
             const bankName = document.getElementById("withdraw-bank")?.value || "CBE";
             const accountNumber = document.getElementById("withdraw-account")?.value;
             const amount = parseFloat(document.getElementById("withdraw-amount")?.value);
 
             if (!amount || amount < 100 || !accountNumber) {
-                if (typeof showMessage === "function") showMessage("የተሳሳተ መረጃ", "እባክዎን አነስተኛውን 100 ETB እና የባንክ አካውንት ቁጥር በትክክል ይሙሉ!", "⚠️");
+                showMessage("የተሳሳተ መረጃ", "እባክዎን አነስተኛውን 100 ETB እና የባንክ አካውንት ቁጥር በትክክል ይሙሉ!", "⚠️");
                 return;
             }
-
-            const activeTgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
-            const finalTgId = activeTgUser?.id ? String(activeTgUser.id) : String(userData?.telegram_id || "");
-
-            if (!finalTgId || finalTgId === "12345678" || finalTgId === "null" || finalTgId === "undefined") {
-                if (typeof showMessage === "function") showMessage("የቴሌግራም ችግር", "እባክዎን አፕሊኬሽኑን በቴሌግራም ቦት በኩል እንደገና ይክፈቱት!", "⚠️");
-                return;
-            }
-
-            const payload = {
-                telegram_id: finalTgId,
-                amount: amount,
-                bank_name: bankName,
-                account_number: accountNumber
-            };
 
             try {
                 const res = await fetch("/api/users/withdraw", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(payload)
+                    body: JSON.stringify({
+                        telegram_id: String(userData.telegram_id),
+                        amount: amount,
+                        bank_name: bankName,
+                        account_number: accountNumber
+                    })
                 });
                 const data = await res.json();
-
                 if (data.success) {
-                    if (typeof closeModals === "function") closeModals();
+                    closeModals();
                     withdrawForm.reset();
-                    if (typeof showMessage === "function") showMessage("ተመዝግቧል!", data.message || "የማውጫ ጥያቄዎ ተመዝግቧል!", "✅");
+                    showMessage("ተመዝግቧል!", data.message || "የማውጫ ጥያቄዎ ተመዝግቧል!", "✅");
                     syncAndFetchUser();
                 } else {
-                    if (typeof showMessage === "function") showMessage("ስህተት", data.message || "ጥያቄውን ማስተናገድ አልተቻለም", "❌");
+                    showMessage("ስህተት", data.message || "ጥያቄውን ማስተናገድ አልተቻለም", "❌");
                 }
             } catch (err) {
-                console.error("Withdraw Error:", err);
-                if (typeof showMessage === "function") showMessage("ስህተት", "የማውጫ ጥያቄ መላክ አልተቻለም!", "❌");
+                showMessage("ስህተት", "የማውጫ ጥያቄ መላክ አልተቻለም!", "❌");
             }
         });
     }
 }
 
 function hideAllViews() {
-    const homeView = document.getElementById("homeView");
-    const profileView = document.getElementById("profileView");
-    const bingoSelectionView = document.getElementById("bingoSelectionView");
-    const bingoGameView = document.getElementById("bingoGameView");
-
     if (homeView) homeView.hidden = true;
     if (profileView) profileView.hidden = true;
     if (bingoSelectionView) bingoSelectionView.hidden = true;
@@ -491,19 +496,11 @@ function hideAllViews() {
 
 function showPage(pageName) {
     document.querySelectorAll(".nav-item").forEach(nav => {
-        if (nav.dataset.page === pageName) {
-            nav.classList.add("active");
-        } else {
-            nav.classList.remove("active");
-        }
+        if (nav.dataset.page === pageName) nav.classList.add("active");
+        else nav.classList.remove("active");
     });
 
     hideAllViews();
-
-    const homeView = document.getElementById("homeView");
-    const profileView = document.getElementById("profileView");
-    const bingoSelectionView = document.getElementById("bingoSelectionView");
-    const bingoGameView = document.getElementById("bingoGameView");
 
     if (pageName === "profile") {
         if (profileView) profileView.hidden = false;
@@ -538,8 +535,6 @@ function loadTelegramUser() {
 
     const tgUser = webApp?.initDataUnsafe?.user;
 
-    if (typeof userData === "undefined") window.userData = {};
-
     if (tgUser && tgUser.id) {
         userData.telegram_id = String(tgUser.id);
         userData.first_name = tgUser.first_name || "User";
@@ -548,24 +543,10 @@ function loadTelegramUser() {
 
         const fullName = `${userData.first_name} ${userData.last_name}`.trim();
 
-        const profileNameEl = document.getElementById("profileNameEl");
-        const profilePhoneEl = document.getElementById("profilePhoneEl");
-
         if (profileNameEl) profileNameEl.textContent = fullName;
         if (profilePhoneEl) profilePhoneEl.textContent = userData.username || `ID: ${userData.telegram_id}`;
 
         syncAndFetchUser();
-    } else {
-        console.warn("Telegram WebApp user not found, retrying...");
-        setTimeout(() => {
-            const retryUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
-            if (retryUser && retryUser.id) {
-                userData.telegram_id = String(retryUser.id);
-                userData.first_name = retryUser.first_name || "User";
-                userData.username = retryUser.username ? `@${retryUser.username}` : "";
-                syncAndFetchUser();
-            }
-        }, 500);
     }
 }
 
