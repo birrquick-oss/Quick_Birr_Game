@@ -656,13 +656,11 @@ function handleGameOver(data) {
         `;
 
         winnersList.forEach((winner, index) => {
-            // ከሰርቨሩ የሚመጡትን የተለያየ Key Names መደገፍ የሚያስችል Mapping
             const wName = winner.telegram_name || winner.first_name || winner.username || `User_${winner.winner_id || winner.telegram_id || index + 1}`;
             const phoneNum = winner.phone_number || winner.phone || "ስልክ አልተመዘገበም";
             const cNum = winner.card_number || winner.card_id || "N/A";
             const pAmt = parseFloat(winner.prize || winner.amount || 0).toFixed(2);
             
-            // የካርቴላው 25 ቁጥሮች እና የወጡት አሸናፊ ቁጥሮች
             const cardMatrixNumbers = winner.card_numbers || winner.matrix || winner.numbers || [];
             const winningNumbers = winner.winning_numbers || recentBallsList.map(b => typeof b === 'object' ? b.num : b) || [];
 
