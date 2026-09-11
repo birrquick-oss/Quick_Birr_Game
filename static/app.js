@@ -23,6 +23,7 @@ let currentDerashAmount = "0.00";
 let bingoSocket = null;
 let takenCardsList = [];
 
+let calledNumbersSet = new Set();
 let recentBallsList = []; 
 let soundEnabled = true;
 let isAutoMark = true;
