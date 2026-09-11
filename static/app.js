@@ -276,6 +276,9 @@ function updateTakenCardsUI(takenCards) {
    QUICK_BIRR GAMES - PART 2 / 3
    ========================================================= */
 
+// የካርቴላዎችን Matrix ሰርቨር ላይ በየሰከንዱ ላለመጠየቅ እዚህ እንይዛቸዋለን
+let loadedCardsMatrix = {}; 
+
 /* =========================
    DRAW PHASE & BOARD LOGIC
 ========================= */
@@ -366,17 +369,8 @@ function renderDrawnBall(data) {
         });
     }
 
-    if (isAutoMark && data.number) {
-        const matchingCells = document.querySelectorAll(`.cell-${data.number}`);
-        matchingCells.forEach(cell => {
-            cell.classList.add("marked-auto");
-            cell.style.background = color;
-            cell.style.color = "#fff";
-        });
-    }
-
     autoMarkAllBoughtCards();
-    renderMyBoughtCards();
+    updateBoughtCardsUIOnly(); // API ሳይጠራ UI-ውን ብቻ በፍጥነት ያድሳል
 }
 
 function render1000BingoCards() {
@@ -478,6 +472,9 @@ document.getElementById("confirmCardsBtn")?.addEventListener("click", async () =
                     syncAndFetchUser();
                 }
 
+                // የካርቴላውን Matrix አስቀድመን አንድ ጊዜ እንጭናለን
+                await fetchCardMatrixOnce(cardNumber);
+
                 showToastMessage("🎉 ካርቴላው በተሳካ ሁኔታ ተገዝቷል!", "success");
             }
         } catch (e) {
@@ -486,11 +483,25 @@ document.getElementById("confirmCardsBtn")?.addEventListener("click", async () =
         }
     }
     updateSelectedCardsUI();
+    renderMyBoughtCards(); // ካርቴላዎቹን ወዲያውኑ ይስላል
 });
 
 /* =========================================================
    QUICK_BIRR GAMES - PART 3 / 3 (MATCHED WITH HTML FORMAT)
    ========================================================= */
+
+async function fetchCardMatrixOnce(cardNumber) {
+    if (loadedCardsMatrix[cardNumber]) return loadedCardsMatrix[cardNumber];
+    try {
+        const res = await fetch(`/api/cards/get_matrix?card_number=${cardNumber}`);
+        const data = await res.json();
+        loadedCardsMatrix[cardNumber] = data.matrix;
+        return data.matrix;
+    } catch (e) {
+        console.error("Matrix fetch error:", e);
+        return null;
+    }
+}
 
 function autoMarkAllBoughtCards() {
     if (!selectedBingoCards || selectedBingoCards.length === 0) return;
@@ -515,68 +526,87 @@ async function renderMyBoughtCards() {
 
     for (let index = 0; index < selectedBingoCards.length; index++) {
         const activeCardNum = selectedBingoCards[index];
+        let matrix = loadedCardsMatrix[activeCardNum];
+        
+        if (!matrix) {
+            matrix = await fetchCardMatrixOnce(activeCardNum);
+        }
+
+        if (!matrix) continue;
 
         if (!markedCellsMap[activeCardNum]) markedCellsMap[activeCardNum] = new Set();
         if (isAutoMark) {
             calledNumbersSet.forEach(num => markedCellsMap[activeCardNum].add(num));
         }
 
-        try {
-            const res = await fetch(`/api/cards/get_matrix?card_number=${activeCardNum}`);
-            const data = await res.json();
-            const matrix = data.matrix;
+        const cardBox = document.createElement("div");
+        cardBox.className = "single-card-block";
+        cardBox.id = `card-block-${activeCardNum}`;
+        cardBox.style.cssText = "background:#181c26; border:1px solid #ff9f43; border-radius:12px; padding:10px; margin-bottom:12px;";
 
-            const cardBox = document.createElement("div");
-            cardBox.className = "single-card-block";
-            cardBox.style.cssText = "background:#181c26; border:1px solid #ff9f43; border-radius:12px; padding:10px; margin-bottom:12px;";
-
-            let html = `
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                    <div class="card-title-label" style="color: #ffd700; font-weight: bold; font-size: 14px;">
-                        ካርቴላ #${activeCardNum}
-                    </div>
-                    <button onclick="toggleMarkingMode()" style="background: ${isAutoMark ? '#2ed573' : '#718093'}; color: white; border: none; padding: 4px 8px; font-size: 11px; font-weight: bold; border-radius: 4px; cursor:pointer;">
-                        ${isAutoMark ? "🤖 Auto: ON" : "🖐 Manual"}
-                    </button>
+        let html = `
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <div class="card-title-label" style="color: #ffd700; font-weight: bold; font-size: 14px;">
+                    ካርቴላ #${activeCardNum}
                 </div>
-                <div class="bingo-header-letters" style="display:grid; grid-template-columns: repeat(5, 1fr); gap: 4px; text-align:center; font-weight:bold; margin-bottom: 5px;">
-                    <span style="background:${getBingoColor('B')}; border-radius:4px;">B</span>
-                    <span style="background:${getBingoColor('I')}; border-radius:4px;">I</span>
-                    <span style="background:${getBingoColor('N')}; border-radius:4px;">N</span>
-                    <span style="background:${getBingoColor('G')}; border-radius:4px;">G</span>
-                    <span style="background:${getBingoColor('O')}; border-radius:4px;">O</span>
-                </div>
-                <div class="bingo-card-grid-5x5" style="display:grid; grid-template-columns: repeat(5, 1fr); gap:6px;">
-            `;
+                <button onclick="toggleMarkingMode()" style="background: ${isAutoMark ? '#2ed573' : '#718093'}; color: white; border: none; padding: 4px 8px; font-size: 11px; font-weight: bold; border-radius: 4px; cursor:pointer;">
+                    ${isAutoMark ? "🤖 Auto: ON" : "🖐 Manual"}
+                </button>
+            </div>
+            <div class="bingo-header-letters" style="display:grid; grid-template-columns: repeat(5, 1fr); gap: 4px; text-align:center; font-weight:bold; margin-bottom: 5px;">
+                <span style="background:${getBingoColor('B')}; border-radius:4px;">B</span>
+                <span style="background:${getBingoColor('I')}; border-radius:4px;">I</span>
+                <span style="background:${getBingoColor('N')}; border-radius:4px;">N</span>
+                <span style="background:${getBingoColor('G')}; border-radius:4px;">G</span>
+                <span style="background:${getBingoColor('O')}; border-radius:4px;">O</span>
+            </div>
+            <div class="bingo-card-grid-5x5" style="display:grid; grid-template-columns: repeat(5, 1fr); gap:6px;">
+        `;
 
-            matrix.forEach(row => {
-                row.forEach(cell => {
-                    if (cell === "FREE" || cell === 0) {
-                        html += `<div class="bingo-cell free-star" style="background:#ffbc00; color:#000; display:flex; justify-content:center; align-items:center; aspect-ratio:1; border-radius:6px; font-weight:bold;">★</div>`;
+        matrix.forEach(row => {
+            row.forEach(cell => {
+                if (cell === "FREE" || cell === 0) {
+                    html += `<div class="bingo-cell free-star" style="background:#ffbc00; color:#000; display:flex; justify-content:center; align-items:center; aspect-ratio:1; border-radius:6px; font-weight:bold;">★</div>`;
+                } else {
+                    const isMarkedInState = markedCellsMap[activeCardNum].has(cell);
+                    const isCalled = calledNumbersSet.has(cell);
+
+                    if (isCalled && (isAutoMark || isMarkedInState)) {
+                        let letterPrefix = cell <= 15 ? 'B' : cell <= 30 ? 'I' : cell <= 45 ? 'N' : cell <= 60 ? 'G' : 'O';
+                        const savedColor = getBingoColor(letterPrefix);
+                        markedCellsMap[activeCardNum].add(cell);
+
+                        html += `<div class="bingo-cell cell-${cell} marked-auto" style="background:${savedColor} !important; color:#fff; display:flex; justify-content:center; align-items:center; aspect-ratio:1; border-radius:6px; font-weight:bold; cursor:pointer;" onclick="handleManualCellClick(this, ${cell}, ${activeCardNum})">${cell}</div>`;
                     } else {
-                        const isMarkedInState = markedCellsMap[activeCardNum].has(cell);
-                        const isCalled = calledNumbersSet.has(cell);
-
-                        if (isCalled && (isAutoMark || isMarkedInState)) {
-                            let letterPrefix = cell <= 15 ? 'B' : cell <= 30 ? 'I' : cell <= 45 ? 'N' : cell <= 60 ? 'G' : 'O';
-                            const savedColor = getBingoColor(letterPrefix);
-                            markedCellsMap[activeCardNum].add(cell);
-
-                            html += `<div class="bingo-cell cell-${cell} marked-auto" style="background:${savedColor} !important; color:#fff; display:flex; justify-content:center; align-items:center; aspect-ratio:1; border-radius:6px; font-weight:bold; cursor:pointer;" onclick="handleManualCellClick(this, ${cell}, ${activeCardNum})">${cell}</div>`;
-                        } else {
-                            html += `<div class="bingo-cell cell-${cell}" style="background:#252634; color:#fff; display:flex; justify-content:center; align-items:center; aspect-ratio:1; border-radius:6px; font-weight:bold; cursor:pointer;" onclick="handleManualCellClick(this, ${cell}, ${activeCardNum})">${cell}</div>`;
-                        }
+                        html += `<div class="bingo-cell cell-${cell}" style="background:#252634; color:#fff; display:flex; justify-content:center; align-items:center; aspect-ratio:1; border-radius:6px; font-weight:bold; cursor:pointer;" onclick="handleManualCellClick(this, ${cell}, ${activeCardNum})">${cell}</div>`;
                     }
-                });
+                }
             });
+        });
 
-            html += `</div>`;
-            cardBox.innerHTML = html;
-            container.appendChild(cardBox);
-        } catch (e) {
-            console.error("Matrix load error", e);
-        }
+        html += `</div>`;
+        cardBox.innerHTML = html;
+        container.appendChild(cardBox);
     }
+}
+
+// አዲስ ኳስ በወጣ ቁጥር ሙሉ DOM ሳይደመሰስ የተጠራውን ቁጥር ብቻ በነባሩ ካርቴላ ላይ ማደሻ፦
+function updateBoughtCardsUIOnly() {
+    selectedBingoCards.forEach(cardNum => {
+        calledNumbersSet.forEach(num => {
+            if (isAutoMark || (markedCellsMap[cardNum] && markedCellsMap[cardNum].has(num))) {
+                const cells = document.querySelectorAll(`#card-block-${cardNum} .cell-${num}`);
+                let letterPrefix = num <= 15 ? 'B' : num <= 30 ? 'I' : num <= 45 ? 'N' : num <= 60 ? 'G' : 'O';
+                const color = getBingoColor(letterPrefix);
+
+                cells.forEach(cell => {
+                    cell.style.setProperty("background", color, "important");
+                    cell.style.color = "#fff";
+                    cell.classList.add("marked-auto");
+                });
+            }
+        });
+    });
 }
 
 function toggleMarkingMode() {
@@ -625,6 +655,7 @@ document.getElementById("claimBingoBtn")?.addEventListener("click", () => {
 
     showToastMessage("🔥 የ BINGO ጥያቄ ተልኳል! በመፈተሽ ላይ...", "success");
 });
+
 
 /* =========================================================
    GAME OVER & WINNERS LOGIC
