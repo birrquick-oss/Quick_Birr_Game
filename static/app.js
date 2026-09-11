@@ -28,7 +28,6 @@ let soundEnabled = true;
 let isAutoMark = true;
 let markedCellsMap = {}; 
 let winnerAutoCloseTimer = null;
-let calledNumbersSet = new Set();
 
 if (tg) {
     tg.ready();
@@ -198,8 +197,6 @@ function connectBingoWebSocket() {
             currentGameId = data.game_id || currentGameId;
             updateCountdownUI(data);
             recentBallsList = [];
-            calledNumbersSet.clear(); 
-            markedCellsMap = {};
         }
 
         if (data.type === "taken_cards_update") {
@@ -353,8 +350,10 @@ function renderDrawnBall(data) {
         }
     }
 
-    recentBallsList.unshift({ label: `${letter}${data.number}`, letter: letter, num: data.number });
-    if (recentBallsList.length > 10) recentBallsList.pop();
+    if (data.number) {
+        recentBallsList.unshift({ label: `${letter}${data.number}`, letter: letter, num: data.number });
+        if (recentBallsList.length > 10) recentBallsList.pop();
+    }
 
     if (historyList) {
         historyList.innerHTML = "";
@@ -367,7 +366,7 @@ function renderDrawnBall(data) {
         });
     }
 
-    if (isAutoMark) {
+    if (isAutoMark && data.number) {
         const matchingCells = document.querySelectorAll(`.cell-${data.number}`);
         matchingCells.forEach(cell => {
             cell.classList.add("marked-auto");
@@ -376,88 +375,58 @@ function renderDrawnBall(data) {
         });
     }
 
-    // 1. የካርቴላዎችን መረጃ ከጀርባ ያድሳል
     autoMarkAllBoughtCards();
-
-    // 2. የተጫዋቹን ካርቴላዎች በስክሪኑ ላይ አዲስ በተጣለው ቁጥር መሰረት ቀለም ቀይሮ ያሳያል (የተቀነሰው መስመር)
     renderMyBoughtCards();
 }
 
-function renderDrawnBall(data) {
-    if (data.number) {
-        calledNumbersSet.add(data.number);
-    }
+function render1000BingoCards() {
+    const gridContainer = document.getElementById("cardsGrid");
+    if (!gridContainer) return;
 
-    const letterEl = document.getElementById("currentBallLetter");
-    const numberEl = document.getElementById("currentBallNumber");
-    const historyList = document.getElementById("recentBallsList");
-    const callBadge = document.getElementById("callCountBadge");
-    const gameIdBadge = document.getElementById("gameIdBadge");
-    const liveDerashText = document.getElementById("liveDerashText");
+    gridContainer.innerHTML = "";
+    selectedBingoCards = [];
+    temporarilySelectedCards = [];
+    updateSelectedCardsUI();
 
-    const letter = data.label ? data.label.charAt(0) : (data.letter || 'B');
-    const color = getBingoColor(letter);
-
-    if (letterEl) {
-        letterEl.textContent = letter;
-        letterEl.style.color = color;
-    }
-    if (numberEl) {
-        numberEl.textContent = data.number || "--";
-    }
-    
-    if (callBadge && data.call_count) callBadge.textContent = `Call ${data.call_count}`;
-    
-    const activeGameId = data.game_id || currentGameId || 0;
-    if (gameIdBadge) gameIdBadge.textContent = `Game #${activeGameId}`;
-
-    if (data.derash_amount) {
-        currentDerashAmount = `${parseFloat(data.derash_amount).toFixed(2)}`;
-    }
-    if (liveDerashText) {
-        liveDerashText.textContent = `ደራሽ ${currentDerashAmount} ETB`;
-    }
-
-    const activeCell = document.getElementById(`cell-ball-${data.number}`);
-    if (activeCell) {
-        activeCell.classList.add("called");
-        activeCell.style.background = color;
-        activeCell.style.color = "#fff";
-    }
-
-    if (soundEnabled && data.number) {
-        try {
-            let audio = new Audio(`/static/sounds/${data.number}.mp3.mp3`);
-            audio.play().catch(e => console.log("Sound playback prevented:", e));
-        } catch (err) {
-            console.error("Audio error:", err);
+    const fragment = document.createDocumentFragment();
+    for (let i = 1; i <= 1000; i++) {
+        const cardBtn = document.createElement("div");
+        cardBtn.className = "card-item";
+        cardBtn.id = `pick-card-${i}`;
+        if (takenCardsList.includes(i)) {
+            cardBtn.classList.add("taken");
         }
+        cardBtn.textContent = i;
+        cardBtn.dataset.cardNum = i;
+
+        cardBtn.addEventListener("click", () => toggleCardSelection(cardBtn, i));
+        fragment.appendChild(cardBtn);
+    }
+    gridContainer.appendChild(fragment);
+}
+
+function toggleCardSelection(element, cardNum) {
+    if (element.classList.contains("taken")) return;
+
+    if (selectedBingoCards.includes(cardNum)) return;
+
+    if (temporarilySelectedCards.includes(cardNum)) {
+        temporarilySelectedCards = temporarilySelectedCards.filter(id => id !== cardNum);
+        element.classList.remove("selected");
+    } else {
+        if (temporarilySelectedCards.length + selectedBingoCards.length >= 10) {
+            showToastMessage("⚠️ በአንድ ጨዋታ መግዛት የሚችሉት ከፍተኛው የካርቴላ መጠን 10 ብቻ ነው!", "error");
+            return;
+        }
+        temporarilySelectedCards.push(cardNum);
+        element.classList.add("selected");
     }
 
-    recentBallsList.unshift({ label: `${letter}${data.number}`, letter: letter, num: data.number });
-    if (recentBallsList.length > 10) recentBallsList.pop();
-
-    if (historyList) {
-        historyList.innerHTML = "";
-        recentBallsList.forEach((b, idx) => {
-            const ballItem = document.createElement("div");
-            ballItem.className = idx === 0 ? "recent-ball-pill active" : "recent-ball-pill";
-            ballItem.style.backgroundColor = getBingoColor(b.letter);
-            ballItem.textContent = `${b.letter}${b.num}`;
-            historyList.appendChild(ballItem);
-        });
+    if (window.Telegram?.WebApp?.HapticFeedback) {
+        window.Telegram.WebApp.HapticFeedback.selectionChanged();
     }
 
-    if (isAutoMark) {
-        const matchingCells = document.querySelectorAll(`.cell-${data.number}`);
-        matchingCells.forEach(cell => {
-            cell.classList.add("marked-auto");
-            cell.style.background = color;
-            cell.style.color = "#fff";
-        });
-    }
-
-    autoMarkAllBoughtCards();
+    updateSelectedCardsUI();
 }
 
 function updateSelectedCardsUI() {
@@ -528,10 +497,11 @@ function autoMarkAllBoughtCards() {
 
     selectedBingoCards.forEach(cardNum => {
         if (!markedCellsMap[cardNum]) markedCellsMap[cardNum] = new Set();
-        calledNumbersSet.forEach(num => markedCellsMap[cardNum].add(num));
+        if (isAutoMark) {
+            calledNumbersSet.forEach(num => markedCellsMap[cardNum].add(num));
+        }
     });
 }
-
 
 async function renderMyBoughtCards() {
     const container = document.getElementById("playerBingoCard");
@@ -543,13 +513,12 @@ async function renderMyBoughtCards() {
         return;
     }
 
-    // በ HTML መዋቅር መሰረት የተገዙትን ካርዶች በሙሉ በቋሚነት (Vertical Stack) እንዲወጡ ማድረግ
     for (let index = 0; index < selectedBingoCards.length; index++) {
         const activeCardNum = selectedBingoCards[index];
 
         if (!markedCellsMap[activeCardNum]) markedCellsMap[activeCardNum] = new Set();
         if (isAutoMark) {
-            recentBallsList.forEach(b => markedCellsMap[activeCardNum].add(b.num));
+            calledNumbersSet.forEach(num => markedCellsMap[activeCardNum].add(num));
         }
 
         try {
@@ -585,10 +554,10 @@ async function renderMyBoughtCards() {
                     if (cell === "FREE" || cell === 0) {
                         html += `<div class="bingo-cell free-star" style="background:#ffbc00; color:#000; display:flex; justify-content:center; align-items:center; aspect-ratio:1; border-radius:6px; font-weight:bold;">★</div>`;
                     } else {
-                        const isAlreadyDrawn = calledNumbersSet.has(cell);
-                        const isMarkedInState = markedCellsMap[activeCardNum] && markedCellsMap[activeCardNum].has(cell);
+                        const isMarkedInState = markedCellsMap[activeCardNum].has(cell);
+                        const isCalled = calledNumbersSet.has(cell);
 
-                        if ((isAutoMark && isAlreadyDrawn) || isMarkedInState) {
+                        if (isCalled && (isAutoMark || isMarkedInState)) {
                             let letterPrefix = cell <= 15 ? 'B' : cell <= 30 ? 'I' : cell <= 45 ? 'N' : cell <= 60 ? 'G' : 'O';
                             const savedColor = getBingoColor(letterPrefix);
                             markedCellsMap[activeCardNum].add(cell);
@@ -645,7 +614,6 @@ document.getElementById("claimBingoBtn")?.addEventListener("click", () => {
         return;
     }
 
-    // በቋሚነት ከወጡት ካርቴላዎች ውስጥ የመጀመሪያውን ወይም አጠቃላይ ጥያቄ መላክ
     selectedBingoCards.forEach(cardNum => {
         bingoSocket.send(JSON.stringify({
             type: "claim_bingo",
