@@ -871,3 +871,10 @@ button {
     .game-image { height: 125px; }
     .game-icon { font-size: 55px; }
 }
+
+/* የካርቴላው መያዣ ሳጥን በጣም እንዳያድግ ይከለክላል */
+#playerBingoCard {
+    max-height: 280px !important;
+    overflow-y: auto;
+    padding: 5px;
+}
