@@ -28,6 +28,7 @@ let soundEnabled = true;
 let isAutoMark = true;
 let markedCellsMap = {}; 
 let winnerAutoCloseTimer = null;
+let calledNumbersSet = new Set();
 
 if (tg) {
     tg.ready();
@@ -197,6 +198,8 @@ function connectBingoWebSocket() {
             currentGameId = data.game_id || currentGameId;
             updateCountdownUI(data);
             recentBallsList = [];
+            calledNumbersSet.clear(); 
+            markedCellsMap = {};
         }
 
         if (data.type === "taken_cards_update") {
@@ -298,6 +301,11 @@ function render75BoardSkeleton() {
         }
     }
 }
+
+function renderDrawnBall(data) {
+    if (data.number) {
+        calledNumbersSet.add(data.number);
+    }
 
 function renderDrawnBall(data) {
     const letterEl = document.getElementById("currentBallLetter");
@@ -487,13 +495,13 @@ document.getElementById("confirmCardsBtn")?.addEventListener("click", async () =
 
 function autoMarkAllBoughtCards() {
     if (!selectedBingoCards || selectedBingoCards.length === 0) return;
-    const drawnNumbers = recentBallsList.map(b => b.num);
 
     selectedBingoCards.forEach(cardNum => {
         if (!markedCellsMap[cardNum]) markedCellsMap[cardNum] = new Set();
-        drawnNumbers.forEach(num => markedCellsMap[cardNum].add(num));
+        calledNumbersSet.forEach(num => markedCellsMap[cardNum].add(num));
     });
 }
+
 
 async function renderMyBoughtCards() {
     const container = document.getElementById("playerBingoCard");
@@ -547,10 +555,10 @@ async function renderMyBoughtCards() {
                     if (cell === "FREE" || cell === 0) {
                         html += `<div class="bingo-cell free-star" style="background:#ffbc00; color:#000; display:flex; justify-content:center; align-items:center; aspect-ratio:1; border-radius:6px; font-weight:bold;">★</div>`;
                     } else {
-                        const isMarkedInState = markedCellsMap[activeCardNum].has(cell);
-                        const isAlreadyDrawn = recentBallsList.some(b => b.num === cell);
+                        const isAlreadyDrawn = calledNumbersSet.has(cell);
+                        const isMarkedInState = markedCellsMap[activeCardNum] && markedCellsMap[activeCardNum].has(cell);
 
-                        if (isMarkedInState || (isAlreadyDrawn && isAutoMark)) {
+                        if ((isAutoMark && isAlreadyDrawn) || isMarkedInState) {
                             let letterPrefix = cell <= 15 ? 'B' : cell <= 30 ? 'I' : cell <= 45 ? 'N' : cell <= 60 ? 'G' : 'O';
                             const savedColor = getBingoColor(letterPrefix);
                             markedCellsMap[activeCardNum].add(cell);
@@ -581,7 +589,7 @@ function toggleMarkingMode() {
 function handleManualCellClick(cellElement, cellNumber, activeCardNum) {
     if (!markedCellsMap[activeCardNum]) markedCellsMap[activeCardNum] = new Set();
 
-    const isBallDrawn = recentBallsList.some(b => b.num === cellNumber);
+    const isBallDrawn = calledNumbersSet.has(cellNumber);
 
     if (isBallDrawn) {
         markedCellsMap[activeCardNum].add(cellNumber);
