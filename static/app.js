@@ -276,7 +276,6 @@ function updateTakenCardsUI(takenCards) {
    QUICK_BIRR GAMES - PART 2 / 3
    ========================================================= */
 
-// የካርቴላዎችን Matrix ሰርቨር ላይ በየሰከንዱ ላለመጠየቅ እዚህ እንይዛቸዋለን
 let loadedCardsMatrix = {}; 
 
 /* =========================
@@ -370,7 +369,14 @@ function renderDrawnBall(data) {
     }
 
     autoMarkAllBoughtCards();
-    updateBoughtCardsUIOnly(); // API ሳይጠራ UI-ውን ብቻ በፍጥነት ያድሳል
+
+    // ካርቴላው በስክሪኑ ላይ ከሌለ መጀመሪያ ይስለዋል፤ ካለ ቀለሙን ብቻ ያድሳል
+    const container = document.getElementById("playerBingoCard");
+    if (container && container.children.length === 0 && selectedBingoCards.length > 0) {
+        renderMyBoughtCards();
+    } else {
+        updateBoughtCardsUIOnly();
+    }
 }
 
 function render1000BingoCards() {
@@ -472,7 +478,6 @@ document.getElementById("confirmCardsBtn")?.addEventListener("click", async () =
                     syncAndFetchUser();
                 }
 
-                // የካርቴላውን Matrix አስቀድመን አንድ ጊዜ እንጭናለን
                 await fetchCardMatrixOnce(cardNumber);
 
                 showToastMessage("🎉 ካርቴላው በተሳካ ሁኔታ ተገዝቷል!", "success");
@@ -483,7 +488,7 @@ document.getElementById("confirmCardsBtn")?.addEventListener("click", async () =
         }
     }
     updateSelectedCardsUI();
-    renderMyBoughtCards(); // ካርቴላዎቹን ወዲያውኑ ይስላል
+    renderMyBoughtCards();
 });
 
 /* =========================================================
@@ -590,7 +595,6 @@ async function renderMyBoughtCards() {
     }
 }
 
-// አዲስ ኳስ በወጣ ቁጥር ሙሉ DOM ሳይደመሰስ የተጠራውን ቁጥር ብቻ በነባሩ ካርቴላ ላይ ማደሻ፦
 function updateBoughtCardsUIOnly() {
     selectedBingoCards.forEach(cardNum => {
         calledNumbersSet.forEach(num => {
