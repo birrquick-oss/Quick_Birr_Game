@@ -307,7 +307,6 @@ function renderDrawnBall(data) {
         calledNumbersSet.add(data.number);
     }
 
-function renderDrawnBall(data) {
     const letterEl = document.getElementById("currentBallLetter");
     const numberEl = document.getElementById("currentBallNumber");
     const historyList = document.getElementById("recentBallsList");
@@ -378,56 +377,6 @@ function renderDrawnBall(data) {
     }
 
     autoMarkAllBoughtCards();
-}
-
-function render1000BingoCards() {
-    const gridContainer = document.getElementById("cardsGrid");
-    if (!gridContainer) return;
-
-    gridContainer.innerHTML = "";
-    selectedBingoCards = [];
-    temporarilySelectedCards = [];
-    updateSelectedCardsUI();
-
-    const fragment = document.createDocumentFragment();
-    for (let i = 1; i <= 1000; i++) {
-        const cardBtn = document.createElement("div");
-        cardBtn.className = "card-item";
-        cardBtn.id = `pick-card-${i}`;
-        if (takenCardsList.includes(i)) {
-            cardBtn.classList.add("taken");
-        }
-        cardBtn.textContent = i;
-        cardBtn.dataset.cardNum = i;
-
-        cardBtn.addEventListener("click", () => toggleCardSelection(cardBtn, i));
-        fragment.appendChild(cardBtn);
-    }
-    gridContainer.appendChild(fragment);
-}
-
-function toggleCardSelection(element, cardNum) {
-    if (element.classList.contains("taken")) return;
-
-    if (selectedBingoCards.includes(cardNum)) return;
-
-    if (temporarilySelectedCards.includes(cardNum)) {
-        temporarilySelectedCards = temporarilySelectedCards.filter(id => id !== cardNum);
-        element.classList.remove("selected");
-    } else {
-        if (temporarilySelectedCards.length + selectedBingoCards.length >= 10) {
-            showToastMessage("⚠️ በአንድ ጨዋታ መግዛት የሚችሉት ከፍተኛው የካርቴላ መጠን 10 ብቻ ነው!", "error");
-            return;
-        }
-        temporarilySelectedCards.push(cardNum);
-        element.classList.add("selected");
-    }
-
-    if (window.Telegram?.WebApp?.HapticFeedback) {
-        window.Telegram.WebApp.HapticFeedback.selectionChanged();
-    }
-
-    updateSelectedCardsUI();
 }
 
 function updateSelectedCardsUI() {
