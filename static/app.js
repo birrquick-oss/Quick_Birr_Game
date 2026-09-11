@@ -376,6 +376,87 @@ function renderDrawnBall(data) {
         });
     }
 
+    // 1. የካርቴላዎችን መረጃ ከጀርባ ያድሳል
+    autoMarkAllBoughtCards();
+
+    // 2. የተጫዋቹን ካርቴላዎች በስክሪኑ ላይ አዲስ በተጣለው ቁጥር መሰረት ቀለም ቀይሮ ያሳያል (የተቀነሰው መስመር)
+    renderMyBoughtCards();
+}
+
+function renderDrawnBall(data) {
+    if (data.number) {
+        calledNumbersSet.add(data.number);
+    }
+
+    const letterEl = document.getElementById("currentBallLetter");
+    const numberEl = document.getElementById("currentBallNumber");
+    const historyList = document.getElementById("recentBallsList");
+    const callBadge = document.getElementById("callCountBadge");
+    const gameIdBadge = document.getElementById("gameIdBadge");
+    const liveDerashText = document.getElementById("liveDerashText");
+
+    const letter = data.label ? data.label.charAt(0) : (data.letter || 'B');
+    const color = getBingoColor(letter);
+
+    if (letterEl) {
+        letterEl.textContent = letter;
+        letterEl.style.color = color;
+    }
+    if (numberEl) {
+        numberEl.textContent = data.number || "--";
+    }
+    
+    if (callBadge && data.call_count) callBadge.textContent = `Call ${data.call_count}`;
+    
+    const activeGameId = data.game_id || currentGameId || 0;
+    if (gameIdBadge) gameIdBadge.textContent = `Game #${activeGameId}`;
+
+    if (data.derash_amount) {
+        currentDerashAmount = `${parseFloat(data.derash_amount).toFixed(2)}`;
+    }
+    if (liveDerashText) {
+        liveDerashText.textContent = `ደራሽ ${currentDerashAmount} ETB`;
+    }
+
+    const activeCell = document.getElementById(`cell-ball-${data.number}`);
+    if (activeCell) {
+        activeCell.classList.add("called");
+        activeCell.style.background = color;
+        activeCell.style.color = "#fff";
+    }
+
+    if (soundEnabled && data.number) {
+        try {
+            let audio = new Audio(`/static/sounds/${data.number}.mp3.mp3`);
+            audio.play().catch(e => console.log("Sound playback prevented:", e));
+        } catch (err) {
+            console.error("Audio error:", err);
+        }
+    }
+
+    recentBallsList.unshift({ label: `${letter}${data.number}`, letter: letter, num: data.number });
+    if (recentBallsList.length > 10) recentBallsList.pop();
+
+    if (historyList) {
+        historyList.innerHTML = "";
+        recentBallsList.forEach((b, idx) => {
+            const ballItem = document.createElement("div");
+            ballItem.className = idx === 0 ? "recent-ball-pill active" : "recent-ball-pill";
+            ballItem.style.backgroundColor = getBingoColor(b.letter);
+            ballItem.textContent = `${b.letter}${b.num}`;
+            historyList.appendChild(ballItem);
+        });
+    }
+
+    if (isAutoMark) {
+        const matchingCells = document.querySelectorAll(`.cell-${data.number}`);
+        matchingCells.forEach(cell => {
+            cell.classList.add("marked-auto");
+            cell.style.background = color;
+            cell.style.color = "#fff";
+        });
+    }
+
     autoMarkAllBoughtCards();
 }
 
