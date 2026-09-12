@@ -292,7 +292,31 @@ function handleBallDraw(data) {
         ballElement.style.color = "#fff";
         ballElement.style.boxShadow = `0 0 10px ${color}`;
     }
+
+function renderDrawnBall(data) {
+    const callBadge = document.getElementById("callCountBadge");
+    const gameIdBadge = document.getElementById("gameIdBadge");
+    const liveDerashText = document.getElementById("liveDerashText");
+
+    if (callBadge && data.call_count) callBadge.textContent = `Call ${data.call_count}`;
     
+    const activeGameId = data.game_id || currentGameId || 0;
+    if (gameIdBadge) gameIdBadge.textContent = `Game #${activeGameId}`;
+
+    if (data.derash_amount) {
+        currentDerashAmount = `${parseFloat(data.derash_amount).toFixed(2)}`;
+    }
+    if (liveDerashText) {
+        liveDerashText.textContent = `ደራሽ ${currentDerashAmount} ETB`;
+    }
+
+    const activeCell = document.getElementById(`cell-ball-${data.number}`);
+    if (activeCell) {
+        activeCell.classList.add("called");
+        activeCell.style.background = color;
+        activeCell.style.color = "#fff";
+    }
+   
     if (soundEnabled) {
         let audio = new Audio(`/static/sounds/${data.number}.mp3.mp3`);
         audio.play().catch(e => {
