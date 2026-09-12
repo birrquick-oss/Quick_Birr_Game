@@ -155,7 +155,7 @@ def sync_or_register_user(data: UserSync, db: Session = Depends(get_db)):
         "user": {
             "id": user.id, 
             "telegram_id": user.telegram_id, 
-            "balance": user.balance
+            "balance": float(user.balance or 0.0)
         }
     }
 
@@ -177,7 +177,7 @@ def get_user_profile(telegram_id: str, db: Session = Depends(get_db)):
             "id": user.id,
             "telegram_id": user.telegram_id,
             "first_name": user.first_name,
-            "balance": user.balance
+            "balance": float(user.balance or 0.0)
         }
     }
 
@@ -257,11 +257,11 @@ def request_withdraw(req: WithdrawRequest, db: Session = Depends(get_db)):
 
     user = db.query(User).filter(User.telegram_id == tg_id).first()
     
-    if not user or user.balance < req.amount:
+    if not user or float(user.balance or 0.0) < req.amount:
         print(f"❌ [WITHDRAWAL FAILED]: Insufficient Balance for User {tg_id}")
         return {"success": False, "message": "በቂ ባላንስ የሎትም!"}
 
-    user.balance -= req.amount
+    user.balance = float(user.balance or 0.0) - float(req.amount)
     
     withd = Withdrawal(
         user_id=user.id, 
