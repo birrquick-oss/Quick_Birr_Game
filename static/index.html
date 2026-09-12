@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -7,7 +6,7 @@
     <meta name="theme-color" content="#0d1119">
     <title>QUICK_BIRR GAMES</title>
 
-    <!-- Telegram Mini App -->
+    <!-- Telegram Mini App SDK -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
     <!-- Main CSS -->
@@ -45,17 +44,17 @@
                     <span class="hero-badge">🎮 PLAY & WIN</span>
                     <h1>Welcome to<br><strong>QUICK_BIRR GAMES</strong></h1>
                     <p>Your favorite games, all in one place.</p>
-                    <button class="primary-button" id="playNowButton" type="button" onclick="showPage('bingoSelection'); render1000BingoCards();">🎮 PLAY NOW</button>
+                    <button class="primary-button" id="playNowButton" type="button">🎮 PLAY NOW</button>
                 </div>
                 <div class="hero-decoration">🎰</div>
             </section>
 
             <!-- QUICK ACTIONS -->
             <section class="quick-actions">
-                <button class="action-button withdraw" type="button" id="withdrawButton" onclick="openWithdrawModal()">
+                <button class="action-button withdraw" type="button" id="withdrawButton">
                     <span>💸</span> Withdraw
                 </button>
-                <button class="action-button deposit" type="button" id="depositButton" onclick="openDepositModal()">
+                <button class="action-button deposit" type="button" id="depositButton">
                     <span>💰</span> Deposit
                 </button>
             </section>
@@ -71,7 +70,7 @@
                 </div>
 
                 <div class="games-grid">
-                    <button class="game-card bingo-card" data-game="bingo" type="button" id="bingoGameCard" onclick="showPage('bingoSelection'); render1000BingoCards();">
+                    <button class="game-card bingo-card" data-game="bingo" type="button" id="bingoGameCard">
                         <div class="game-image">
                             <span class="game-icon">🎱</span>
                             <span class="game-star">★</span>
@@ -172,8 +171,8 @@
             </section>
         </div>
 
-        <!-- 1. BINGO CARD SELECTION VIEW (PHASE 1: 1-1000 NUMBERS) -->
-        <div id="bingoSelectionView" class="page-view" hidden>
+        <!-- 1. BINGO CARD SELECTION VIEW (PHASE 1) -->
+        <div id="bingoSelectionView" class="page-view" style="display: none;">
             <div class="bingo-header-stats">
                 <div class="stat-pill orange-glow">
                     <span class="icon">🤖</span>
@@ -206,7 +205,7 @@
                 <span class="timer-badge" id="selectionTimer">60</span>
             </div>
 
-            <!-- 10 Columns Grid for Cards 1 to 1000 -->
+            <!-- 10 Columns Grid for Cards -->
             <div class="cards-grid-10cols" id="cardsGrid"></div>
 
             <div class="selection-footer-bar">
@@ -216,8 +215,8 @@
             </div>
         </div>
 
-        <!-- 2. BINGO LIVE GAMEPLAY VIEW (PHASE 2: 1-75 DRAWING BOARD) -->
-        <div id="bingoGameView" class="page-view" hidden>
+        <!-- 2. BINGO LIVE GAMEPLAY VIEW (PHASE 2) -->
+        <div id="bingoGameView" class="page-view" style="display: none;">
             
             <div class="live-game-topbar">
                 <div class="topbar-info">
@@ -225,7 +224,7 @@
                     <span class="derash-badge" id="liveDerashText" style="background:#2ed573; color:#000; padding:4px 8px; border-radius:4px; font-weight:bold;">ደራሽ 0.00 ETB</span>
                     <span class="game-id-badge" id="gameIdBadge">Game #0</span>
                 </div>
-                <button class="sound-toggle-btn" id="soundToggleBtn" type="button" onclick="toggleSound()">
+                <button class="sound-toggle-btn" id="soundToggleBtn" type="button">
                     🔊 <span id="soundStatusText">ON</span>
                 </button>
             </div>
@@ -238,11 +237,8 @@
                 <div class="bingo-row"><div class="letter o">O</div><div id="o-container" class="num-row"></div></div>
             </div>
 
-            <div class="recent-balls-row">
-                <div class="recent-ball live">29</div>
-                <div class="recent-ball">36</div>
-                <div class="recent-ball">22</div>
-                <div class="recent-ball">19</div>
+            <div class="recent-balls-row" id="recentBallsRow">
+                <!-- Live balls will be injected here via app.js -->
             </div>
 
             <div class="live-action-footer">
@@ -254,7 +250,7 @@
         </div>
 
         <!-- PROFILE VIEW -->
-        <div id="profileView" class="page-view" hidden>
+        <div id="profileView" class="page-view" style="display: none;">
             <div class="profile-dashboard">
                 <div class="user-profile-header">
                     <div class="profile-avatar">💼</div>
@@ -276,8 +272,8 @@
                 </div>
 
                 <div class="action-buttons-grid">
-                    <button class="action-btn btn-withdraw" id="dashWithdrawBtn" type="button" onclick="openWithdrawModal()">💸 Withdraw</button>
-                    <button class="action-btn btn-deposit" id="dashDepositBtn" type="button" onclick="openDepositModal()">💰 Deposit</button>
+                    <button class="action-btn btn-withdraw" id="dashWithdrawBtn" type="button">💸 Withdraw</button>
+                    <button class="action-btn btn-deposit" id="dashDepositBtn" type="button">💰 Deposit</button>
                 </div>
 
                 <div class="dashboard-banner promo-cashback">
@@ -323,24 +319,24 @@
 </div>
 
 <!-- GENERAL MESSAGE MODAL -->
-<div class="modal" id="messageModal" hidden>
+<div class="modal" id="messageModal" style="display: none;">
     <div class="modal-overlay"></div>
     <div class="modal-box">
-        <button class="modal-close" id="modalClose" type="button" onclick="closeModals()">×</button>
+        <button class="modal-close" id="modalClose" type="button">×</button>
         <div class="modal-icon" id="modalIcon">🎮</div>
         <h2 id="modalTitle">QUICK_BIRR GAMES</h2>
         <p id="modalMessage">Coming soon.</p>
-        <button class="primary-button modal-button" id="modalButton" type="button" onclick="closeModals()">OK</button>
+        <button class="primary-button modal-button" id="modalButton" type="button">OK</button>
     </div>
 </div>
 
 <!-- DEPOSIT MODAL -->
-<div class="custom-modal" id="depositModal" hidden>
-    <div class="modal-overlay" onclick="closeModals()"></div>
+<div class="custom-modal" id="depositModal" style="display: none;">
+    <div class="modal-overlay"></div>
     <div class="modal-card">
         <div class="modal-header">
             <h3>📥 ገንዘብ ማስገቢያ (Deposit)</h3>
-            <button class="close-modal-btn" type="button" onclick="closeModals()">✕</button>
+            <button class="close-modal-btn" id="closeDepositModalBtn" type="button">✕</button>
         </div>
 
         <div class="instruction-box">
@@ -348,29 +344,28 @@
         </div>
 
         <div class="bank-accounts-list">
-            <div class="account-item" onclick="copyToClipboard('+251910032722')">
+            <div class="account-item" data-copy="+251910032722">
                 <span>📱 Telebirr:</span>
                 <span class="acc-num">+251910032722 <span class="copy-icon">📋</span></span>
             </div>
-            <div class="account-item" onclick="copyToClipboard('+251910032722')">
+            <div class="account-item" data-copy="+251910032722">
                 <span>🔸 CBE Birr:</span>
                 <span class="acc-num">+251910032722 <span class="copy-icon">📋</span></span>
             </div>
-            <div class="account-item" onclick="copyToClipboard('1000406099141')">
+            <div class="account-item" data-copy="1000406099141">
                 <span>🏦 CBE Bank:</span>
                 <span class="acc-num">1000406099141 <span class="copy-icon">📋</span></span>
             </div>
-            <div class="account-item" onclick="copyToClipboard('214157098')">
+            <div class="account-item" data-copy="214157098">
                 <span>🦅 Abyssinia:</span>
                 <span class="acc-num">214157098 <span class="copy-icon">📋</span></span>
             </div>
-            <div class="account-item" onclick="copyToClipboard('013201588359000')">
+            <div class="account-item" data-copy="013201588359000">
                 <span>🏛️ Awash Bank:</span>
                 <span class="acc-num">013201588359000 <span class="copy-icon">📋</span></span>
             </div>
         </div>
 
-        <!-- FORM WRAPPER -->
         <form id="deposit-form">
             <div class="form-group">
                 <label>የገንዘብ መጠን ይምረጡ (Deposit):</label>
@@ -407,15 +402,14 @@
 </div>
 
 <!-- WITHDRAW MODAL -->
-<div class="custom-modal" id="withdrawModal" hidden>
-    <div class="modal-overlay" onclick="closeModals()"></div>
+<div class="custom-modal" id="withdrawModal" style="display: none;">
+    <div class="modal-overlay"></div>
     <div class="modal-card">
         <div class="modal-header">
             <h3>📬 ገንዘብ ማውጫ (Withdraw)</h3>
-            <button class="close-modal-btn" type="button" onclick="closeModals()">✕</button>
+            <button class="close-modal-btn" id="closeWithdrawModalBtn" type="button">✕</button>
         </div>
 
-        <!-- FORM WRAPPER -->
         <form id="withdraw-form">
             <div class="form-group">
                 <label>የምታወጡት የገንዘብ መጠን ይምረጡ (Withdraw):</label>
@@ -450,44 +444,6 @@
         </form>
     </div>
 </div>
-
-<!-- UI HELPER SCRIPTS -->
-<script>
-    function openDepositModal() {
-        document.getElementById('depositModal').hidden = false;
-    }
-
-    function openWithdrawModal() {
-        document.getElementById('withdrawModal').hidden = false;
-    }
-
-    function closeModals() {
-        document.getElementById('depositModal').hidden = true;
-        document.getElementById('withdrawModal').hidden = true;
-        document.getElementById('messageModal').hidden = true;
-    }
-
-    function showToastMessage(text, type) {
-        const msgEl = document.getElementById('modalMessage');
-        const iconEl = document.getElementById('modalIcon');
-        if (msgEl) msgEl.textContent = text;
-        if (iconEl) iconEl.textContent = type === 'success' ? '✅' : '⚠️';
-        document.getElementById('messageModal').hidden = false;
-    }
-
-    function showMessage(title, text, icon) {
-        document.getElementById('modalTitle').textContent = title;
-        document.getElementById('modalMessage').textContent = text;
-        document.getElementById('modalIcon').textContent = icon || '🎮';
-        document.getElementById('messageModal').hidden = false;
-    }
-
-    function copyToClipboard(text) {
-        navigator.clipboard.writeText(text).then(() => {
-            showToastMessage(`አካውንት ቁጥር (${text}) ተኮፒ አድርጓል!`, 'success');
-        });
-    }
-</script>
 
 <!-- Main JavaScript -->
 <script src="/static/app.js"></script>
