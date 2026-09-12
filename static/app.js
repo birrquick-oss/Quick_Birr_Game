@@ -1,5 +1,6 @@
 /* =========================================================
    QUICK_BIRR GAMES - PART 1
+   Init, State, Elements, Helpers, Modals & Base WS
    ========================================================= */
 
 const tg = window.Telegram?.WebApp;
@@ -277,6 +278,7 @@ function updateTakenCardsUI(takenCards) {
 
 /* =========================================================
    QUICK_BIRR GAMES - PART 2
+   Ball Handling, Winners Modal & Card Rendering
    ========================================================= */
 
 function handleBallDraw(data) {
@@ -495,6 +497,7 @@ function updateSelectedCardsUI() {
 
 /* =========================================================
    QUICK_BIRR GAMES - PART 3
+   Card Confirmation, Manual/Auto Play, Forms & Initialization
    ========================================================= */
 
 document.getElementById("confirmCardsBtn")?.addEventListener("click", async () => {
