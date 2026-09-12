@@ -292,7 +292,7 @@ function handleBallDraw(data) {
     }
     
     if (soundEnabled) {
-        let audio = new Audio(`/static/sounds/${data.number}.mp3`);
+        let audio = new Audio(`/static/sounds/${data.number}.mp3.mp3`);
         audio.play().catch(e => {
             console.log("🔊 ድምፅ ማጫወት አልተቻለም፦", e);
         });
