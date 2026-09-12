@@ -70,7 +70,7 @@
                 </div>
 
                 <div class="games-grid">
-                    <button class="game-card bingo-card" data-game="bingo" type="button" id="bingoGameCard">
+                    <button class="game-card bingo-card" data-game="bingo" type="button" id="bingoGameCard" onclick="if(typeof showPage==='function') showPage('bingoSelection');">
                         <div class="game-image">
                             <span class="game-icon">🎱</span>
                             <span class="game-star">★</span>
@@ -172,7 +172,7 @@
         </div>
 
         <!-- 1. BINGO CARD SELECTION VIEW (PHASE 1) -->
-        <div id="bingoSelectionView" class="page-view" style="display: none;">
+        <div id="bingoSelectionView" class="page-view" hidden>
             <div class="bingo-header-stats">
                 <div class="stat-pill orange-glow">
                     <span class="icon">🤖</span>
@@ -216,7 +216,7 @@
         </div>
 
         <!-- 2. BINGO LIVE GAMEPLAY VIEW (PHASE 2) -->
-        <div id="bingoGameView" class="page-view" style="display: none;">
+        <div id="bingoGameView" class="page-view" hidden>
             
             <div class="live-game-topbar">
                 <div class="topbar-info">
@@ -250,7 +250,7 @@
         </div>
 
         <!-- PROFILE VIEW -->
-        <div id="profileView" class="page-view" style="display: none;">
+        <div id="profileView" class="page-view" hidden>
             <div class="profile-dashboard">
                 <div class="user-profile-header">
                     <div class="profile-avatar">💼</div>
