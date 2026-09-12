@@ -42,6 +42,11 @@ button {
     font-family: inherit;
 }
 
+/* 🎯 Universal Hidden Fix (በዲዛይን እንዳይጋጭ) */
+[hidden], .page-view[hidden], .custom-modal[hidden], .modal[hidden] {
+    display: none !important;
+}
+
 #app {
     width: 100%;
     max-width: 600px;
@@ -362,8 +367,8 @@ button {
 /* 10 COLUMNS GRID FOR 1-1000 NUMBERS WITH SMOOTH SCROLL */
 .cards-grid-10cols {
     display: grid;
-    grid-template-columns: repeat(10, 1fr);
-    gap: 5px;
+    grid-template-columns: repeat(10, minmax(0, 1fr));
+    gap: 4px;
     padding: 10px;
     max-height: 55vh;
     overflow-y: auto;
@@ -376,11 +381,11 @@ button {
     aspect-ratio: 1;
     background: #ffffff !important;
     border: 1px solid #e0e0e0;
-    border-radius: 8px;
+    border-radius: 6px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 11px;
+    font-size: 10px;
     font-weight: bold;
     color: #000000 !important;
     cursor: pointer;
@@ -393,7 +398,7 @@ button {
 /* Selected Card Style */
 .card-item.selected {
     background: var(--orange) !important;
-    color: #000000 !important;
+    color: #ffffff !important;
     border-color: var(--orange-border) !important;
     box-shadow: 0 0 8px var(--orange-glow);
 }
@@ -405,7 +410,7 @@ button {
     border-color: #cbd5e1 !important;
     text-decoration: line-through;
     cursor: not-allowed;
-    opacity: 0.6;
+    opacity: 0.5;
 }
 
 .selection-footer-bar {
@@ -471,7 +476,7 @@ button {
     background: #090a14;
     padding: 10px;
     border-radius: 12px;
-    margin-bottom: 15px;
+    margin: 10px 14px;
 }
 .bingo-row {
     display: flex;
@@ -509,7 +514,7 @@ button {
     justify-content: center;
     align-items: center;
     border-radius: 50%;
-    font-size: 10.5px;
+    font-size: 10px;
     font-weight: 800;
     border: 1px solid rgba(255, 255, 255, 0.15);
     transition: all 0.25s ease-in-out;
@@ -520,7 +525,7 @@ button {
     background: #22c55e !important;
     color: #ffffff !important;
     border-color: #22c55e !important;
-    box-shadow: 0 0 10px #22c55e, 0 0 4px #22c55e;
+    box-shadow: 0 0 10px #22c55e;
     transform: scale(1.1);
 }
 
@@ -528,7 +533,7 @@ button {
     background: #ef4444 !important;
     color: #ffffff !important;
     border-color: #ef4444 !important;
-    box-shadow: 0 0 10px #ef4444, 0 0 4px #ef4444;
+    box-shadow: 0 0 10px #ef4444;
     transform: scale(1.1);
 }
 
@@ -536,7 +541,7 @@ button {
     background: #f59e0b !important;
     color: #ffffff !important;
     border-color: #f59e0b !important;
-    box-shadow: 0 0 10px #f59e0b, 0 0 4px #f59e0b;
+    box-shadow: 0 0 10px #f59e0b;
     transform: scale(1.1);
 }
 
@@ -544,7 +549,7 @@ button {
     background: #3b82f6 !important;
     color: #ffffff !important;
     border-color: #3b82f6 !important;
-    box-shadow: 0 0 10px #3b82f6, 0 0 4px #3b82f6;
+    box-shadow: 0 0 10px #3b82f6;
     transform: scale(1.1);
 }
 
@@ -552,11 +557,11 @@ button {
     background: #a855f7 !important;
     color: #ffffff !important;
     border-color: #a855f7 !important;
-    box-shadow: 0 0 10px #a855f7, 0 0 4px #a855f7;
+    box-shadow: 0 0 10px #a855f7;
     transform: scale(1.1);
 }
 
-/* 🔴 የኳሶች እርስ በርስ መደራረቢያ ስታይል (Overlapping Balls) */
+/* 🔴 የኳሶች እርስ በርስ መደራረቢያ ስታይል */
 .recent-balls-row {
     display: flex;
     justify-content: center;
@@ -565,7 +570,7 @@ button {
     padding: 12px 10px;
     background: #11141a;
     border-radius: 16px;
-    margin-bottom: 15px;
+    margin: 0 14px 15px;
     min-height: 70px;
 }
 
@@ -586,32 +591,17 @@ button {
     transition: all 0.3s ease;
     opacity: 0.85;
 }
-.overlapping-ball .b-letter { font-size: 8px; line-height: 1; opacity: 0.9; }
-.overlapping-ball .b-number { font-size: 12px; line-height: 1; font-weight: 800; }
 
 .overlapping-ball.current-live-ball {
-    width: 60px !important;
-    height: 60px !important;
+    width: 55px !important;
+    height: 55px !important;
     font-size: 18px;
     margin-left: 6px;
     z-index: 100;
     opacity: 1 !important;
     border: 3px solid #ffd700 !important;
-    box-shadow: 0 0 18px rgba(255, 215, 0, 0.8), 
-                0 0 8px rgba(255, 215, 0, 0.5),
-                0 6px 10px rgba(0,0,0,0.5);
+    box-shadow: 0 0 18px rgba(255, 215, 0, 0.8);
     transform: scale(1.08);
-}
-
-.overlapping-ball.current-live-ball .b-letter { 
-    font-size: 13px !important; 
-    font-weight: 900;
-    letter-spacing: 0.5px;
-}
-.overlapping-ball.current-live-ball .b-number { 
-    font-size: 22px !important;
-    font-weight: 900;
-    line-height: 1;
 }
 
 /* 🎴 የካርድ እና የጎን ፍላጻዎች ዋና መዋቅር ማስተካከያ */
@@ -620,13 +610,10 @@ button {
     justify-content: space-between;
     align-items: center;
     width: 100%;
-    max-width: 100%;
     background: #151821;
-    padding: 6px 4px;
+    padding: 6px;
     border-radius: 14px;
-    box-sizing: border-box;
-    position: relative;
-    margin-bottom: 5px;
+    margin-bottom: 10px;
 }
 
 .card-display-center {
@@ -635,7 +622,6 @@ button {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    margin: 0 auto;
     width: 100%;
     max-width: 260px;
 }
@@ -647,17 +633,13 @@ button {
     width: 100%;
     margin-bottom: 6px;
     text-align: center;
-    box-sizing: border-box;
 }
 .bingo-header-letters span {
     color: white;
     font-weight: bold;
     font-size: 14px;
-    padding: 6px 0;
+    padding: 4px 0;
     border-radius: 6px;
-    text-shadow: 1px 1px 2px #000;
-    display: block;
-    width: 100%;
 }
 
 .bingo-card-grid-5x5 {
@@ -665,7 +647,6 @@ button {
     grid-template-columns: repeat(5, 1fr);
     gap: 5px;
     width: 100%;
-    box-sizing: border-box;
 }
 
 .bingo-cell {
@@ -673,12 +654,10 @@ button {
     color: #fff;
     text-align: center;
     font-weight: bold;
-    font-size: 15px; 
-    padding: 10px 0;
+    font-size: 14px; 
+    padding: 8px 0;
     border-radius: 8px;
     border: 1px solid #333949;
-    user-select: none;
-    box-sizing: border-box;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -686,24 +665,7 @@ button {
 .bingo-cell.free-star {
     background: #ffd700 !important;
     color: #000 !important;
-    font-size: 18px;
-}
-
-.side-nav-btn {
-    background: rgba(255, 255, 255, 0.08);
-    color: white;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    font-size: 14px;
-    cursor: pointer;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 10;
-    flex-shrink: 0;
-    transition: all 0.2s;
+    font-size: 16px;
 }
 
 .live-action-footer { padding: 10px 14px; }
@@ -724,32 +686,55 @@ button {
 
 .orange-bingo-btn:active { transform: scale(0.98); }
 
-/* 🎯 Winner Popup 5x5 Matrix Cell Styling */
-.grid-cell-5x5 {
-    background: #1e272e;
-    color: #ffffff;
-    border: 1px solid #4b6584;
-    border-radius: 4px;
-    padding: 6px 2px;
-    font-size: 11px;
-    font-weight: bold;
+/* =========================================================
+   GENERAL MODAL STYLES (MessageModal)
+========================================================= */
+.modal {
+    position: fixed;
+    inset: 0;
+    z-index: 2500;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.modal-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(4px);
+}
+
+.modal-box {
+    position: relative;
+    background: #172033;
+    border: 1px solid #303b4d;
+    border-radius: 18px;
+    padding: 24px;
+    width: 85%;
+    max-width: 360px;
     text-align: center;
+    z-index: 2501;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
 }
 
-.grid-cell-5x5.marked {
-    background: #ff4757;
-    color: #ffffff;
-    border-color: #ff4757;
+.modal-close {
+    position: absolute;
+    top: 10px;
+    right: 14px;
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-size: 22px;
+    cursor: pointer;
 }
 
-.grid-cell-5x5.free {
-    background: #ffd700;
-    color: #1e272e;
-    border-color: #ffd700;
-}
+.modal-icon { font-size: 40px; margin-bottom: 10px; }
+.modal-box h2 { font-size: 18px; margin-bottom: 8px; color: #fff; }
+.modal-box p { font-size: 13px; color: var(--muted); margin-bottom: 18px; }
+.modal-button { width: 100%; margin-top: 0; }
 
 /* CUSTOM POPUP MODALS (DEPOSIT / WITHDRAW) */
-.custom-modal[hidden] { display: none !important; }
 .custom-modal {
     position: fixed;
     inset: 0;
@@ -854,8 +839,6 @@ button {
 /* =========================================================
    PROFILE DASHBOARD UI
 ========================================================= */
-.page-view[hidden] { display: none !important; }
-
 .profile-dashboard { padding: 16px; }
 .user-profile-header {
     display: flex; align-items: center; gap: 12px;
