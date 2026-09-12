@@ -194,7 +194,6 @@ def send_admin_action_to_backend(call, url, payload, headers, target_id, action,
         except Exception:
             res_data = {"success": response.ok}
 
-        # 200 OK ከተመለሰ
         if response.status_code == 200 and res_data.get("success", True):
             status_emoji = "✅" if action == "approve" else "❌"
             status_text = "APPROVED" if action == "approve" else "REJECTED"
@@ -218,7 +217,6 @@ def send_admin_action_to_backend(call, url, payload, headers, target_id, action,
             except Exception as edit_err:
                 print(f"⚠️ Telegram message edit issue: {edit_err}")
         else:
-            # ስህተት ከተፈጠረ የችግሩን ምክንያት በስልኩ Alert ላይ ያሳያል
             err_msg = res_data.get('detail', res_data.get('message', f'Status Code: {response.status_code}'))
             bot.answer_callback_query(call.id, text=f"❌ ስህተት፦ {err_msg}", show_alert=True)
     except Exception as e:
@@ -232,7 +230,6 @@ def handle_admin_actions(call):
     user_id_str = str(call.from_user.id).strip()
     print(f"🔘 Callback Clicked by User ID: {user_id_str} | Data: {call.data}")
 
-    # 🔒 የአድሚን ማረጋገጫ
     if ADMIN_TELEGRAM_ID and str(user_id_str).strip() != str(ADMIN_TELEGRAM_ID).strip():
         print(f"🚫 Unauthorized attempt by {user_id_str}. Expected: {ADMIN_TELEGRAM_ID}")
         try:
@@ -253,11 +250,9 @@ def handle_admin_actions(call):
     
     backend_action = "APPROVE" if action == "approve" else "REJECT"
 
-    # 🎯 Route Mapping (users.py Endpoint ጋር ይስማማል)
     endpoint = "deposit" if tx_type == "dep" else "withdraw"
     url = f"{BACKEND_URL}/api/users/admin/{endpoint}/approve"
     
-    # 🎯 Clean Payload (ከ FastAPI Pydantic Schema ጋር 100% የሚስማማ)
     if tx_type == "dep":
         payload = {
             "deposit_id": target_id,
