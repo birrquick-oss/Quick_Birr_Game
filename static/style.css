@@ -466,161 +466,244 @@ button {
 .derash-badge { background: #10b981; padding: 4px 8px; border-radius: 6px; }
 .game-id-badge { color: var(--muted); }
 
-/* 1-75 BOARD */
-.bingo-board-container.orange-theme {
-    background: #121925;
-    margin: 8px;
-    padding: 8px;
+/* 🎱 የ1-75 የቢንጎ ሰሌዳ ረድፎች አቀማመጥ */
+.bingo-board-75 {
+    background: #090a14;
+    padding: 10px;
     border-radius: 12px;
-    border: 1px solid #2d3a4e;
+    margin-bottom: 15px;
 }
-
-.board-row {
+.bingo-row {
     display: flex;
     align-items: center;
-    gap: 4px;
-    margin-bottom: 4px;
+    margin-bottom: 6px;
 }
+.bingo-row:last-child { margin-bottom: 0; }
 
-.row-label.orange-text {
-    width: 20px;
+.letter {
+    width: 25px;
+    font-size: 18px;
     font-weight: 900;
-    color: var(--orange);
     text-align: center;
-    font-size: 13px;
+    margin-right: 8px;
 }
+.letter.b { color: #22c55e; }
+.letter.i { color: #ef4444; }
+.letter.n { color: #f59e0b; }
+.letter.g { color: #3b82f6; }
+.letter.o { color: #a855f7; }
 
-.row-cells {
+.num-row {
     display: grid;
     grid-template-columns: repeat(15, 1fr);
     gap: 3px;
     flex: 1;
 }
 
-.board-cell {
+/* 🎯 ያልወጡ ቁጥሮች - ደምቀው የሚታዩ ነጭ ቁጥሮች */
+.board-num {
+    background: rgba(255, 255, 255, 0.08);
+    color: #FFFFFF !important;              
     aspect-ratio: 1;
-    background: #1b2432;
-    border-radius: 4px;
     display: flex;
-    align-items: center;
     justify-content: center;
-    font-size: 9px;
-    color: #64748b;
-    font-weight: bold;
-}
-
-.board-cell.called {
-    background: var(--orange) !important;
-    color: #fff !important;
-    box-shadow: 0 0 6px var(--orange-glow);
-}
-
-/* BALLS DISPLAY WRAPPER */
-.balls-display-wrapper {
-    display: flex;
     align-items: center;
-    justify-content: space-between;
-    padding: 10px 14px;
-    gap: 10px;
+    border-radius: 50%;
+    font-size: 10.5px;
+    font-weight: 800;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    transition: all 0.25s ease-in-out;
 }
 
-.recent-balls-list {
+/* 🎯 በየፊደሉ የተለየ አበራብራ (B-I-N-G-O Colors) */
+#b-container .board-num.drawn {
+    background: #22c55e !important;
+    color: #ffffff !important;
+    border-color: #22c55e !important;
+    box-shadow: 0 0 10px #22c55e, 0 0 4px #22c55e;
+    transform: scale(1.1);
+}
+
+#i-container .board-num.drawn {
+    background: #ef4444 !important;
+    color: #ffffff !important;
+    border-color: #ef4444 !important;
+    box-shadow: 0 0 10px #ef4444, 0 0 4px #ef4444;
+    transform: scale(1.1);
+}
+
+#n-container .board-num.drawn {
+    background: #f59e0b !important;
+    color: #ffffff !important;
+    border-color: #f59e0b !important;
+    box-shadow: 0 0 10px #f59e0b, 0 0 4px #f59e0b;
+    transform: scale(1.1);
+}
+
+#g-container .board-num.drawn {
+    background: #3b82f6 !important;
+    color: #ffffff !important;
+    border-color: #3b82f6 !important;
+    box-shadow: 0 0 10px #3b82f6, 0 0 4px #3b82f6;
+    transform: scale(1.1);
+}
+
+#o-container .board-num.drawn {
+    background: #a855f7 !important;
+    color: #ffffff !important;
+    border-color: #a855f7 !important;
+    box-shadow: 0 0 10px #a855f7, 0 0 4px #a855f7;
+    transform: scale(1.1);
+}
+
+/* 🔴 የኳሶች እርስ በርስ መደራረቢያ ስታይል (Overlapping Balls) */
+.recent-balls-row {
     display: flex;
-    gap: 6px;
-    overflow-x: auto;
-    flex: 1;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    padding: 12px 10px;
+    background: #11141a;
+    border-radius: 16px;
+    margin-bottom: 15px;
+    min-height: 70px;
 }
 
-.recent-ball {
+.overlapping-ball {
     width: 32px;
     height: 32px;
     border-radius: 50%;
-    background: #1b2432;
-    border: 1px solid var(--orange-border);
+    color: white;
     display: flex;
-    align-items: center;
+    flex-direction: column;
     justify-content: center;
-    font-size: 11px;
+    align-items: center;
     font-weight: bold;
-    color: #fff;
-    flex-shrink: 0;
+    border: 2px solid rgba(255, 255, 255, 0.8);
+    margin-left: -8px;
+    position: relative;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.4);
+    transition: all 0.3s ease;
+    opacity: 0.85;
+}
+.overlapping-ball .b-letter { font-size: 8px; line-height: 1; opacity: 0.9; }
+.overlapping-ball .b-number { font-size: 12px; line-height: 1; font-weight: 800; }
+
+.overlapping-ball.current-live-ball {
+    width: 60px !important;
+    height: 60px !important;
+    font-size: 18px;
+    margin-left: 6px;
+    z-index: 100;
+    opacity: 1 !important;
+    border: 3px solid #ffd700 !important;
+    box-shadow: 0 0 18px rgba(255, 215, 0, 0.8), 
+                0 0 8px rgba(255, 215, 0, 0.5),
+                0 6px 10px rgba(0,0,0,0.5);
+    transform: scale(1.08);
 }
 
-.current-ball-big.orange-glow {
-    width: 60px;
-    height: 60px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #ff7b00, #ff4500);
+.overlapping-ball.current-live-ball .b-letter { 
+    font-size: 13px !important; 
+    font-weight: 900;
+    letter-spacing: 0.5px;
+}
+.overlapping-ball.current-live-ball .b-number { 
+    font-size: 22px !important;
+    font-weight: 900;
+    line-height: 1;
+}
+
+/* 🎴 የካርድ እና የጎን ፍላጻዎች ዋና መዋቅር ማስተካከያ */
+.main-slider-layout {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    max-width: 100%;
+    background: #151821;
+    padding: 6px 4px;
+    border-radius: 14px;
+    box-sizing: border-box;
+    position: relative;
+    margin-bottom: 5px;
+}
+
+.card-display-center {
+    flex: 1;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 0 18px var(--orange-glow);
-    animation: ballPop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    margin: 0 auto;
+    width: 100%;
+    max-width: 260px;
 }
 
-@keyframes ballPop {
-    0% { transform: scale(0.5); opacity: 0; }
-    100% { transform: scale(1); opacity: 1; }
-}
-
-.current-ball-big .letter { font-size: 10px; font-weight: 900; line-height: 1; }
-.current-ball-big .number { font-size: 20px; font-weight: 900; line-height: 1; }
-
-/* 5x5 MATRIX PLAYER CARD */
-.player-card-wrapper {
-    padding: 10px 14px;
-}
-
-.player-bingo-card {
-    background: #121925;
-    border: 2px solid var(--orange-border);
-    border-radius: 16px;
-    padding: 12px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
-}
-
-.bingo-matrix-grid {
+.bingo-header-letters {
     display: grid;
     grid-template-columns: repeat(5, 1fr);
-    gap: 6px;
+    gap: 5px;
+    width: 100%;
+    margin-bottom: 6px;
+    text-align: center;
+    box-sizing: border-box;
+}
+.bingo-header-letters span {
+    color: white;
+    font-weight: bold;
+    font-size: 14px;
+    padding: 6px 0;
+    border-radius: 6px;
+    text-shadow: 1px 1px 2px #000;
+    display: block;
+    width: 100%;
+}
+
+.bingo-card-grid-5x5 {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 5px;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .bingo-cell {
-    aspect-ratio: 1;
-    background: #1b2432;
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 14px;
-    font-weight: bold;
+    background: #242834;
     color: #fff;
-    border: 1px solid #2d3a4e;
-    cursor: pointer;
-    transition: background 0.2s ease, transform 0.1s ease;
+    text-align: center;
+    font-weight: bold;
+    font-size: 15px; 
+    padding: 10px 0;
+    border-radius: 8px;
+    border: 1px solid #333949;
     user-select: none;
+    box-sizing: border-box;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+.bingo-cell.free-star {
+    background: #ffd700 !important;
+    color: #000 !important;
+    font-size: 18px;
 }
 
-.bingo-cell:active { transform: scale(0.92); }
-
-.bingo-cell.free-space {
-    background: #2a3649;
-    color: var(--gold);
-    font-size: 16px;
-}
-
-.bingo-cell.marked, .bingo-cell.marked-auto {
-    background: var(--orange) !important;
-    color: #ffffff !important;
-    border-color: var(--orange-border) !important;
-    box-shadow: 0 0 10px var(--orange-glow);
-    animation: cellPop 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-}
-
-@keyframes cellPop {
-    0% { transform: scale(0.7); }
-    100% { transform: scale(1); }
+.side-nav-btn {
+    background: rgba(255, 255, 255, 0.08);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    font-size: 14px;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 10;
+    flex-shrink: 0;
+    transition: all 0.2s;
 }
 
 .live-action-footer { padding: 10px 14px; }
@@ -641,56 +724,29 @@ button {
 
 .orange-bingo-btn:active { transform: scale(0.98); }
 
-/* =========================================================
-   3. WINNER MODAL & GENERAL MODALS
-========================================================= */
-
-.modal[hidden] { display: none !important; }
-.modal {
-    position: fixed;
-    inset: 0;
-    z-index: 2000;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
-}
-
-.modal-overlay {
-    position: absolute;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.8);
-    backdrop-filter: blur(4px);
-}
-
-.modal-box {
-    position: relative;
-    z-index: 2001;
-    width: 100%;
-    max-width: 340px;
-    padding: 25px 20px;
+/* 🎯 Winner Popup 5x5 Matrix Cell Styling */
+.grid-cell-5x5 {
+    background: #1e272e;
+    color: #ffffff;
+    border: 1px solid #4b6584;
+    border-radius: 4px;
+    padding: 6px 2px;
+    font-size: 11px;
+    font-weight: bold;
     text-align: center;
-    border-radius: 20px;
-    background: #1b2432;
-    border: 1px solid #354156;
-    box-shadow: 0 20px 50px rgba(0,0,0,.5);
 }
 
-.modal-close {
-    position: absolute;
-    right: 12px;
-    top: 9px;
-    border: none;
-    background: transparent;
-    color: #8995a7;
-    font-size: 28px;
-    cursor: pointer;
+.grid-cell-5x5.marked {
+    background: #ff4757;
+    color: #ffffff;
+    border-color: #ff4757;
 }
 
-.modal-icon { font-size: 48px; }
-.modal-box h2 { margin-top: 10px; font-size: 18px; }
-.modal-box p { margin-top: 8px; color: var(--muted); font-size: 12px; line-height: 1.5; }
-.modal-button { width: 100%; margin-top: 12px; }
+.grid-cell-5x5.free {
+    background: #ffd700;
+    color: #1e272e;
+    border-color: #ffd700;
+}
 
 /* CUSTOM POPUP MODALS (DEPOSIT / WITHDRAW) */
 .custom-modal[hidden] { display: none !important; }
@@ -870,11 +926,4 @@ button {
     .hero h1, .hero h1 strong { font-size: 21px; }
     .game-image { height: 125px; }
     .game-icon { font-size: 55px; }
-}
-
-/* የካርቴላው መያዣ ሳጥን በጣም እንዳያድግ ይከለክላል */
-#playerBingoCard {
-    max-height: 280px !important;
-    overflow-y: auto;
-    padding: 5px;
 }
