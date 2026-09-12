@@ -230,29 +230,23 @@
                 </button>
             </div>
 
-            <!-- 1-75 Board Container -->
-            <div class="bingo-board-container orange-theme">
-                <div class="board-row" data-row="B"><span class="row-label orange-text">B</span><div class="row-cells" id="row-B"></div></div>
-                <div class="board-row" data-row="I"><span class="row-label orange-text">I</span><div class="row-cells" id="row-I"></div></div>
-                <div class="board-row" data-row="N"><span class="row-label orange-text">N</span><div class="row-cells" id="row-N"></div></div>
-                <div class="board-row" data-row="G"><span class="row-label orange-text">G</span><div class="row-cells" id="row-G"></div></div>
-                <div class="board-row" data-row="O"><span class="row-label orange-text">O</span><div class="row-cells" id="row-O"></div></div>
+            <div class="bingo-board-75">
+                <div class="bingo-row"><div class="letter b">B</div><div id="b-container" class="num-row"></div></div>
+                <div class="bingo-row"><div class="letter i">I</div><div id="i-container" class="num-row"></div></div>
+                <div class="bingo-row"><div class="letter n">N</div><div id="n-container" class="num-row"></div></div>
+                <div class="bingo-row"><div class="letter g">G</div><div id="g-container" class="num-row"></div></div>
+                <div class="bingo-row"><div class="letter o">O</div><div id="o-container" class="num-row"></div></div>
             </div>
 
-            <!-- Drawn Balls Display Section -->
-            <div class="balls-display-wrapper">
-                <div class="recent-balls-list" id="recentBallsList"></div>
-                <div class="current-ball-big orange-glow" id="currentBallBig">
-                    <span class="letter" id="currentBallLetter">-</span>
-                    <span class="number" id="currentBallNumber">--</span>
-                </div>
-            </div>
-
-            <!-- Vertical Stack Container for Player Cards (No Next/Prev Buttons) -->
-            <div class="active-card-container" id="playerBingoCard" style="display:flex; flex-direction:column; gap:15px; max-height:420px; overflow-y:auto; padding:10px;">
+            <div class="recent-balls-row">
+                <div class="recent-ball live">29</div>
+                <div class="recent-ball">36</div>
+                <div class="recent-ball">22</div>
+                <div class="recent-ball">19</div>
             </div>
 
             <div class="live-action-footer">
+                <div id="playerBingoCard" class="player-bingo-card"></div>
                 <button class="orange-bingo-btn" id="claimBingoBtn" type="button">
                     🔥 BINGO!
                 </button>
@@ -326,42 +320,6 @@
         </button>
     </nav>
 
-</div>
-
-<!-- WINNER OVERLAY MODAL -->
-<div class="custom-modal winner-modal" id="winnerModal" hidden>
-    <div class="modal-overlay"></div>
-    <div class="modal-card orange-border" style="background:#181c26; border:2px solid #ff9f43; border-radius:16px; padding:20px; width:90%; max-width:380px; margin:auto;">
-        <div class="winner-header" style="text-align:center; margin-bottom:12px;">
-            <h2 style="color:#ff9f43; margin:0; font-size:24px;">🎉 BINGO! 🎉</h2>
-            <p class="winner-subtitle" style="color:#d1d8e0; font-size:13px; margin-top:4px;" id="winnerHeaderSubtitle">አሸናፊ: user_--- (ካርቴላ #---)</p>
-        </div>
-
-        <div class="winner-details-box" style="margin:10px 0; font-size:14px; background:#222736; padding:10px 14px; border-radius:8px;">
-            <div class="detail-row" style="display:flex; justify-content:space-between; margin-bottom:6px;">
-                <span style="color:#a0a0a0;">👤 ስም:</span>
-                <strong id="winnerNameText" style="color:#ff9f43;">---</strong>
-            </div>
-            <div class="detail-row" style="display:flex; justify-content:space-between; margin-bottom:6px;">
-                <span style="color:#a0a0a0;">📞 ስልክ:</span>
-                <strong id="winnerPhoneText" style="color:#fff;">አልተመዘገበም</strong>
-            </div>
-            <div class="detail-row" style="display:flex; justify-content:space-between;">
-                <span style="color:#a0a0a0;">🎫 ካርድ:</span>
-                <strong id="winnerCardIdText" style="color:#ff9f43;">#---</strong>
-            </div>
-        </div>
-
-        <!-- 5x5 Winning Pattern Grid Preview -->
-        <div class="winner-grid-preview" id="winnerGridPreview" style="display:grid; grid-template-columns:repeat(5, 1fr); gap:5px; margin:15px 0;">
-        </div>
-
-        <div class="prize-badge-box" style="text-align:center; margin-bottom:15px;">
-            <div id="winnerPrizeAmount" style="background:#00b894; color:#fff; font-size:22px; font-weight:bold; padding:12px; border-radius:10px;">+0 ETB</div>
-        </div>
-
-        <button class="submit-btn orange-btn" type="button" onclick="closeWinnerModalAndReset()" style="width:100%; background:#ff7675; border:none; padding:12px; color:#fff; font-size:16px; font-weight:bold; border-radius:8px; cursor:pointer;">እሺ (ቀጥል)</button>
-    </div>
 </div>
 
 <!-- GENERAL MESSAGE MODAL -->
