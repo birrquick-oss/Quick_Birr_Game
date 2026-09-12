@@ -44,7 +44,7 @@
                     <span class="hero-badge">🎮 PLAY & WIN</span>
                     <h1>Welcome to<br><strong>QUICK_BIRR GAMES</strong></h1>
                     <p>Your favorite games, all in one place.</p>
-                    <button class="primary-button" id="playNowButton" type="button">🎮 PLAY NOW</button>
+                    <button class="primary-button" id="playNowButton" type="button" onclick="showPage('bingoSelection')">🎮 PLAY NOW</button>
                 </div>
                 <div class="hero-decoration">🎰</div>
             </section>
@@ -70,7 +70,7 @@
                 </div>
 
                 <div class="games-grid">
-                    <button class="game-card bingo-card" data-game="bingo" type="button" id="bingoGameCard" onclick="if(typeof showPage==='function') showPage('bingoSelection');">
+                    <button class="game-card bingo-card" data-game="bingo" type="button" id="bingoGameCard" onclick="showPage('bingoSelection');">
                         <div class="game-image">
                             <span class="game-icon">🎱</span>
                             <span class="game-star">★</span>
@@ -319,7 +319,7 @@
 </div>
 
 <!-- GENERAL MESSAGE MODAL -->
-<div class="modal" id="messageModal" style="display: none;">
+<div class="modal" id="messageModal" hidden>
     <div class="modal-overlay"></div>
     <div class="modal-box">
         <button class="modal-close" id="modalClose" type="button">×</button>
@@ -331,7 +331,7 @@
 </div>
 
 <!-- DEPOSIT MODAL -->
-<div class="custom-modal" id="depositModal" style="display: none;">
+<div class="custom-modal" id="depositModal" hidden>
     <div class="modal-overlay"></div>
     <div class="modal-card">
         <div class="modal-header">
@@ -402,7 +402,7 @@
 </div>
 
 <!-- WITHDRAW MODAL -->
-<div class="custom-modal" id="withdrawModal" style="display: none;">
+<div class="custom-modal" id="withdrawModal" hidden>
     <div class="modal-overlay"></div>
     <div class="modal-card">
         <div class="modal-header">
@@ -445,7 +445,7 @@
     </div>
 </div>
 
-<!-- Main JavaScript -->
+<!-- Main JavaScript File -->
 <script src="/static/app.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
 <script>eruda.init();</script>
