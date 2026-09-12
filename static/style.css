@@ -30,6 +30,14 @@ html {
     scroll-behavior: smooth;
 }
 
+/* 1. መላው ገጽ Scroll እንዲያደርግ መፍቀድ */
+body, html {
+    overflow-y: auto !important;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}
+
 body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
     background: var(--bg);
@@ -42,7 +50,7 @@ button {
     font-family: inherit;
 }
 
-/* 🎯 Universal Hidden Fix (በዲዛይን እንዳይጋጭ) */
+/* 🎯 Universal Hidden Fix */
 [hidden], .page-view[hidden], .custom-modal[hidden], .modal[hidden] {
     display: none !important;
 }
@@ -52,7 +60,14 @@ button {
     max-width: 600px;
     min-height: 100vh;
     margin: auto;
-    padding-bottom: 90px;
+    padding-bottom: 110px;
+}
+
+/* 2. የጨዋታው Container ከታች በኩል ቦታ እንዲኖረው መተው */
+.game-container, .main-content {
+    padding-bottom: 90px !important; /* ከታች ያለው Navigation Bar እንዳይሸፍነው */
+    min-height: 100vh;
+    box-sizing: border-box;
 }
 
 /* =========================================================
@@ -385,7 +400,7 @@ button {
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 10px;
+    font-size: 11px;
     font-weight: bold;
     color: #000000 !important;
     cursor: pointer;
@@ -474,23 +489,23 @@ button {
 /* 🎱 የ1-75 የቢንጎ ሰሌዳ ረድፎች አቀማመጥ */
 .bingo-board-75 {
     background: #090a14;
-    padding: 10px;
+    padding: 8px;
     border-radius: 12px;
-    margin: 10px 14px;
+    margin: 8px 10px;
 }
 .bingo-row {
     display: flex;
     align-items: center;
-    margin-bottom: 6px;
+    margin-bottom: 5px;
 }
 .bingo-row:last-child { margin-bottom: 0; }
 
 .letter {
-    width: 25px;
-    font-size: 18px;
+    width: 22px;
+    font-size: 16px;
     font-weight: 900;
     text-align: center;
-    margin-right: 8px;
+    margin-right: 6px;
 }
 .letter.b { color: #22c55e; }
 .letter.i { color: #ef4444; }
@@ -501,11 +516,11 @@ button {
 .num-row {
     display: grid;
     grid-template-columns: repeat(15, 1fr);
-    gap: 3px;
+    gap: 2px;
     flex: 1;
 }
 
-/* 🎯 ያልወጡ ቁጥሮች - ደምቀው የሚታዩ ነጭ ቁጥሮች */
+/* 🎯 ያልወጡ ቁጥሮች */
 .board-num {
     background: rgba(255, 255, 255, 0.08);
     color: #FFFFFF !important;              
@@ -514,7 +529,7 @@ button {
     justify-content: center;
     align-items: center;
     border-radius: 50%;
-    font-size: 10px;
+    font-size: 9px;
     font-weight: 800;
     border: 1px solid rgba(255, 255, 255, 0.15);
     transition: all 0.25s ease-in-out;
@@ -567,16 +582,16 @@ button {
     justify-content: center;
     align-items: center;
     position: relative;
-    padding: 12px 10px;
+    padding: 8px 10px;
     background: #11141a;
     border-radius: 16px;
-    margin: 0 14px 15px;
-    min-height: 70px;
+    margin: 0 10px 10px;
+    min-height: 60px;
 }
 
 .overlapping-ball {
-    width: 32px;
-    height: 32px;
+    width: 30px;
+    height: 30px;
     border-radius: 50%;
     color: white;
     display: flex;
@@ -593,9 +608,9 @@ button {
 }
 
 .overlapping-ball.current-live-ball {
-    width: 55px !important;
-    height: 55px !important;
-    font-size: 18px;
+    width: 50px !important;
+    height: 50px !important;
+    font-size: 16px;
     margin-left: 6px;
     z-index: 100;
     opacity: 1 !important;
@@ -611,9 +626,16 @@ button {
     align-items: center;
     width: 100%;
     background: #151821;
-    padding: 6px;
-    border-radius: 14px;
-    margin-bottom: 10px;
+    padding: 10px;
+    border-radius: 16px;
+    margin-bottom: 12px;
+}
+
+/* 3. የካርቴላው Grid መጠኑ በስልክ ስክሪን ልክ እንዲሆን እና እንዲጎላ የተደረገ */
+.bingo-card, .card-grid {
+    max-width: 340px; /* እንደ ስክሪኑ ስፋት አስተካክለው */
+    margin: 0 auto;
+    padding: 8px;
 }
 
 .card-display-center {
@@ -623,49 +645,53 @@ button {
     align-items: center;
     justify-content: center;
     width: 100%;
-    max-width: 260px;
+    max-width: 330px;
 }
 
 .bingo-header-letters {
     display: grid;
     grid-template-columns: repeat(5, 1fr);
-    gap: 5px;
+    gap: 6px;
     width: 100%;
-    margin-bottom: 6px;
+    margin-bottom: 8px;
     text-align: center;
 }
+
 .bingo-header-letters span {
     color: white;
-    font-weight: bold;
-    font-size: 14px;
-    padding: 4px 0;
-    border-radius: 6px;
+    font-weight: 900;
+    font-size: 17px;
+    padding: 6px 0;
+    border-radius: 8px;
 }
 
 .bingo-card-grid-5x5 {
     display: grid;
     grid-template-columns: repeat(5, 1fr);
-    gap: 5px;
+    gap: 6px;
     width: 100%;
 }
 
 .bingo-cell {
+    aspect-ratio: 1; /* የሴሎቹ ቅርፅ እንዳይዛባ */
     background: #242834;
     color: #fff;
     text-align: center;
-    font-weight: bold;
-    font-size: 14px; 
-    padding: 8px 0;
-    border-radius: 8px;
-    border: 1px solid #333949;
+    font-weight: 900;
+    font-size: 18px; /* የጽሁፉ መጠን ትልቅ እና ግልጽ እንዲሆን */
+    padding: 13px 0;
+    border-radius: 10px;
+    border: 1.5px solid #333949;
     display: flex;
     justify-content: center;
     align-items: center;
+    box-shadow: inset 0 0 5px rgba(0,0,0,0.2);
 }
+
 .bingo-cell.free-star {
     background: #ffd700 !important;
     color: #000 !important;
-    font-size: 16px;
+    font-size: 20px;
 }
 
 .live-action-footer { padding: 10px 14px; }
@@ -909,4 +935,7 @@ button {
     .hero h1, .hero h1 strong { font-size: 21px; }
     .game-image { height: 125px; }
     .game-icon { font-size: 55px; }
+    
+    .card-display-center { max-width: 280px; }
+    .bingo-cell { font-size: 15px; padding: 10px 0; }
 }
