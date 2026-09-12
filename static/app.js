@@ -276,101 +276,216 @@ function updateTakenCardsUI(takenCards) {
    QUICK_BIRR GAMES - PART 2 / 3
    ========================================================= */
 
-/* =========================
-   DRAW PHASE & BOARD LOGIC
-========================= */
-function render75BoardSkeleton() {
-    const ranges = {
-        B: [1, 15], I: [16, 30], N: [31, 45], G: [46, 60], O: [61, 75]
+ // 2️⃣ DRAW PHASE መሸጋገሪያ
+        if (data.type === "phase_change" && data.phase === "DRAW") {
+            document.getElementById("pickScreen").style.display = "none";
+            document.getElementById("drawScreen").style.display = "block";
+         
+            const gameMetaSpan = document.querySelector(".game-meta span");
+            if (gameMetaSpan) gameMetaSpan.innerText = "Game " + data.game_no;
+            
+            if (data.derash_rooms) {
+                latestDerashRooms = data.derash_rooms;
+                updateDerashUI();
+            }
+            
+            clear75Board();
+            currentCardIndex = 0; 
+            renderMyBoughtCards();
+            updateRecentBallsUI(); 
+        }
+
+        // 3️⃣ BALL PHASE (ኳስ ሲወድቅ)
+        if (data.type === "ball") {
+            document.getElementById("pickScreen").style.display = "none";
+            document.getElementById("drawScreen").style.display = "block";
+            
+            const ballElement = document.getElementById(`ball-${data.number}`);
+            const letter = data.label.charAt(0);
+            const color = getBingoColor(letter);
+            
+            if (ballElement) {
+                ballElement.classList.add("drawn");
+                ballElement.style.background = color;
+                ballElement.style.color = "#fff";
+                ballElement.style.boxShadow = `0 0 10px ${color}`;
+            }
+
+            if (data.derash_rooms) {
+                latestDerashRooms = data.derash_rooms;
+                updateDerashUI();
+            }
+            
+            if (soundEnabled) {
+                // 🛠️ የተስተካከለ፦ .mp3 አንድ ጊዜ ብቻ እንዲሆን ተደርጓል
+                let audio = new Audio(`/static/sounds/${data.number}.mp3.mp3`);
+                audio.play().catch(e => {
+                    console.log("🔊 ድምፅ ማጫወት አልተቻለም፦", e);
+                });
+            }
+
+            recentBallsList.unshift({ label: data.label, letter: letter, num: data.number });
+            if (recentBallsList.length > 10) recentBallsList.pop();
+            updateRecentBallsUI(); 
+
+            if (isAutoMark) {
+                const matchingCells = document.querySelectorAll(`.cell-${data.number}`);
+                matchingCells.forEach(cell => {
+                    cell.classList.add("marked-auto");
+                    cell.style.background = color;
+                    cell.style.color = "#fff";
+                    cell.style.boxShadow = `0 0 12px ${color}`;
+                });
+            }
+        
+            if (document.getElementById("callCount")) {
+                document.getElementById("callCount").innerText = data.call_count;
+            }
+        }
+
+        // 4️⃣ GAME OVER
+        if (data.type === "game_over") {
+            // 🛠️ የተስተካከለ፦ soundEnabled = false; እዚህ ጋር ተወግዷል
+            if (soundEnabled && typeof playWinSound === "function") playWinSound();
+
+            const winnersList = data.winners || [];
+            const titleText = winnersList.length > 1 ? `🎉 ${winnersList.length} አሸናፊዎች! 🎉` : "🎉 BINGO! 🎉";
+            const messageText = data.message || "ጨዋታው ተጠናቋል!";
+
+            let allWinnersHtml = "";
+
+            if (winnersList.length > 0) {
+                winnersList.forEach((winner) => {
+                    const wName = winner.telegram_name || `User_${winner.winner_id || winner.telegram_id}`;
+                    const phoneNum = winner.phone_number || "ስልክ አልተመዘገበም";
+                    const cNum = winner.card_number || "N/A";
+                    const pAmt = winner.prize || 0;
+                    const cardMatrixNumbers = winner.card_numbers || [];
+                    const winningNumbers = winner.winning_numbers || [];
+
+                    let gridHtml = "";
+                    if (cardMatrixNumbers.length === 25) {
+                        gridHtml = `<div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin: 15px auto; max-width: 250px; background: #111; padding: 10px; border-radius: 10px;">`;
+                        cardMatrixNumbers.forEach((num) => {
+                            const isWinningNum = winningNumbers.includes(num);
+                            const isFreeSpace = num === 0 || num === "★" || num === "FREE";
+                            const displayNum = isFreeSpace ? "★" : num;
+
+                            let cellStyle = `aspect-ratio: 1; display: flex; justify-content: center; align-items: center; font-weight: bold; font-size: 14px; border-radius: 6px; transition: all 0.3s;`;
+                            if (isWinningNum || isFreeSpace) {
+                                cellStyle += `background: #ffbc00; color: black; box-shadow: 0 0 12px #ffbc00; border: 1px solid #fff; scale: 1.05;`;
+                            } else {
+                                cellStyle += `background: #252634; color: #666; border: 1px solid #333;`;
+                            }
+                            gridHtml += `<div style="${cellStyle}">${displayNum}</div>`;
+                        });
+                        gridHtml += `</div>`;
+                    }
+
+                    allWinnersHtml += `
+                        <div style="background:#161622; padding:15px; border-radius:15px; margin-bottom: 20px; border: 1px solid #2a2b3d; text-align: left;">
+                            <div style="font-size:16px; margin-bottom: 10px;">
+                                <p style="margin:4px 0;">👤 <b>ስም፦</b> <span style="color:#00ffcc; float:right; font-weight:bold;">${wName}</span></p>
+                                <p style="margin:4px 0;">📞 <b>ስልክ፦</b> <span style="color:#3aafaa; float:right; font-weight:bold;">${phoneNum}</span></p>
+                                <p style="margin:4px 0;">🎫 <b>ካርድ፦</b> <span style="color:#ffbc00; float:right; font-weight:bold;">#${cNum}</span></p>
+                            </div>
+                            ${gridHtml}
+                            <div style="background: rgba(0,255,0,0.1); border: 1px dashed #00ff00; padding: 8px; border-radius: 10px; text-align: center; margin-top: 10px;">
+                                <span style="font-size:22px; color:#00ff00; font-weight:bold;">+${pAmt} ETB</span>
+                            </div>
+                        </div>
+                    `;
+                });
+            } else {
+                const winnerName = data.telegram_name || data.winner_name || "ተጫዋች";
+                const phoneNum = data.phone_number || "ስልክ አልተመዘገበም";
+                const cardNum = data.card_number || "N/A";
+                const prize = data.prize || 0;
+                const cardMatrixNumbers = data.card_numbers || []; 
+                const winningNumbers = data.winning_numbers || []; 
+
+                let gridHtml = "";
+                if (cardMatrixNumbers.length === 25) {
+                    gridHtml = `<div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin: 15px auto; max-width: 250px; background: #111; padding: 10px; border-radius: 10px;">`;
+                    cardMatrixNumbers.forEach((num) => {
+                        const isWinningNum = winningNumbers.includes(num);
+                        const isFreeSpace = num === 0 || num === "★" || num === "FREE";
+                        const displayNum = isFreeSpace ? "★" : num;
+
+                        let cellStyle = `aspect-ratio: 1; display: flex; justify-content: center; align-items: center; font-weight: bold; font-size: 14px; border-radius: 6px; transition: all 0.3s;`;
+                        if (isWinningNum || isFreeSpace) {
+                            cellStyle += `background: #ffbc00; color: black; box-shadow: 0 0 12px #ffbc00; border: 1px solid #fff; scale: 1.05;`;
+                        } else {
+                            cellStyle += `background: #252634; color: #666; border: 1px solid #333;`;
+                        }
+                        gridHtml += `<div style="${cellStyle}">${displayNum}</div>`;
+                    });
+                    gridHtml += `</div>`;
+                }
+
+                allWinnersHtml = `
+                    <div style="background:#161622; padding:15px; border-radius:15px; border: 1px solid #2a2b3d; text-align: left;">
+                        <div style="font-size:16px; margin-bottom: 10px;">
+                            <p style="margin:4px 0;">👤 <b>ስም፦</b> <span style="color:#00ffcc; float:right; font-weight:bold;">${winnerName}</span></p>
+                            <p style="margin:4px 0;">📞 <b>ስልክ፦</b> <span style="color:#3aafaa; float:right; font-weight:bold;">${phoneNum}</span></p>
+                            <p style="margin:4px 0;">🎫 <b>ካርድ፦</b> <span style="color:#ffbc00; float:right; font-weight:bold;">#${cardNum}</span></p>
+                        </div>
+                        ${gridHtml}
+                        <div style="background: rgba(0,255,0,0.1); border: 1px dashed #00ff00; padding: 10px; border-radius: 10px; text-align: center; margin-top: 10px;">
+                            <span style="font-size:24px; color:#00ff00; font-weight:bold;">+${prize} ETB</span>
+                        </div>
+                    </div>
+                `;
+            }
+
+            const oldModal = document.getElementById('winnerModal');
+            if (oldModal) oldModal.remove();
+
+            const modalHtml = `
+                <div id="winnerModal" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); display:flex; justify-content:center; align-items:center; z-index:9999; color:white; font-family:sans-serif;">
+                    <div style="background:#1e1e2e; padding:25px; border-radius:20px; text-align:center; max-width:90%; width:360px; border:2px solid #ffbc00; box-shadow: 0 0 30px rgba(255,188,0,0.3); display: flex; flex-direction: column; max-height: 85vh;">
+                        <h2 style="color:#ffbc00; margin:0 0 5px 0; font-size:24px; font-weight:900;">${titleText}</h2>
+                        <p style="font-size:12px; color:#aaa; margin: 0 0 10px 0;">${messageText}</p>
+                        <hr style="border-color:#2a2b3d; margin:5px 0 15px 0; width:100%;">
+                        
+                        <div style="overflow-y: auto; flex-grow: 1; padding-right: 5px; margin-bottom: 15px; scrollbar-width: thin;">
+                            ${allWinnersHtml}
+                        </div>
+
+                        <button onclick="document.getElementById('winnerModal').remove();" style="background:#ffbc00; color:black; border:none; padding:14px; font-size:16px; font-weight:bold; border-radius:10px; width:100%; cursor:pointer; flex-shrink: 0;">እሺ (ቀጥል)</button>
+                    </div>
+                </div>
+            `;
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+            setTimeout(() => {
+                const autoModal = document.getElementById('winnerModal');
+                if (autoModal) {
+                    autoModal.remove();
+                }
+            }, 5000);
+
+            selectedCards = []; 
+            temporarilySelectedCards = [];
+            document.querySelectorAll(".card-btn").forEach(btn => {
+                btn.style.backgroundColor = "#ffffff";
+                btn.style.color = "#000000";
+                btn.classList.remove("bought", "selected-temp");
+            });
+            refreshTakenCards(); 
+        }
     };
 
-    for (const [letter, range] of Object.entries(ranges)) {
-        const container = document.getElementById(`row-${letter}`);
-        if (!container) continue;
-
-        container.innerHTML = "";
-        for (let i = range[0]; i <= range[1]; i++) {
-            const cell = document.createElement("span");
-            cell.className = "board-cell";
-            cell.id = `cell-ball-${i}`;
-            cell.textContent = i;
-            container.appendChild(cell);
-        }
-    }
+    ws.onclose = () => setTimeout(connectWebSocket, 2000);
 }
 
-function renderDrawnBall(data) {
-    const letterEl = document.getElementById("currentBallLetter");
-    const numberEl = document.getElementById("currentBallNumber");
-    const historyList = document.getElementById("recentBallsList");
-    const callBadge = document.getElementById("callCountBadge");
-    const gameIdBadge = document.getElementById("gameIdBadge");
-    const liveDerashText = document.getElementById("liveDerashText");
 
-    const letter = data.label ? data.label.charAt(0) : (data.letter || 'B');
-    const color = getBingoColor(letter);
-
-    if (letterEl) {
-        letterEl.textContent = letter;
-        letterEl.style.color = color;
-    }
-    if (numberEl) {
-        numberEl.textContent = data.number || "--";
-    }
-    
-    if (callBadge && data.call_count) callBadge.textContent = `Call ${data.call_count}`;
-    
-    const activeGameId = data.game_id || currentGameId || 0;
-    if (gameIdBadge) gameIdBadge.textContent = `Game #${activeGameId}`;
-
-    if (data.derash_amount) {
-        currentDerashAmount = `${parseFloat(data.derash_amount).toFixed(2)}`;
-    }
-    if (liveDerashText) {
-        liveDerashText.textContent = `ደራሽ ${currentDerashAmount} ETB`;
-    }
-
-    const activeCell = document.getElementById(`cell-ball-${data.number}`);
-    if (activeCell) {
-        activeCell.classList.add("called");
-        activeCell.style.background = color;
-        activeCell.style.color = "#fff";
-    }
-
-    if (soundEnabled && data.number) {
-        try {
-            let audio = new Audio(`/static/sounds/${data.number}.mp3.mp3`);
-            audio.play().catch(e => console.log("Sound playback prevented:", e));
-        } catch (err) {
-            console.error("Audio error:", err);
-        }
-    }
-
-    recentBallsList.unshift({ label: `${letter}${data.number}`, letter: letter, num: data.number });
-    if (recentBallsList.length > 10) recentBallsList.pop();
-
-    if (historyList) {
-        historyList.innerHTML = "";
-        recentBallsList.forEach((b, idx) => {
-            const ballItem = document.createElement("div");
-            ballItem.className = idx === 0 ? "recent-ball-pill active" : "recent-ball-pill";
-            ballItem.style.backgroundColor = getBingoColor(b.letter);
-            ballItem.textContent = `${b.letter}${b.num}`;
-            historyList.appendChild(ballItem);
-        });
-    }
-
-    if (isAutoMark) {
-        const matchingCells = document.querySelectorAll(`.cell-${data.number}`);
-        matchingCells.forEach(cell => {
-            cell.classList.add("marked-auto");
-            cell.style.background = color;
-            cell.style.color = "#fff";
-        });
-    }
-
-    autoMarkAllBoughtCards();
+// 🧠 ማርክ የተደረጉ ቁጥሮች እንዳይጠፉ በካርድ ቁጥር ደረጃ የሚይዝ State
+// structure: { cardNum: Set([12, 45, 60]) }
+if (typeof markedCellsMap === "undefined") {
+    var markedCellsMap = {};
 }
+
 
 function render1000BingoCards() {
     const gridContainer = document.getElementById("cardsGrid");
@@ -481,103 +596,6 @@ document.getElementById("confirmCardsBtn")?.addEventListener("click", async () =
     updateSelectedCardsUI();
 });
 
-/* =========================================================
-   QUICK_BIRR GAMES - PART 3 / 3 (MATCHED WITH HTML FORMAT)
-   ========================================================= */
-
-function autoMarkAllBoughtCards() {
-    if (!selectedBingoCards || selectedBingoCards.length === 0) return;
-    const drawnNumbers = recentBallsList.map(b => b.num);
-
-    selectedBingoCards.forEach(cardNum => {
-        if (!markedCellsMap[cardNum]) markedCellsMap[cardNum] = new Set();
-        drawnNumbers.forEach(num => markedCellsMap[cardNum].add(num));
-    });
-}
-
-async function renderMyBoughtCards() {
-    const container = document.getElementById("playerBingoCard");
-    if (!container) return;
-    container.innerHTML = "";
-
-    if (selectedBingoCards.length === 0) {
-        container.innerHTML = "<div style='color:white; text-align:center; padding:20px;'>በዚህ ዙር ምንም ካርቴላ አልገዙም!</div>";
-        return;
-    }
-
-    // በ HTML መዋቅር መሰረት የተገዙትን ካርዶች በሙሉ በቋሚነት (Vertical Stack) እንዲወጡ ማድረግ
-    for (let index = 0; index < selectedBingoCards.length; index++) {
-        const activeCardNum = selectedBingoCards[index];
-
-        if (!markedCellsMap[activeCardNum]) markedCellsMap[activeCardNum] = new Set();
-        if (isAutoMark) {
-            recentBallsList.forEach(b => markedCellsMap[activeCardNum].add(b.num));
-        }
-
-        try {
-            const res = await fetch(`/api/cards/get_matrix?card_number=${activeCardNum}`);
-            const data = await res.json();
-            const matrix = data.matrix;
-
-            const cardBox = document.createElement("div");
-            cardBox.className = "single-card-block";
-            cardBox.style.cssText = "background:#181c26; border:1px solid #ff9f43; border-radius:12px; padding:10px; margin-bottom:12px;";
-
-            let html = `
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                    <div class="card-title-label" style="color: #ffd700; font-weight: bold; font-size: 14px;">
-                        ካርቴላ #${activeCardNum}
-                    </div>
-                    <button onclick="toggleMarkingMode()" style="background: ${isAutoMark ? '#2ed573' : '#718093'}; color: white; border: none; padding: 4px 8px; font-size: 11px; font-weight: bold; border-radius: 4px; cursor:pointer;">
-                        ${isAutoMark ? "🤖 Auto: ON" : "🖐 Manual"}
-                    </button>
-                </div>
-                <div class="bingo-header-letters" style="display:grid; grid-template-columns: repeat(5, 1fr); gap: 4px; text-align:center; font-weight:bold; margin-bottom: 5px;">
-                    <span style="background:${getBingoColor('B')}; border-radius:4px;">B</span>
-                    <span style="background:${getBingoColor('I')}; border-radius:4px;">I</span>
-                    <span style="background:${getBingoColor('N')}; border-radius:4px;">N</span>
-                    <span style="background:${getBingoColor('G')}; border-radius:4px;">G</span>
-                    <span style="background:${getBingoColor('O')}; border-radius:4px;">O</span>
-                </div>
-                <div class="bingo-card-grid-5x5" style="display:grid; grid-template-columns: repeat(5, 1fr); gap:6px;">
-            `;
-
-            matrix.forEach(row => {
-                row.forEach(cell => {
-                    if (cell === "FREE" || cell === 0) {
-                        html += `<div class="bingo-cell free-star" style="background:#ffbc00; color:#000; display:flex; justify-content:center; align-items:center; aspect-ratio:1; border-radius:6px; font-weight:bold;">★</div>`;
-                    } else {
-                        const isMarkedInState = markedCellsMap[activeCardNum].has(cell);
-                        const isAlreadyDrawn = recentBallsList.some(b => b.num === cell);
-
-                        if (isMarkedInState || (isAlreadyDrawn && isAutoMark)) {
-                            let letterPrefix = cell <= 15 ? 'B' : cell <= 30 ? 'I' : cell <= 45 ? 'N' : cell <= 60 ? 'G' : 'O';
-                            const savedColor = getBingoColor(letterPrefix);
-                            markedCellsMap[activeCardNum].add(cell);
-
-                            html += `<div class="bingo-cell cell-${cell} marked-auto" style="background:${savedColor} !important; color:#fff; display:flex; justify-content:center; align-items:center; aspect-ratio:1; border-radius:6px; font-weight:bold; cursor:pointer;" onclick="handleManualCellClick(this, ${cell}, ${activeCardNum})">${cell}</div>`;
-                        } else {
-                            html += `<div class="bingo-cell cell-${cell}" style="background:#252634; color:#fff; display:flex; justify-content:center; align-items:center; aspect-ratio:1; border-radius:6px; font-weight:bold; cursor:pointer;" onclick="handleManualCellClick(this, ${cell}, ${activeCardNum})">${cell}</div>`;
-                        }
-                    }
-                });
-            });
-
-            html += `</div>`;
-            cardBox.innerHTML = html;
-            container.appendChild(cardBox);
-        } catch (e) {
-            console.error("Matrix load error", e);
-        }
-    }
-}
-
-function toggleMarkingMode() {
-    isAutoMark = !isAutoMark;
-    if (isAutoMark) autoMarkAllBoughtCards();
-    renderMyBoughtCards(); 
-}
-
 function handleManualCellClick(cellElement, cellNumber, activeCardNum) {
     if (!markedCellsMap[activeCardNum]) markedCellsMap[activeCardNum] = new Set();
 
@@ -621,84 +639,208 @@ document.getElementById("claimBingoBtn")?.addEventListener("click", () => {
 });
 
 /* =========================================================
-   GAME OVER & WINNERS LOGIC
-========================================================= */
-function handleGameOver(data) {
-    const winnerModalEl = document.getElementById('winnerModal');
-    const winnersList = data.winners || [];
-    
-    if (winnerModalEl && winnersList.length > 0) {
-        let modalContentContainer = winnerModalEl.querySelector('.modal-card') || winnerModalEl;
-        
-        let winnersHTML = `
-            <div style="text-align:center; padding:10px; color:#fff;">
-                <h2 style="color:#ff9f43; margin:0 0 10px 0; font-size:24px;">🎉 BINGO! 🎉</h2>
-                <div style="font-size:13px; color:#2ed573; margin-bottom:12px;">በዚህ ዙር አጠቃላይ ${winnersList.length} አሸናፊ(ዎች) ወጥተዋል!</div>
-                <div style="max-height: 350px; overflow-y: auto; text-align: left; padding-right:5px;">
-        `;
+   QUICK_BIRR GAMES - PART 3 / 3 (MATCHED WITH HTML FORMAT)
+   ========================================================= */
+function clear75Board() {
+    // አዲስ ጨዋታ ሲጀመር የነበሩ ማርኮችን ማጽዳት
+    markedCellsMap = {};
 
-        winnersList.forEach((winner, index) => {
-            const wName = winner.telegram_name || `User_${winner.winner_id || winner.telegram_id}`;
-            const phoneNum = winner.phone_number || "አልተመዘገበም";
-            const cNum = winner.card_number || "N/A";
-            const pAmt = winner.prize || 0;
-            const cardMatrixNumbers = winner.card_numbers || [];
-            const winningNumbers = winner.winning_numbers || [];
+    const containers = {
+        "b": document.getElementById("b-container"),
+        "i": document.getElementById("i-container"),
+        "n": document.getElementById("n-container"),
+        "g": document.getElementById("g-container"),
+        "o": document.getElementById("o-container")
+    };
+    Object.values(containers).forEach(c => { if(c) c.innerHTML = ""; });
 
-            winnersHTML += `
-                <div style="background:#222736; border:1px solid #ff9f43; border-radius:10px; padding:10px; margin-bottom:12px;">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-                        <span style="font-weight:bold; color:#ff9f43; font-size:13px;">አሸናፊ #${index + 1}: ${wName}</span>
-                        <span style="background:#ffbc00; color:#000; font-size:11px; padding:2px 6px; border-radius:4px; font-weight:bold;">#${cNum}</span>
-                    </div>
-                    <div style="font-size:12px; color:#a0a0a0; margin-bottom:2px;">📞 ስልክ: ${phoneNum}</div>
-                    
-                    <div style="display:grid; grid-template-columns: repeat(5, 1fr); gap:3px; margin: 8px 0;">
-            `;
+    for (let num = 1; num <= 75; num++) {
+        const numDiv = document.createElement("div");
+        numDiv.className = "board-num";
+        numDiv.id = `ball-${num}`;
+        numDiv.innerText = num;
 
-            if (cardMatrixNumbers.length === 25) {
-                cardMatrixNumbers.forEach((num) => {
-                    const isWinningNum = winningNumbers.includes(num);
-                    const isFreeSpace = num === 0 || num === "★" || num === "FREE";
-                    const cellDisplay = isFreeSpace ? "★" : num;
+        if (num <= 15) containers["b"].appendChild(numDiv);
+        else if (num <= 30) containers["i"].appendChild(numDiv);
+        else if (num <= 45) containers["n"].appendChild(numDiv);
+        else if (num <= 60) containers["g"].appendChild(numDiv);
+        else containers["o"].appendChild(numDiv);
+    }
+}
 
-                    if (isWinningNum || isFreeSpace) {
-                        winnersHTML += `<div style="aspect-ratio:1; display:flex; justify-content:center; align-items:center; background:#ffbc00; color:#000; font-weight:bold; font-size:10px; border-radius:3px;">${cellDisplay}</div>`;
-                    } else {
-                        winnersHTML += `<div style="aspect-ratio:1; display:flex; justify-content:center; align-items:center; background:#181c26; color:#555; font-weight:bold; font-size:10px; border-radius:3px;">${cellDisplay}</div>`;
-                    }
-                });
-            }
+function updateRecentBallsUI() {
+    const recentRow = document.querySelector(".recent-balls-row");
+    if (!recentRow) return;
+    recentRow.innerHTML = ""; 
 
-            winnersHTML += `
-                    </div>
-                    <div style="background:#00b894; color:#fff; font-weight:bold; text-align:center; padding:6px; border-radius:6px; margin-top:6px; font-size:14px;">
-                        +${pAmt} ETB
-                    </div>
-                </div>
-            `;
-        });
-
-        winnersHTML += `
-                </div>
-                <button onclick="closeWinnerModalAndReset()" style="width:100%; background:#ff7675; color:#fff; border:none; padding:12px; font-size:15px; font-weight:bold; border-radius:8px; cursor:pointer; margin-top:10px;">
-                    እሺ (ቀጥል)
-                </button>
-            </div>
-        `;
-
-        modalContentContainer.innerHTML = winnersHTML;
-        winnerModalEl.hidden = false;
+    if (recentBallsList.length === 0) {
+        recentRow.innerHTML = "<div style='color:#aaa; font-size:12px; text-align:center; width:100%;'>ኳሶች እዚህ ይደረደራሉ...</div>";
+        return;
+    }
+    for (let i = recentBallsList.length - 1; i >= 0; i--) {
+        const ball = recentBallsList[i];
+        const ballDiv = document.createElement("div");
+        ballDiv.className = (i === 0) ? "overlapping-ball current-live-ball" : "overlapping-ball";
+        ballDiv.innerHTML = `<span class="b-letter">${ball.letter}</span><span class="b-number">${ball.label.substring(1)}</span>`;
+        const color = getBingoColor(ball.letter);
+        ballDiv.style.backgroundColor = color;
+        ballDiv.style.boxShadow = `0 0 10px ${color}`;
+        recentRow.appendChild(ballDiv);
     }
 
-    if (winnerAutoCloseTimer) clearTimeout(winnerAutoCloseTimer);
-    winnerAutoCloseTimer = setTimeout(() => {
-        closeWinnerModalAndReset();
-    }, 6000);
+    // አዲስ ኳስ በተጠራ ቁጥር Auto Mark ከበራ ሁሉንም የተገዙ ካርዶች ቼክ አድርጎ በራስ-ሰር ማርክ ያደርጋል
+    if (isAutoMark && recentBallsList.length > 0) {
+        autoMarkAllBoughtCards();
+    }
+}
 
-    selectedBingoCards = [];
-    temporarilySelectedCards = [];
-    syncAndFetchUser();
+// 🤖 Auto Mark Mode፡ የተጠሩት ኳሶች ሁሉንም ካርዶች ላይ ማርክ መደረጋቸውን የሚያረጋግጥ ተግባር
+function autoMarkAllBoughtCards() {
+    if (!selectedCards || selectedCards.length === 0) return;
+    
+    // የተጠሩትን ቁጥሮች በሙሉ አውጣ
+    const drawnNumbers = recentBallsList.map(b => b.num);
+
+    selectedCards.forEach(cardNum => {
+        if (!markedCellsMap[cardNum]) {
+            markedCellsMap[cardNum] = new Set();
+        }
+        // ከዚህ ቀደም የተደረጉት እንዳሉ ሆነው አዳዲስ የተጠሩትን ይጨምራል
+        drawnNumbers.forEach(num => {
+            markedCellsMap[cardNum].add(num);
+        });
+    });
+}
+
+async function renderMyBoughtCards() {
+    const container = document.getElementById("playerBingoCard");
+    if (!container) return;
+    container.innerHTML = "";
+
+    if (selectedCards.length === 0) {
+        container.innerHTML = "<div style='color:white; text-align:center; padding:20px;'>በዚህ ዙር ምንም ካርቴላ አልገዙም!</div>";
+        return;
+    }
+    const activeCardNum = selectedCards[currentCardIndex];
+
+    // ለዚህ ካርድ የመዝገብ ቦታ ካልተከፈተ ክፈትለች
+    if (!markedCellsMap[activeCardNum]) {
+        markedCellsMap[activeCardNum] = new Set();
+    }
+
+    // Auto Mark ከበራ የተጠሩትን ቁጥሮች ለዚህ ካርድ መዝግብ
+    if (isAutoMark) {
+        recentBallsList.forEach(b => {
+            markedCellsMap[activeCardNum].add(b.num);
+        });
+    }
+
+    try {
+        const res = await fetch(`/api/cards/get_matrix?card_number=${activeCardNum}`);
+        const data = await res.json();
+        const matrix = data.matrix;
+
+        const mainSliderLayout = document.createElement("div");
+        mainSliderLayout.className = "main-slider-layout";
+
+        let html = `
+            <button class="side-nav-btn" onclick="moveSlider(-1)">◀</button>
+            <div class="card-display-center">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; width: 100%; padding: 0 5px;">
+                    <div class="card-title-label" style="color: #ffd700; font-weight: bold; font-size: 13px;">
+                        ካርድ #${activeCardNum} (${currentCardIndex + 1}/${selectedCards.length})
+                    </div>
+                    <button id="toggleMarkBtn" onclick="toggleMarkingMode()" style="background: ${isAutoMark ? '#2ed573' : '#718093'}; color: white; border: none; padding: 4px 8px; font-size: 11px; font-weight: bold; border-radius: 4px;">
+                        ${isAutoMark ? "🤖 Auto: ON" : "🖐 Manual"}
+                    </button>
+                </div>
+                <div class="bingo-header-letters">
+                    <span style="background:${getBingoColor('B')}">B</span>
+                    <span style="background:${getBingoColor('I')}">I</span>
+                    <span style="background:${getBingoColor('N')}">N</span>
+                    <span style="background:${getBingoColor('G')}">G</span>
+                    <span style="background:${getBingoColor('O')}">O</span>
+                </div>
+                <div class="bingo-card-grid-5x5">
+        `;
+
+        matrix.forEach(row => {
+            row.forEach(cell => {
+                if (cell === "FREE") {
+                    html += `<div class="bingo-cell free-star">★</div>`;
+                } else {
+                    // ቁጥሩ በ Auto ወይም በ Manual ቀደም ሲል ማርክ ከተደረገ በቋሚነት ያበራል
+                    const isMarkedInState = markedCellsMap[activeCardNum].has(cell);
+                    const isAlreadyDrawn = recentBallsList.some(b => b.num === cell);
+
+                    if (isMarkedInState || (isAlreadyDrawn && isAutoMark)) {
+                        let letterPrefix = cell <= 15 ? 'B' : cell <= 30 ? 'I' : cell <= 45 ? 'N' : cell <= 60 ? 'G' : 'O';
+                        const savedColor = getBingoColor(letterPrefix);
+                        
+                        // ወደ State መጨመሩን እርግጠኛ ሁን
+                        markedCellsMap[activeCardNum].add(cell);
+
+                        html += `<div class="bingo-cell cell-${cell} marked-auto" style="background:${savedColor} !important; color:#fff;" onclick="handleManualCellClick(this, ${cell}, ${activeCardNum})">${cell}</div>`;
+                    } else {
+                        html += `<div class="bingo-cell cell-${cell}" onclick="handleManualCellClick(this, ${cell}, ${activeCardNum})">${cell}</div>`;
+                    }
+                }
+            });
+        });
+        html += `</div></div><button class="side-nav-btn" onclick="moveSlider(1)">▶</button>`;
+        mainSliderLayout.innerHTML = html;
+        container.appendChild(mainSliderLayout);
+    } catch (e) { console.log(e); }
+}
+
+function moveSlider(direction) {
+    if (selectedCards.length <= 1) return;
+    currentCardIndex += direction;
+    if (currentCardIndex < 0) currentCardIndex = selectedCards.length - 1;
+    if (currentCardIndex >= selectedCards.length) currentCardIndex = 0;
+    renderMyBoughtCards();
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+    // 🛠️ ማንም ሰው በየትኛውም ስልክ ሲከፍተው ካርዶቹ ወዲያውኑ እንዲፈጠሩ እዚህ እናስቀምጣለን
+    generate1000Cards();
+    connectWebSocket();
+    
+    const confirmBtn = document.getElementById("confirmBtn");
+    if (confirmBtn) {
+        confirmBtn.onclick = () => confirmAllSelectedPicks();
+    }
+});
+
+function toggleMarkingMode() {
+    isAutoMark = !isAutoMark;
+    if (isAutoMark) {
+        autoMarkAllBoughtCards(); // ከባለሙያ ወደ Auto ሲቀየር አዳዲስ የተጠሩትን ማርክ ያደርጋል
+    }
+    renderMyBoughtCards(); 
+}
+
+function handleManualCellClick(cellElement, cellNumber, activeCardNum) {
+    if (!activeCardNum) activeCardNum = selectedCards[currentCardIndex];
+    if (!markedCellsMap[activeCardNum]) markedCellsMap[activeCardNum] = new Set();
+
+    const isBallDrawn = recentBallsList.some(b => b.num === cellNumber);
+
+    if (isBallDrawn) {
+        // ቁጥሩ ከተጠራ ወደ መዝገብ ይገባል (አይጠፋም)
+        markedCellsMap[activeCardNum].add(cellNumber);
+
+        let letterPrefix = cellNumber <= 15 ? 'B' : cellNumber <= 30 ? 'I' : cellNumber <= 45 ? 'N' : cellNumber <= 60 ? 'G' : 'O';
+        const ballColor = getBingoColor(letterPrefix);
+        cellElement.style.background = ballColor;
+        cellElement.style.color = "#fff";
+        cellElement.classList.add("marked-manual");
+    } else {
+        // ያልተጠራ ቁጥር ከተነካ ለጥቂት ሰከንድ ቀይ አሳይቶ ይመለሳል (ወደ State አይገባም)
+        const oldBg = cellElement.style.background;
+        cellElement.style.background = "#ff4757";
+        setTimeout(() => { cellElement.style.background = oldBg; }, 250);
+    }
 }
 
 function closeWinnerModalAndReset() {
