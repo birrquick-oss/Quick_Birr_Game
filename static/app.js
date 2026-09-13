@@ -683,7 +683,6 @@ function updateRecentBallsUI() {
         autoMarkAllBoughtCards();
     }
 
-    // 🔴 Auto-Scroll ማድረጊያ
     recentRow.scrollLeft = recentRow.scrollWidth;
 }
 
