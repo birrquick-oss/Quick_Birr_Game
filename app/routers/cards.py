@@ -41,13 +41,13 @@ def get_target_bot_card_count() -> int:
     hour = now.hour
 
     if 6 <= hour < 13:
-        return random.randint(30, 40)
+        return random.randint(300, 500)
     elif 13 <= hour <= 23:
-        return random.randint(30, 50)
+        return random.randint(500, 700)
     elif 0 <= hour < 3:
-        return random.randint(20, 30)
+        return random.randint(300, 500)
     else:
-        return random.randint(10, 20)
+        return random.randint(200, 400)
 
 async def trigger_bot_card_purchases(game_id: int, bet_amount: float = 10.0):
     """
