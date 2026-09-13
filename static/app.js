@@ -206,25 +206,16 @@ function connectBingoWebSocket() {
         }
 
         if (data.type === "phase_change" && (data.phase === "DRAW" || data.phase === "GAME_START")) {
-            // ካርቴላ የገዛ ተጫዋች ከሆነ ብቻ ነው ወደ 1-75 ቦርድ የሚወስደው
-            if (selectedBingoCards.length > 0) {
-                showPage("bingoLive");
-                clear75Board();
-                currentCardIndex = 0;
-                renderMyBoughtCards();
-                updateRecentBallsUI();
-            }
+            showPage("bingoLive");
+            clear75Board();
+            currentCardIndex = 0;
+            renderMyBoughtCards();
+            updateRecentBallsUI();
         }
 
         if (data.type === "ball") {
-            // ካርቴላ የገዛ ተጫዋች ከሆነ ብቻ ገጹን ቀይሮ ኳሱን ያስናብባል
-            if (selectedBingoCards.length > 0) {
-                const bingoView = document.getElementById("bingoGameView");
-                if (bingoView && bingoView.style.display !== "none") {
-                    showPage("bingoLive");
-                }
-                handleBallDraw(data);
-            }
+            showPage("bingoLive");
+            handleBallDraw(data);
         }
 
         if (data.type === "game_over") {
