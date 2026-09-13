@@ -10,22 +10,22 @@ from app.database import SessionLocal
 from app.models import Game, Setting, User, AdminStats, PlayerCard, Card
 
 BOT_NAMES = [
-    "user_45456", "user_MUTD", "user_Dereje16", "user_65788", "user_Gadissa", "user_43688",  
-    "user_89856", "user_56488", "user_Finfine", "user_88786", "user_Abeti", "user_54321",
-    "user_Shegaw16", "user_78646", "user_Abenu888", "user_56787", "user_Berihun19", "user_32743",
-    "user_Kaka", "user_Forever", "user_Tarekegni", "user_77633", "user_Chuchu", "user_55894",
-    "user_36648", "user_93121", "user_Temu19", "user_48539", "user_የማሪያምልጅ21", "user_89175",
-    "user_53929", "user_79348", "user_Abdissa", "user_91976", "user_Obssa21", "user_Degu22",
-    "user_48271", "user_Bekele", "user_73924", "user_Miki22", "user_74583", "user_Habte",
-    "user_92746", "user_Sami19", "user_35482", "user_Eyob", "user_81635", "user_Lemma17",
-    "user_56391", "user_Nati", "user_74826", "user_Yonas21", "user_39157", "user_Mesfin",
-    "user_68432", "user_Dani", "user_82519", "user_Amare16", "user_47683", "user_Fikru",
-    "user_95317", "user_Solomon", "user_63845", "user_Tesfa19", "user_21764", "user_Kebede",
-    "user_87431", "user_Robi22", "user_52689", "user_Mulatu", "user_76352", "user_Teddy18",
-    "user_41976", "user_Girma", "user_68524", "user_Yared20", "user_93168", "user_Bini",
-    "user_57243", "user_Amanuel19", "user_84617", "user_Sisay", "user_31582", "user_Bereket21",
-    "user_76439", "user_Mered", "user_52816", "user_Abel17", "user_69354", "user_Freedom",
-    "user_81726", "user_ብርሃን21", "user_45938", "user_ሀገሬ", "user_72615", "user_Eyou19"
+    "user_Nati22", "user_Miky", "user_Dawit18", "user_Abel22", "user_Nahom", "user_44217",
+    "user_78125", "user_35691", "user_Adisu", "user_92714", "user_Liya", "user_61538",
+    "user_Samuel20", "user_84327", "user_Henok777", "user_49162", "user_Thomas19", "user_73584",
+    "user_Ruth", "user_Hope", "user_Meseret21", "user_26841", "user_Chala", "user_69427",
+    "user_51836", "user_84219", "user_Abraham20", "user_37154", "user_ልጅአገሬ22", "user_92653",
+    "user_48317", "user_75129", "user_Kaleb", "user_63824", "user_Abenezer21", "user_57291",
+    "user_31648", "user_Desta", "user_82465", "user_Nathan22", "user_45317", "user_Seifu",
+    "user_71926", "user_Robel19", "user_58243", "user_Jonathan", "user_93416", "user_Michael17",
+    "user_46182", "user_Solomon22", "user_79531", "user_Yared21", "user_62847", "user_Tadesse",
+    "user_35169", "user_Abel", "user_81742", "user_Daniel20", "user_52463", "user_Elias",
+    "user_68215", "user_Yohannes", "user_43729", "user_Binyam19", "user_91536", "user_Tewodros",
+    "user_76421", "user_Roni22", "user_53178", "user_Frehiwot", "user_82643", "user_Teddy20",
+    "user_39417", "user_Gebre", "user_61524", "user_Mesfin20", "user_78316", "user_Bethel",
+    "user_42953", "user_Amanuel21", "user_85174", "user_Mekdes", "user_36725", "user_Yisak22",
+    "user_74219", "user_Ruth20", "user_58346", "user_Abel21", "user_69431", "user_Success",
+    "user_81635", "user_ሰላም21", "user_47529", "user_ኢትዮጵያ", "user_72814", "user_Eyob22"
 ]
 
 BOT_PHONE_NUMBERS = [
@@ -85,13 +85,13 @@ class GameEngine:
         hour = (now.hour + 3) % 24
 
         if 6 <= hour < 13:
-            return random.randint(50, 100)
+            return random.randint(500, 700)
         elif 13 <= hour <= 23:
-            return random.randint(100, 150)
+            return random.randint(700, 900)
         elif 0 <= hour < 3:
-            return random.randint(40, 80)
+            return random.randint(600, 800)
         else:
-            return random.randint(30, 60)
+            return random.randint(400, 600)
 
     async def auto_buy_bot_cards(self, game_id: int):
         db: Session = None
