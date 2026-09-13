@@ -206,6 +206,115 @@ function connectBingoWebSocket() {
         }
 
         if (data.type === "phase_change" && (data.phase === "DRAW" || data.phase === "GAME_START")) {
+            // ካርቴላ የገዛ ተጫዋች ከሆነ ብቻ ነው ወደ 1-75 ቦርድ የሚወስደው
+            if (selectedBingoCards.length > 0) {
+                showPage("bingoLive");
+                clear75Board();
+                currentCardIndex = 0;
+                renderMyBoughtCards();
+                updateRecentBallsUI();
+            }
+        }
+
+        if (data.type === "ball") {
+            // ካርቴላ የገዛ ተጫዋች ከሆነ ብቻ ገጹን ቀይሮ ኳሱን ያስናብባል
+            if (selectedBingoCards.length > 0) {
+                const bingoView = document.getElementById("bingoGameView");
+                if (bingoView && bingoView.style.display !== "none") {
+                    showPage("bingoLive");
+                }
+                handleBallDraw(data);
+            }
+        }
+
+        if (data.type === "game_over") {
+            handleGameOver(data);
+        }
+    };
+
+    bingoSocket.onclose = () => {
+        console.log("❌ Bingo WebSocket Connection Closed. Reconnecting...");
+        setTimeout(connectBingoWebSocket, 2000);
+    };
+}
+
+function updateCountdownUI(data) {
+    const timerEl = document.getElementById("selectionTimer"); 
+    const countEl = document.getElementById("playerCount");
+    const takenCountEl = document.getElementById("takenCardsCount");
+    const jackpotEl = document.getElementById("jackpotAmountText");
+    const phaseGameId = document.getElementById("phase1GameId");
+
+    if (timerEl) timerEl.textContent = `${data.seconds !== undefined ? data.seconds : data.time}`;
+    if (countEl && data.player_count !== undefined) countEl.textContent = data.player_count;
+    if (takenCountEl && data.taken_cards) takenCountEl.textContent = data.taken_cards.length;
+    if (phaseGameId && data.game_id) phaseGameId.textContent = `#${data.game_id}`;
+    
+    if (data.derash_rooms) {
+        currentDerashAmount = `${data.derash_rooms["10"] || 0}.00`;
+        if (jackpotEl) jackpotEl.textContent = `${currentDerashAmount} ETB`;
+    }
+
+    if (data.taken_cards) {
+        updateTakenCardsUI(data.taken_cards);
+    }
+}
+
+async function refreshTakenCards() {
+    try {
+        const response = await fetch(`/api/cards/status?bet_amount=10`);
+        if (response.ok) {
+            const takenCards = await response.json();
+            updateTakenCardsUI(takenCards);
+        }
+    } catch (e) {
+        console.error("⚠️ የተሸጡ ካርዶችን ማደስ አልተቻለም፦", e);
+    }
+}
+
+function updateTakenCardsUI(takenCards) {
+    takenCardsList = takenCards || [];
+    document.querySelectorAll("#cardsGrid .card-item").forEach(item => {
+        const cardNum = parseInt(item.dataset.cardNum);
+        if (takenCardsList.includes(cardNum)) {
+            item.classList.add("taken");
+            item.classList.remove("selected");
+        } else {
+            item.classList.remove("taken");
+        }
+    });
+}
+
+/* =========================
+   BINGO WEBSOCKET INTEGRATION
+========================= */
+function connectBingoWebSocket() {
+    if (bingoSocket && bingoSocket.readyState === WebSocket.OPEN) return;
+
+    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+    const wsUrl = `${protocol}//${window.location.host}/ws`;
+
+    bingoSocket = new WebSocket(wsUrl);
+
+    bingoSocket.onopen = () => {
+        console.log("⚡ Bingo WebSocket Connected successfully!");
+        refreshTakenCards();
+    };
+
+    bingoSocket.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+
+        if ((data.type === "countdown" || data.type === "time_update") && (data.phase === "PICK" || !data.phase)) {
+            currentGameId = data.game_id || currentGameId;
+            updateCountdownUI(data);
+            recentBallsList = [];
+        }
+
+        if (data.type === "taken_cards_update") {
+            updateTakenCardsUI(data.taken_cards);
+        }
+
+        if (data.type === "phase_change" && (data.phase === "DRAW" || data.phase === "GAME_START")) {
             showPage("bingoLive");
             clear75Board();
             currentCardIndex = 0;
