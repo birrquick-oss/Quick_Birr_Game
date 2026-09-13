@@ -682,8 +682,6 @@ function updateRecentBallsUI() {
     if (isAutoMark && recentBallsList.length > 0) {
         autoMarkAllBoughtCards();
     }
-
-    recentRow.scrollLeft = recentRow.scrollWidth;
 }
 
 function autoMarkAllBoughtCards() {
