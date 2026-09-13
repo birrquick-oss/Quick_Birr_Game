@@ -293,17 +293,29 @@ function handleBallDraw(data) {
         ballElement.style.boxShadow = `0 0 10px ${color}`;
     }
 
-function renderDrawnBall(data) {
+    // የጠራውን ኳስ በሁለተኛው ገፅ እና ቦርድ ላይ መመዝገብ
+    renderDrawnBall(data, letter, color);
+}
+
+function renderDrawnBall(data, letter, color) {
     const callBadge = document.getElementById("callCountBadge");
     const gameIdBadge = document.getElementById("gameIdBadge");
     const liveDerashText = document.getElementById("liveDerashText");
 
-    if (callBadge && data.call_count) callBadge.textContent = `Call ${data.call_count}`;
+    // 1. Call (የተጠሩ ቁጥሮች ብዛት) መመዝገቢያ
+    if (callBadge) {
+        const currentCall = data.call_count || recentBallsList.length + 1;
+        callBadge.textContent = `Call ${currentCall}`;
+    }
     
+    // 2. Game ID መመዝገቢያ
     const activeGameId = data.game_id || currentGameId || 0;
-    if (gameIdBadge) gameIdBadge.textContent = `Game #${activeGameId}`;
+    if (gameIdBadge) {
+        gameIdBadge.textContent = `Game #${activeGameId}`;
+    }
 
-    if (data.derash_amount) {
+    // 3. የደራሽ አማውንት (መጠን) መመዝገቢያ
+    if (data.derash_amount !== undefined && data.derash_amount !== null) {
         currentDerashAmount = `${parseFloat(data.derash_amount).toFixed(2)}`;
     }
     if (liveDerashText) {
