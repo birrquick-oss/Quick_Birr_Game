@@ -682,6 +682,14 @@ function updateRecentBallsUI() {
     if (isAutoMark && recentBallsList.length > 0) {
         autoMarkAllBoughtCards();
     }
+
+    // 🔴 አዲሱ ኳስ ሲመጣ ወደ እሱ Auto-Scroll ማድረጊያው መስመር፦
+    recentRow.scrollLeft = recentRow.scrollWidth;
+}
+
+    if (isAutoMark && recentBallsList.length > 0) {
+        autoMarkAllBoughtCards();
+    }
 }
 
 function autoMarkAllBoughtCards() {
