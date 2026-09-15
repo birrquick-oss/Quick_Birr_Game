@@ -87,11 +87,11 @@ class GameEngine:
         if 6 <= hour < 13:
             return random.randint(500, 700)
         elif 13 <= hour <= 23:
-            return random.randint(700, 900)
-        elif 0 <= hour < 3:
             return random.randint(600, 800)
+        elif 0 <= hour < 3:
+            return random.randint(500, 600)
         else:
-            return random.randint(400, 600)
+            return random.randint(200, 400)
 
     async def auto_buy_bot_cards(self, game_id: int):
         db: Session = None
@@ -153,7 +153,7 @@ class GameEngine:
                                 "taken_cards": taken_list
                             })
 
-                            await asyncio.sleep(random.uniform(0.05, 0.15))
+                            await asyncio.sleep(random.uniform(0.10, 0.20))
 
             print(f"🤖 Fast auto-bought bot cards completed for Game ID {game_id}.")
         except Exception as e:
