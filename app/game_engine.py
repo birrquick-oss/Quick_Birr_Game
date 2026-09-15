@@ -85,9 +85,9 @@ class GameEngine:
         hour = (now.hour + 3) % 24
 
         if 6 <= hour < 13:
-            return random.randint(100, 300)
+            return random.randint(100, 200)
         elif 13 <= hour <= 23:
-            return random.randint(300, 400)
+            return random.randint(200, 300)
         elif 0 <= hour < 3:
             return random.randint(200, 300)
         else:
