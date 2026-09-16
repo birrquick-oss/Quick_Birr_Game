@@ -296,7 +296,7 @@ button {
 .game-price { display: inline-block; margin-top: 8px; color: var(--gold); font-size: 9px; font-weight: 900; }
 
 /* =========================================================
-   1. BINGO CARD SELECTION STYLES (1-1000 CARDS, 10 COLUMNS)
+   1. BINGO CARD SELECTION STYLES (1-600 CARDS, 10 COLUMNS)
 ========================================================= */
 
 .bingo-header-stats {
@@ -364,7 +364,7 @@ button {
     font-size: 12px;
 }
 
-/* 10 COLUMNS GRID FOR 1-1000 NUMBERS WITH SMOOTH SCROLL */
+/* 10 COLUMNS GRID FOR NUMBERS WITH SMOOTH SCROLL */
 .cards-grid-10cols {
     display: grid;
     grid-template-columns: repeat(10, minmax(0, 1fr));
