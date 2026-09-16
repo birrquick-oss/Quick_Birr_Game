@@ -10,20 +10,20 @@ def seed_cards():
 
     existing_count = db.query(Card).count()
     
-    # 🎯 1000 ካርዶች አስቀድመው ከተፈጠሩ በድጋሚ አይፈጥርም
-    if existing_count >= 1000:
+    # 🎯 600 ካርዶች አስቀድመው ከተፈጠሩ በድጋሚ አይፈጥርም
+    if existing_count >= 600:
         print(f"✅ {existing_count} cards already exist in the database.")
         db.close()
         return
 
-    # 🔄 ከ 1000 ያነሰ ካርድ ካለ አሮጌዎቹን አጽድቶ አዲሶቹን 1000 ካርዶች ይፈጥራል
+    # 🔄 ከ 600 ያነሰ ወይም የተለየ ቁጥር ካለ አሮጌዎቹን አጽድቶ አዲሶቹን 600 ካርዶች ይፈጥራል
     if existing_count > 0:
-        print(f"🔄 Found {existing_count} old cards. Re-seeding to 1000 cards...")
+        print(f"🔄 Found {existing_count} old cards. Re-seeding to 600 cards...")
         db.query(Card).delete()
         db.commit()
 
-    # 1000 ካርዶችን ማመንጨት
-    cards = generate_all_cards(1000)
+    # 600 ካርዶችን ማመንጨት
+    cards = generate_all_cards(600)
 
     for index, card in enumerate(cards, start=1):
         db.add(
