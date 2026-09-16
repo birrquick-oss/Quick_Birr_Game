@@ -13,7 +13,7 @@ router = APIRouter(prefix="/api/cards", tags=["Cards"])
 class AdvancedPickCardRequest(BaseModel):
     telegram_id: str
     card_number: int
-    bet_amount: float = Field(..., description="የውርርድ መጠን፡ 10, 20, ወይም 50")
+    bet_amount: float = Field(10.0, description="የውርርድ መጠን፡ 10 ETB ብቻ")
 
 
 # =========================================================
@@ -36,22 +36,22 @@ def get_bot_user(db):
     return bot
 
 def get_target_bot_card_count() -> int:
-    """🕒 በውይይታችን መሰረት የተስተካከለ ሰዓትን መሰረት ያደረገ የቦት ካርድ ብዛት (UTC+3)"""
-    now = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(hours=3)
-    hour = now.hour
+    """🕒 ሰዓትን መሰረት ያደረገ የቦት ካርድ ብዛት (ከ 100 እስከ 300)"""
+    now = datetime.datetime.now(datetime.timezone.utc)
+    hour = (now.hour + 3) % 24
 
     if 6 <= hour < 13:
-        return random.randint(50, 100)
+        return random.randint(100, 200)
     elif 13 <= hour <= 23:
-        return random.randint(100, 200)
+        return random.randint(200, 300)
     elif 0 <= hour < 3:
-        return random.randint(100, 200)
+        return random.randint(200, 300)
     else:
-        return random.randint(50, 100)
+        return random.randint(100, 200)
 
 async def trigger_bot_card_purchases(game_id: int, bet_amount: float = 10.0):
     """
-    🤖 ቦቱ በ 10 ETB ክፍል ብቻ በዘፈቀደ ላልተያዙ የካርድ ቁጥሮች (ከ 1 እስከ 1000) ተራ በተራ ግዢ ይፈጽማል።
+    🤖 ቦቱ በ 10 ETB ክፍል ብቻ በዘፈቀደ ላልተያዙ የካርድ ቁጥሮች (ከ 1 እስከ 600) ተራ በተራ ግዢ ይፈጽማል።
     """
     if bet_amount != 10.0:
         return
@@ -77,7 +77,8 @@ async def trigger_bot_card_purchases(game_id: int, bet_amount: float = 10.0):
         if needed <= 0:
             return
 
-        available_numbers = [num for num in range(1, 1001) if num not in taken_numbers]
+        # ✅ ከ 1 እስከ 601 (600 ካርዶች) ተስተካክሏል
+        available_numbers = [num for num in range(1, 601) if num not in taken_numbers]
         cards_to_buy_count = min(needed, len(available_numbers))
         
         if cards_to_buy_count <= 0:
@@ -141,7 +142,7 @@ async def trigger_bot_card_purchases(game_id: int, bet_amount: float = 10.0):
         finally:
             db_loop.close()
 
-        await asyncio.sleep(random.uniform(0.3, 0.8))
+        await asyncio.sleep(random.uniform(0.15, 0.35))
 
 
 # =========================================================
@@ -184,8 +185,12 @@ def get_cards_status(
 async def pick_card(request: AdvancedPickCardRequest, background_tasks: BackgroundTasks):
     db = SessionLocal()
     try:
-        if request.bet_amount not in [10.0, 20.0, 50.0]:
-            return {"success": False, "message": "ያልተፈቀደ የውርርድ መጠን! እባክህ 10፣ 20 ወይም 50 ይምረጡ።"}
+        # ✅ የ 10 ብር ክፍል ብቻ እንዲፈቀድ ተደርጓል
+        if request.bet_amount != 10.0:
+            return {"success": False, "message": "ያልተፈቀደ የውርርድ መጠን! ጨዋታው በ 10 ብር ክፍል ብቻ ነው የሚሰራው።"}
+
+        if request.card_number < 1 or request.card_number > 600:
+            return {"success": False, "message": "ትክክለኛ ያልሆነ የካርቴላ ቁጥር! ከ 1 እስከ 600 ባለው ክልል ውስጥ ይምረጡ።"}
 
         user = db.query(User).filter(User.telegram_id == request.telegram_id).first()
         if not user:
@@ -217,7 +222,7 @@ async def pick_card(request: AdvancedPickCardRequest, background_tasks: Backgrou
             PlayerCard.bet_amount == request.bet_amount
         ).first()
         if card_taken:
-            return {"success": False, "message": f"ካርቴላ ቁጥር {request.card_number} በ {int(request.bet_amount)} ብር ክፍል አስቀድሞ ተይዟል!"}
+            return {"success": False, "message": f"ካርቴላ ቁጥር {request.card_number} አስቀድሞ ተይዟል!"}
 
         if (user.balance or 0.0) < request.bet_amount:
             return {"success": False, "message": f"በቂ ባላንስ የሎትም! የእርሶ ጠቅላላ ባላንስ {user.balance or 0.0} ETB ነው።"}
