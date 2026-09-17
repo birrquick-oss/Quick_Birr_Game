@@ -45,7 +45,6 @@ BOT_PHONE_NUMBERS = [
     "2519****3761", "2517****6294", "2519****8147", "2517****2508", "2519****5473", "አልተመዘገበም",
 ]
 
-# አዲሱ ቢንጎ የ 10 ብር ክፍል ብቻ ነው የሚጠቀመው
 SUPPORTED_FEES = [10.0]
 BOT_ALLOWED_FEES = [10.0]
 
@@ -61,7 +60,6 @@ class GameEngine:
         bot = db.query(User).filter(User.telegram_id == "BOT_VIRTUAL_PLAYER").first()
         if not bot:
             default_bot_name = random.choice(BOT_NAMES)
-            # ✅ telegram_name ወደ telegram_username ተቀይሯል
             bot = User(
                 telegram_id="BOT_VIRTUAL_PLAYER",
                 telegram_username=default_bot_name,
@@ -271,28 +269,28 @@ class GameEngine:
 
     async def countdown(self, seconds, game_display_no, saved_game_id):
         has_bought_cards = True
-        
+    
         while seconds >= 0 and self.running:
             current_taken_list = []
             comm_percent = 20.0
             player_counts = {fee: 0 for fee in SUPPORTED_FEES}
-            total_players_all_rooms = 0
-            
+        
             db: Session = None
             try:
                 db = SessionLocal()
-                taken_cards = db.query(Card.card_number).filter(Card.is_taken == True).all()
-                current_taken_list = [c[0] for c in taken_cards]
                 
                 settings = db.query(Setting).first()
                 if settings and hasattr(settings, 'game_commission_percent'):
                     comm_percent = settings.game_commission_percent
 
+                player_cards = db.query(PlayerCard).filter(
+                    PlayerCard.game_id == saved_game_id
+                ).all()
+
+                current_taken_list = [pc.card_number for pc in player_cards]
+
                 for fee in SUPPORTED_FEES:
-                    count = db.query(PlayerCard).filter(
-                        PlayerCard.game_id == saved_game_id, 
-                        PlayerCard.bet_amount == fee
-                    ).count()
+                    count = sum(1 for pc in player_cards if pc.bet_amount == fee)
                     player_counts[fee] = count
 
                 if saved_game_id:
@@ -307,11 +305,12 @@ class GameEngine:
                     db.close()
 
             derash_amounts = {}
+            total_players_all_rooms = len(current_taken_list)
+
             for fee, count in player_counts.items():
-                total_players_all_rooms += count
                 total_pool = count * fee
                 derash_ratio = (100.0 - comm_percent) / 100.0
-                derash_amounts[str(int(fee))] = int(total_pool * derash_ratio)
+                derash_amounts[str(int(fee))] = round(total_pool * derash_ratio, 2)
 
             payload = {
                 "type": "countdown",
@@ -363,7 +362,7 @@ class GameEngine:
             for fee in SUPPORTED_FEES:
                 count = sum(1 for c in bought_cards.values() if c["bet_amount"] == fee)
                 pools_by_fee[fee] = count * fee
-                derash_by_fee[str(int(fee))] = int(pools_by_fee[fee] * ((100.0 - comm_percent) / 100.0))
+                derash_by_fee[str(int(fee))] = round(pools_by_fee[fee] * ((100.0 - comm_percent) / 100.0), 2)
                 if count > 0:
                     active_rooms.append(fee)
 
@@ -434,7 +433,6 @@ class GameEngine:
                             phone_number = random.choice(BOT_PHONE_NUMBERS)
                         else:
                             user_record = db.query(User).filter(User.id == w["winner_id"]).first()
-                            # ✅ telegram_username ወይም first_name እንዲጠቀም ተደርጓል
                             if user_record:
                                 telegram_name = user_record.telegram_username or user_record.first_name or f"user_{w['winner_id']}"
                             else:
