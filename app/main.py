@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 
 from app.database import SessionLocal, initialize_database
 from app.models import User
+from app.seed_cards import seed_cards  # 👈 Seed cards import ተደርጓል
 
 # Routerዎች
 from app.routers.games import router as games_router
@@ -44,10 +45,16 @@ async def lifespan(app: FastAPI):
     # 1. የዳታቤዝ ቴብሎችን ማዘጋጀት
     initialize_database()
     
-    # 2. የቢንጎ ጨዋታ ኢንጂኑን በጀርባ (Background Task) ማስጀመር
+    # 🎯 2. አዲሶቹን 600 ካርዶች Seed ማድረግ
+    try:
+        seed_cards()
+    except Exception as e:
+        print(f"⚠️ Card Seeding Error: {e}")
+
+    # 3. የቢንጎ ጨዋታ ኢንጂኑን በጀርባ (Background Task) ማስጀመር
     engine_task = asyncio.create_task(engine.start_game())
     
-    # 3. 🤖 የቴሌግራም ቦቱን በ Background Thread ማስጀመር
+    # 4. 🤖 የቴሌግራም ቦቱን በ Background Thread ማስጀመር
     bot_thread = threading.Thread(target=run_telegram_bot, daemon=True)
     bot_thread.start()
     
