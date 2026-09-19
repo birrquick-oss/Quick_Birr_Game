@@ -348,7 +348,7 @@ class GameEngine:
             for pc in db.query(PlayerCard).filter(PlayerCard.game_id == saved_game_id).all():
                 bought_cards[pc.card_number] = {"user_id": pc.user_id, "bet_amount": pc.bet_amount}
 
-            all_1000_cards = {}
+            all_600_cards = {}
             for c in db.query(Card).all():
                 card_data = json.loads(c.data) if isinstance(c.data, str) else c.data
                 all_1000_cards[str(c.card_number)] = card_data
@@ -415,7 +415,7 @@ class GameEngine:
                 })
 
                 result = self.process_drawn_ball_and_check_winner_v3(
-                    db, saved_game_id, self.called_numbers, pools_by_fee, bought_cards, all_1000_cards, room_status
+                    db, saved_game_id, self.called_numbers, pools_by_fee, bought_cards, all_600_cards, room_status
                 )
 
                 if result["status"] == "WINNER_FOUND":
@@ -490,7 +490,7 @@ class GameEngine:
                     break
 
                 if call_count >= max_draw_balls and target_house_wins > 0:
-                    bot_win_info = self.find_best_bot_trigger_ball(bought_cards, all_1000_cards, self.called_numbers, remaining_numbers)
+                    bot_win_info = self.find_best_bot_trigger_ball(bought_cards, all_600_cards, self.called_numbers, remaining_numbers)
                     if bot_win_info:
                         trigger_ball = bot_win_info["trigger_ball"]
                         remaining_numbers.remove(trigger_ball)
@@ -592,21 +592,21 @@ class GameEngine:
 
         return False, [], ""
 
-    def find_best_bot_trigger_ball(self, bought_cards, all_1000_cards, current_drawn_balls, remaining_numbers):
+    def find_best_bot_trigger_ball(self, bought_cards, all_600_cards, current_drawn_balls, remaining_numbers):
         db = SessionLocal()
         bot_user = self.get_bot_user(db)
         db.close()
 
         bot_cards = [card_num for card_num, info in bought_cards.items() if info["user_id"] == bot_user.id]
         if not bot_cards:
-            bot_cards = list(all_1000_cards.keys())
+            bot_cards = list(all_600_cards.keys())
 
         drawn_set = set(current_drawn_balls)
         drawn_set.add("FREE")
         drawn_set.add(None)
 
         for c_num in bot_cards:
-            card_matrix = all_1000_cards.get(str(c_num))
+            card_matrix = all_600_cards.get(str(c_num))
             if not card_matrix or len(card_matrix) != 5:
                 continue
 
@@ -635,7 +635,7 @@ class GameEngine:
                     }
         
         fallback_card = int(random.choice(bot_cards))
-        fallback_matrix = all_1000_cards.get(str(fallback_card), [[0]*5 for _ in range(5)])
+        fallback_matrix = all_600_cards.get(str(fallback_card), [[0]*5 for _ in range(5)])
         fallback_flat = [item for sublist in fallback_matrix for item in sublist] if len(fallback_matrix) == 5 else []
         fallback_trigger = remaining_numbers[0]
         
@@ -657,7 +657,7 @@ class GameEngine:
             if room_status.get(fee) == "FORCE_HOUSE" and card_info["user_id"] != bot_user.id:
                 continue
 
-            card_matrix = all_1000_cards.get(str(card_num))
+            card_matrix = all_600_cards.get(str(card_num))
             if card_matrix:
                 is_win, win_nums, pattern = self.check_bingo_patterns(card_matrix, current_drawn_balls)
                 if is_win:
@@ -682,12 +682,12 @@ class GameEngine:
                     # ለቦቶቹ ከቦት ካርዶች ውስጥ ካርቴላ መምረጥ
                     bot_cards = [c_num for c_num, info in bought_cards.items() if info["user_id"] == bot_user.id]
                     if len(bot_cards) < 3:
-                        bot_cards = [i for i in range(1, 1001) if i != real_winner["card_number"]]
+                        bot_cards = [i for i in range(1, 601) if i != real_winner["card_number"]]
 
                     sampled_bot_cards = random.sample(bot_cards, min(3, len(bot_cards)))
 
                     for b_card in sampled_bot_cards:
-                        b_matrix = all_1000_cards.get(str(b_card), [[0]*5 for _ in range(5)])
+                        b_matrix = all_600_cards.get(str(b_card), [[0]*5 for _ in range(5)])
                         b_flat = [item for sublist in b_matrix for item in sublist] if len(b_matrix) == 5 else []
                         
                         detected_winners.append({
