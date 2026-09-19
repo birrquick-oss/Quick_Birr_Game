@@ -152,7 +152,7 @@ class GameEngine:
                                 "taken_cards": taken_list
                             })
 
-                            await asyncio.sleep(random.uniform(0.10, 0.20))
+                            await asyncio.sleep(random.uniform(0.10, 0.15))
 
             print(f"🤖 Fast auto-bought bot cards completed for Game ID {game_id}.")
         except Exception as e:
@@ -348,10 +348,10 @@ class GameEngine:
             for pc in db.query(PlayerCard).filter(PlayerCard.game_id == saved_game_id).all():
                 bought_cards[pc.card_number] = {"user_id": pc.user_id, "bet_amount": pc.bet_amount}
 
-            all_1000_cards = {}
+            all_600_cards = {}
             for c in db.query(Card).all():
                 card_data = json.loads(c.data) if isinstance(c.data, str) else c.data
-                all_1000_cards[str(c.card_number)] = card_data
+                all_600_cards[str(c.card_number)] = card_data
 
             settings = db.query(Setting).first()
             comm_percent = settings.game_commission_percent if (settings and hasattr(settings, 'game_commission_percent')) else 20.0
@@ -415,7 +415,7 @@ class GameEngine:
                 })
 
                 result = self.process_drawn_ball_and_check_winner_v3(
-                    db, saved_game_id, self.called_numbers, pools_by_fee, bought_cards, all_1000_cards, room_status
+                    db, saved_game_id, self.called_numbers, pools_by_fee, bought_cards, all_600_cards, room_status
                 )
 
                 if result["status"] == "WINNER_FOUND":
@@ -490,7 +490,8 @@ class GameEngine:
                     break
 
                 if call_count >= max_draw_balls and target_house_wins > 0:
-                    bot_win_info = self.find_best_bot_trigger_ball(bought_cards, all_1000_cards, self.called_numbers, remaining_numbers)
+                    bot_win_info = self.find_best_bot_trigger_ball(bought_cards, all_600_cards, self.called_numbers, remaining_numbers)
+                                                                  
                     if bot_win_info:
                         trigger_ball = bot_win_info["trigger_ball"]
                         remaining_numbers.remove(trigger_ball)
@@ -592,21 +593,21 @@ class GameEngine:
 
         return False, [], ""
 
-    def find_best_bot_trigger_ball(self, bought_cards, all_1000_cards, current_drawn_balls, remaining_numbers):
+    def find_best_bot_trigger_ball(self, bought_cards, all_600_cards, current_drawn_balls, remaining_numbers):
         db = SessionLocal()
         bot_user = self.get_bot_user(db)
         db.close()
 
         bot_cards = [card_num for card_num, info in bought_cards.items() if info["user_id"] == bot_user.id]
         if not bot_cards:
-            bot_cards = list(all_1000_cards.keys())
+            bot_cards = list(all_600_cards.keys())
 
         drawn_set = set(current_drawn_balls)
         drawn_set.add("FREE")
         drawn_set.add(None)
 
         for c_num in bot_cards:
-            card_matrix = all_1000_cards.get(str(c_num))
+            card_matrix = all_600_cards.get(str(c_num))
             if not card_matrix or len(card_matrix) != 5:
                 continue
 
@@ -635,7 +636,7 @@ class GameEngine:
                     }
         
         fallback_card = int(random.choice(bot_cards))
-        fallback_matrix = all_1000_cards.get(str(fallback_card), [[0]*5 for _ in range(5)])
+        fallback_matrix = all_600_cards.get(str(fallback_card), [[0]*5 for _ in range(5)])
         fallback_flat = [item for sublist in fallback_matrix for item in sublist] if len(fallback_matrix) == 5 else []
         fallback_trigger = remaining_numbers[0]
         
@@ -647,7 +648,7 @@ class GameEngine:
             "winning_pattern": "ቢንጎ"
         }
 
-    def process_drawn_ball_and_check_winner_v3(self, db, game_id, current_drawn_balls, pools_by_fee, bought_cards, all_1000_cards, room_status):
+    def process_drawn_ball_and_check_winner_v3(self, db, game_id, current_drawn_balls, pools_by_fee, bought_cards, all_600_cards, room_status):
         bot_user = self.get_bot_user(db)
         detected_winners = []
         
@@ -657,7 +658,7 @@ class GameEngine:
             if room_status.get(fee) == "FORCE_HOUSE" and card_info["user_id"] != bot_user.id:
                 continue
 
-            card_matrix = all_1000_cards.get(str(card_num))
+            card_matrix = all_600_cards.get(str(card_num))
             if card_matrix:
                 is_win, win_nums, pattern = self.check_bingo_patterns(card_matrix, current_drawn_balls)
                 if is_win:
@@ -672,8 +673,8 @@ class GameEngine:
                     })
         
         if detected_winners:
-            # በየ 3 ጨዋታው አንዴ (game_counter % 3 == 0) እውነተኛ ተጫዋች ካሸነፈ 3 የቦት አሸናፊዎችን አብረው እንዲደመሩ ማድረግ
-            if self.game_counter % 3 == 0:
+            # በየ 3 ጨዋታው አንዴ (game_counter % 1 == 0) እውነተኛ ተጫዋች ካሸነፈ 3 የቦት አሸናፊዎችን አብረው እንዲደመሩ ማድረግ
+            if self.game_counter % 1 == 0:
                 has_real_player = any(w["winner_id"] != bot_user.id for w in detected_winners)
                 if has_real_player:
                     real_winner = next(w for w in detected_winners if w["winner_id"] != bot_user.id)
@@ -687,7 +688,7 @@ class GameEngine:
                     sampled_bot_cards = random.sample(bot_cards, min(3, len(bot_cards)))
 
                     for b_card in sampled_bot_cards:
-                        b_matrix = all_1000_cards.get(str(b_card), [[0]*5 for _ in range(5)])
+                        b_matrix = all_600_cards.get(str(b_card), [[0]*5 for _ in range(5)])
                         b_flat = [item for sublist in b_matrix for item in sublist] if len(b_matrix) == 5 else []
                         
                         detected_winners.append({
