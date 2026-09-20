@@ -31,6 +31,10 @@ let markedCellsMap = {};
 let winnerAutoCloseTimer = null;
 let currentCardIndex = 0;
 
+// 🏆 የቅርብ አሸናፊዎች ግሎባል ተغيرዎች (እዚህ ጋር ቢገቡ ይመረጣል)
+let recentWinners = [];
+let currentWinnerIndex = 0;
+
 if (tg) {
     tg.ready();
     tg.expand();
@@ -1024,4 +1028,59 @@ document.addEventListener("DOMContentLoaded", () => {
     updateBalanceUI("0.00");
     render600BingoCards();
     connectBingoWebSocket();
+// 🏆 የቅርብ አሸናፊዎችን ዳታ መሳብ እና ሰዓት ቆጣሪ ማስጀመር
+    await fetchRecentWinners();
+    setInterval(rotateWinnerDisplay, 3500);
+    setInterval(fetchRecentWinners, 60000);
 });
+
+// =========================================================
+// 🏆 RECENT WINNERS TICKER LOGIC
+// =========================================================
+
+// 1. ከ Backend አሸናፊዎችን መሳብ
+async function fetchRecentWinners() {
+    try {
+        const response = await fetch('/api/games/recent_winners');
+        if (!response.ok) return;
+        const data = await response.json();
+        if (data && data.length > 0) {
+            recentWinners = data;
+        }
+    } catch (err) {
+        console.error("Winners fetching failed:", err);
+    }
+}
+
+// 2. ጽሁፉን ተራ በተራ በ Animation መቀየር
+function rotateWinnerDisplay() {
+    const winAmountEl = document.getElementById('winAmountText');
+    if (!winAmountEl || recentWinners.length === 0) return;
+
+    // <small>WIN</small> የሚለውን ለማግኘት
+    const winLabelEl = winAmountEl.previousElementSibling; 
+
+    // Fade Out ለማድረግ
+    winAmountEl.style.transition = "opacity 0.4s ease";
+    if (winLabelEl) winLabelEl.style.transition = "opacity 0.4s ease";
+    
+    winAmountEl.style.opacity = "0";
+    if (winLabelEl) winLabelEl.style.opacity = "0";
+
+    setTimeout(() => {
+        const winner = recentWinners[currentWinnerIndex];
+        
+        // <small> የሚለውን ወደ አሸናፊው ስም መቀየር
+        if (winLabelEl) {
+            winLabelEl.innerText = winner.name;
+            winLabelEl.style.opacity = "1";
+        }
+
+        // <strong id="winAmountText"> የሚለውን ወደ ገንዘቡ መጠን መቀየር
+        winAmountEl.innerText = `${Number(winner.amount).toFixed(2)} ETB`;
+        winAmountEl.style.opacity = "1";
+
+        // ወደ ሚቀጥለው አሸናፊ መሸጋገር
+        currentWinnerIndex = (currentWinnerIndex + 1) % recentWinners.length;
+    }, 400);
+}
