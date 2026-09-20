@@ -403,14 +403,14 @@ button {
     box-shadow: 0 0 8px var(--orange-glow);
 }
 
-/* Taken / Crossed-Out Card Style */
+/* Taken / Crossed-Out Card Style (Red & Dimmed) */
 .card-item.taken {
-    background: #e2e8f0 !important;
-    color: #94a3b8 !important;
-    border-color: #cbd5e1 !important;
-    text-decoration: line-through;
+    background: #dc2626 !important; /* ቀይ background */
+    color: #ffffff !important; /* የጽሁፉ ቀለም ነጭ */
+    border-color: #b91c1c !important; /* የቀይ ቦርደር */
+    text-decoration: line-through; /* ቁጥሩ ላይ መስመር እንዲሰመርበት (ካስፈለገህ) */
     cursor: not-allowed;
-    opacity: 0.5;
+    opacity: 0.55 !important; /* ቁጥሮቹ እና ካርዱ ደብዘዝ ብለው መያዛቸውን እንዲያሳዩ */
 }
 
 .selection-footer-bar {
