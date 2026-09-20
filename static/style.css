@@ -926,3 +926,17 @@ button {
     .card-display-center { max-width: 270px; }
     .bingo-cell { font-size: 14px; padding: 8px 0; }
 }
+
+/* =========================================================
+   2. 🏆 RECENT WINNERS TICKER FADE ANIMATION
+   ========================================================= */
+/* WIN ላቤል እና የብር መጠኑ ላይ ለስላሳ የኦፓሲቲ ሽግግር እንዲኖር */
+#winAmountText,
+.stat-pill.orange-glow small {
+    transition: opacity 0.4s ease-in-out;
+}
+
+/* ወርቃማ/ብሩህ ቀለም እንዲኖረው (ካስፈለገህ) */
+.stat-pill.orange-glow strong#winAmountText {
+    color: #fbbf24;
+}
