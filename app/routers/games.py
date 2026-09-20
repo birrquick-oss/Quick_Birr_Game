@@ -115,7 +115,8 @@ def get_recent_winners(db: Session = Depends(get_db)):
 
                 winners_list.append({
                     "name": display_name,
-                    "amount": round(g.prize_amount or 0.0, 2)
+                    # ✅ g.prize_amount ወደ g.prize ተቀይሯል (ከ Game model column ጋር እንዲገጣጠም)
+                    "amount": round(getattr(g, 'prize', None) or getattr(g, 'total_pool', 0.0) or 0.0, 2)
                 })
 
         # ገና ምንም አሸናፊ ከሌለ ነባሪ ማሳያ
