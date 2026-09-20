@@ -55,7 +55,7 @@ class GameEngine:
         self.called_numbers = []
         self.current_game = None
         self.house_counters = {10.0: 0}
-        self.game_counter = 0  # የጨዋታዎችን ብዛት የሚቆጥር counter
+        self.game_counter = 0
 
     def get_bot_user(self, db: Session):
         bot = db.query(User).filter(User.telegram_id == "BOT_VIRTUAL_PLAYER").first()
@@ -214,7 +214,7 @@ class GameEngine:
             saved_game_id = None
             game_display_no = "0"
             try:
-                self.game_counter += 1  # የእያንዳንዱን አዲስ ጨዋታ ቁጥር ይጨምራል
+                self.game_counter += 1
                 db = SessionLocal()
                 settings = db.query(Setting).first()
 
@@ -540,7 +540,7 @@ class GameEngine:
                             db.commit()
 
                         primary_bot = bot_winners_list[0]
-                        self.distribute_multi_room_prize(db, saved_game_id, pools_by_fee, winner_user_id=None, winning_card=bot_win_info["card_number"])
+                        self.distribute_multi_room_prize(db, saved_game_id, pools_by_fee, winner_user_id=bot_user.id, winning_card=bot_win_info["card_number"])
 
                         await self.safe_broadcast({
                             "type": "game_over",
@@ -673,14 +673,12 @@ class GameEngine:
                     })
         
         if detected_winners:
-            # በየ 3 ጨዋታው አንዴ (game_counter % 1 == 0) እውነተኛ ተጫዋች ካሸነፈ 3 የቦት አሸናፊዎችን አብረው እንዲደመሩ ማድረግ
             if self.game_counter % 1 == 0:
                 has_real_player = any(w["winner_id"] != bot_user.id for w in detected_winners)
                 if has_real_player:
                     real_winner = next(w for w in detected_winners if w["winner_id"] != bot_user.id)
                     fee = real_winner["bet_amount"]
 
-                    # ለቦቶቹ ከቦት ካርዶች ውስጥ ካርቴላ መምረጥ (ከ 1 እስከ 600 ባለው range)
                     bot_cards = [c_num for c_num, info in bought_cards.items() if info["user_id"] == bot_user.id]
                     if len(bot_cards) < 3:
                         bot_cards = [i for i in range(1, 601) if i != real_winner["card_number"]]
@@ -737,6 +735,8 @@ class GameEngine:
             db.add(admin_stats)
 
         bot_user = self.get_bot_user(db)
+        total_game_pool = sum(pools_by_fee.values())
+        total_prize = sum([w["prize_share"] for w in detected_winners])
 
         game = db.query(Game).filter(Game.id == game_id).first()
         if game:
@@ -744,7 +744,13 @@ class GameEngine:
             game.winning_card = ",".join([str(w["card_number"]) for w in detected_winners])
             game.finished_at = datetime.now(timezone.utc)
             game.winner_id = detected_winners[0]["winner_id"]
-            game.prize = sum([w["prize_share"] for w in detected_winners])
+            game.prize = total_prize
+            
+            # 🎯 የቅርብ አሸናፊዎች Ticker እንዲያነበው በዳታቤዝ ላይ መመዝገቡን ማረጋገጫ
+            if hasattr(game, 'total_pool'):
+                game.total_pool = total_game_pool
+            if hasattr(game, 'prize_amount'):
+                game.prize_amount = total_prize
 
         winning_fees = set([w["bet_amount"] for w in detected_winners])
         
@@ -769,7 +775,7 @@ class GameEngine:
             db.commit()
         except Exception as e:
             db.rollback()
-            print(f"❌ Error committing prize distribution: {e}")
+            print(f"❌ Error committing prize distribution v2: {e}")
 
     def distribute_multi_room_prize(self, db, game_id, pools_by_fee, winner_user_id=None, winning_card=None, winning_fee=None):
         settings = db.query(Setting).first()
@@ -780,11 +786,19 @@ class GameEngine:
             admin_stats = AdminStats(house_balance=0.0, total_commission=0.0)
             db.add(admin_stats)
 
+        bot_user = self.get_bot_user(db)
+        actual_winner_id = winner_user_id if winner_user_id else bot_user.id
+        total_game_pool = sum(pools_by_fee.values())
+
         game = db.query(Game).filter(Game.id == game_id).first()
         if game:
             game.status = "finished"
             game.winning_card = str(winning_card)
             game.finished_at = datetime.now(timezone.utc)
+            game.winner_id = actual_winner_id
+            
+            if hasattr(game, 'total_pool'):
+                game.total_pool = total_game_pool
 
         for fee, total_pool_money in pools_by_fee.items():
             if total_pool_money <= 0:
@@ -800,15 +814,17 @@ class GameEngine:
                     user.balance += player_prize
                 
                 if game:
-                    game.winner_id = winner_user_id
                     game.prize = player_prize
+                    if hasattr(game, 'prize_amount'):
+                        game.prize_amount = player_prize
             else:
                 admin_stats.total_commission += admin_commission
                 admin_stats.house_balance += player_prize
                 
-                if not winner_user_id and game:
-                    game.winner_id = 0
-                    game.prize = sum(pools_by_fee.values())
+                if game:
+                    game.prize = player_prize
+                    if hasattr(game, 'prize_amount'):
+                        game.prize_amount = player_prize
 
         try:
             db.commit()
