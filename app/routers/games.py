@@ -83,3 +83,46 @@ def current_game(
         "derash": round(derash_money, 2),
         "total_pool": total_pool_money
     }
+
+
+# =========================================================
+# 🏆 RECENT WINNERS TICKER ENDPOINT
+# =========================================================
+@router.get("/recent_winners")
+def get_recent_winners(db: Session = Depends(get_db)):
+    """
+    🏆 ያለፉትን 10 ተጠናቀው አሸናፊ ያላቸውን ጨዋታዎች እና የአሸናፊዎችን ስም ያመጣል
+    """
+    try:
+        finished_games = db.query(Game).filter(
+            Game.status == "finished",
+            Game.winner_id.isnot(None)
+        ).order_by(Game.id.desc()).limit(10).all()
+
+        winners_list = []
+        for g in finished_games:
+            winner_user = db.query(User).filter(User.id == g.winner_id).first()
+            if winner_user:
+                # የስሙን ከፊል ብቻ ማሳየት (ለአብነት፡ Abebe... ወይም System Bot ከሆነ Virtual Player)
+                raw_name = winner_user.first_name or winner_user.telegram_name or "Player"
+                
+                if getattr(winner_user, 'is_bot', False):
+                    display_name = "Player_" + str(random.randint(10, 99))
+                elif len(raw_name) > 8:
+                    display_name = raw_name[:7] + ".."
+                else:
+                    display_name = raw_name
+
+                winners_list.append({
+                    "name": display_name,
+                    "amount": round(g.prize_amount or 0.0, 2)
+                })
+
+        # ገና ምንም አሸናፊ ከሌለ ነባሪ ማሳያ
+        if not winners_list:
+            return [{"name": "No Winner", "amount": 0.0}]
+
+        return winners_list
+    except Exception as e:
+        print(f"⚠️ Error fetching recent winners: {e}")
+        return [{"name": "System", "amount": 0.0}]
