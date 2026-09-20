@@ -1028,8 +1028,9 @@ document.addEventListener("DOMContentLoaded", () => {
     updateBalanceUI("0.00");
     render600BingoCards();
     connectBingoWebSocket();
-// 🏆 የቅርብ አሸናፊዎችን ዳታ መሳብ እና ሰዓት ቆጣሪ ማስጀመር
-    await fetchRecentWinners();
+   
+ // 🏆 የቅርብ አሸናፊዎችን ዳታ መሳብ እና ሰዓት ቆጣሪ ማስጀመር
+    fetchRecentWinners();
     setInterval(rotateWinnerDisplay, 3500);
     setInterval(fetchRecentWinners, 60000);
 });
