@@ -16,6 +16,7 @@ from app.seed_cards import seed_cards  # 👈 Seed cards import ተደርጓል
 from app.routers.games import router as games_router
 from app.routers.cards import router as cards_router
 from app.routers.users import router as users_router
+from app.routers.slots import router as slots_router
 from app.websocket import router as websocket_router, manager
 from app.game_engine import engine
 
@@ -92,6 +93,7 @@ app.add_middleware(
 app.include_router(games_router)
 app.include_router(cards_router)
 app.include_router(users_router)
+app.include_router(slots_router)
 app.include_router(websocket_router)
 
 
