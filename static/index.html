@@ -90,7 +90,7 @@
                         <div class="game-info">
                             <h3>Lucky Slots</h3>
                             <p>Spin & Win</p>
-                            <span class="game-price">Coming Soon</span>
+                            <span class="game-price">10 / 20 / 50 ETB</span>
                         </div>
                     </button>
 
@@ -249,6 +249,168 @@
             </div>
         </div>
 
+        
+<!-- =====================================================
+     LUCKY SLOTS VIEW
+===================================================== -->
+
+<div id="slotsView" class="slots-view" hidden>
+
+    <div class="slots-header">
+
+        <button
+            id="slotsBackBtn"
+            class="slots-back-btn"
+            type="button"
+        >
+            ←
+        </button>
+
+        <div class="slots-title">
+            🎰 Lucky Slots
+        </div>
+
+        <div
+            id="slotsBalance"
+            class="slots-balance"
+        >
+            0.00 ETB
+        </div>
+
+    </div>
+
+
+    <!-- SLOT MACHINE -->
+
+    <div class="slots-machine">
+
+        <div class="slots-machine-title">
+            LUCKY SLOTS
+        </div>
+
+        <div class="slots-reels">
+
+            <div
+                id="slotReel1"
+                class="slot-reel"
+            >
+                🍒
+            </div>
+
+            <div
+                id="slotReel2"
+                class="slot-reel"
+            >
+                🍋
+            </div>
+
+            <div
+                id="slotReel3"
+                class="slot-reel"
+            >
+                🔔
+            </div>
+
+        </div>
+
+        <div
+            id="slotResultText"
+            class="slot-result-text"
+        >
+            Choose your bet and spin
+        </div>
+
+    </div>
+
+
+    <!-- BET -->
+
+    <div class="slot-section-title">
+        SELECT BET
+    </div>
+
+    <div class="slot-bet-buttons">
+
+        <button
+            type="button"
+            class="slot-bet-btn active"
+            data-slot-bet="10"
+        >
+            10 ETB
+        </button>
+
+        <button
+            type="button"
+            class="slot-bet-btn"
+            data-slot-bet="20"
+        >
+            20 ETB
+        </button>
+
+        <button
+            type="button"
+            class="slot-bet-btn"
+            data-slot-bet="50"
+        >
+            50 ETB
+        </button>
+
+    </div>
+
+
+    <!-- SPIN -->
+
+    <button
+        id="slotSpinBtn"
+        class="slot-spin-btn"
+        type="button"
+    >
+        🎰 SPIN
+    </button>
+
+
+    <!-- PAYOUT -->
+
+    <div class="slot-payout-card">
+
+        <div class="slot-payout-title">
+            🎯 TRIPLE MATCH PAYOUT
+        </div>
+
+        <div class="slot-payout-row">
+            <span>🍒 🍒 🍒</span>
+            <strong>3x</strong>
+        </div>
+
+        <div class="slot-payout-row">
+            <span>🍋 🍋 🍋</span>
+            <strong>4x</strong>
+        </div>
+
+        <div class="slot-payout-row">
+            <span>🔔 🔔 🔔</span>
+            <strong>5x</strong>
+        </div>
+
+        <div class="slot-payout-row">
+            <span>⭐ ⭐ ⭐</span>
+            <strong>8x</strong>
+        </div>
+
+        <div class="slot-payout-row">
+            <span>💎 💎 💎</span>
+            <strong>12x</strong>
+        </div>
+
+        <div class="slot-payout-row">
+            <span>7️⃣ 7️⃣ 7️⃣</span>
+            <strong>20x</strong>
+        </div>
+
+    </div>
+
+</div>
+         
         <!-- PROFILE VIEW -->
         <div id="profileView" class="page-view" hidden>
             <div class="profile-dashboard">
