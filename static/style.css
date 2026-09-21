@@ -940,3 +940,266 @@ button {
 .stat-pill.orange-glow strong#winAmountText {
     color: #fbbf24;
 }
+
+/* =========================================================
+   QUICK_BIRR GAMES - LUCKY SLOTS
+   ========================================================= */
+
+.slots-view {
+    min-height: calc(100vh - 70px);
+    padding: 14px;
+    padding-bottom: 90px;
+    background:
+        radial-gradient(
+            circle at top,
+            rgba(41, 148, 255, 0.14),
+            transparent 40%
+        ),
+        var(--bg);
+}
+
+
+.slots-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 18px;
+}
+
+
+.slots-back-btn {
+    width: 42px;
+    height: 42px;
+    border: none;
+    border-radius: 13px;
+    background: var(--card);
+    color: var(--white);
+    font-size: 25px;
+    cursor: pointer;
+}
+
+
+.slots-title {
+    flex: 1;
+    text-align: center;
+    font-size: 19px;
+    font-weight: 800;
+    color: var(--white);
+}
+
+
+.slots-balance {
+    background: var(--card);
+    border: 1px solid rgba(41, 148, 255, 0.35);
+    border-radius: 12px;
+    padding: 9px 10px;
+    color: var(--gold);
+    font-size: 12px;
+    font-weight: 800;
+    white-space: nowrap;
+}
+
+
+/* MACHINE */
+
+.slots-machine {
+    position: relative;
+    overflow: hidden;
+    border-radius: 24px;
+    padding: 22px 14px 20px;
+    background:
+        radial-gradient(
+            circle at 50% 0%,
+            rgba(41, 148, 255, 0.28),
+            transparent 45%
+        ),
+        linear-gradient(
+            145deg,
+            #151b31,
+            #241735,
+            #101827
+        );
+    border: 1px solid rgba(255,255,255,0.08);
+    box-shadow:
+        0 18px 45px rgba(0,0,0,0.38),
+        inset 0 0 30px rgba(41,148,255,0.06);
+}
+
+
+.slots-machine-title {
+    text-align: center;
+    font-size: 13px;
+    letter-spacing: 3px;
+    font-weight: 900;
+    color: #b9c8ff;
+    margin-bottom: 18px;
+}
+
+
+.slots-reels {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 9px;
+    max-width: 390px;
+    margin: auto;
+}
+
+
+.slot-reel {
+    height: 105px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(
+        180deg,
+        #ffffff,
+        #e7edf6
+    );
+    border-radius: 18px;
+    font-size: 48px;
+    box-shadow:
+        inset 0 -8px 0 rgba(0,0,0,0.07),
+        0 8px 20px rgba(0,0,0,0.25);
+    user-select: none;
+}
+
+
+.slot-reel.spinning {
+    animation: slotReelShake 0.09s linear infinite;
+}
+
+
+@keyframes slotReelShake {
+    0% {
+        transform: translateY(-2px);
+    }
+
+    50% {
+        transform: translateY(2px);
+    }
+
+    100% {
+        transform: translateY(-2px);
+    }
+}
+
+
+.slot-result-text {
+    min-height: 24px;
+    margin-top: 17px;
+    text-align: center;
+    font-size: 14px;
+    font-weight: 800;
+    color: var(--text);
+}
+
+
+/* BET */
+
+.slot-section-title {
+    margin: 22px 0 10px;
+    font-size: 12px;
+    font-weight: 800;
+    color: var(--muted);
+    letter-spacing: 1px;
+}
+
+
+.slot-bet-buttons {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 9px;
+}
+
+
+.slot-bet-btn {
+    height: 48px;
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 14px;
+    background: var(--card);
+    color: var(--text);
+    font-size: 14px;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+
+.slot-bet-btn.active {
+    background: linear-gradient(
+        135deg,
+        var(--blue),
+        var(--blue2)
+    );
+    color: white;
+    border-color: rgba(255,255,255,0.15);
+    box-shadow: 0 7px 20px rgba(41,148,255,0.25);
+}
+
+
+/* SPIN BUTTON */
+
+.slot-spin-btn {
+    width: 100%;
+    height: 58px;
+    margin-top: 18px;
+    border: none;
+    border-radius: 17px;
+    background: linear-gradient(
+        135deg,
+        #2994ff,
+        #1267c9
+    );
+    color: white;
+    font-size: 18px;
+    font-weight: 900;
+    letter-spacing: 1px;
+    cursor: pointer;
+    box-shadow: 0 10px 25px rgba(41,148,255,0.28);
+}
+
+
+.slot-spin-btn:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+
+/* PAYOUT */
+
+.slot-payout-card {
+    margin-top: 18px;
+    padding: 16px;
+    border-radius: 18px;
+    background: var(--card);
+    border: 1px solid rgba(255,255,255,0.06);
+}
+
+
+.slot-payout-title {
+    margin-bottom: 12px;
+    color: var(--white);
+    font-size: 13px;
+    font-weight: 900;
+}
+
+
+.slot-payout-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 9px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    color: var(--text);
+    font-size: 14px;
+}
+
+
+.slot-payout-row:last-child {
+    border-bottom: none;
+}
+
+
+.slot-payout-row strong {
+    color: var(--gold);
+}
