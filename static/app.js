@@ -220,31 +220,86 @@ function connectBingoWebSocket() {
     bingoSocket.onmessage = (event) => {
         const data = JSON.parse(event.data);
 
-        if ((data.type === "countdown" || data.type === "time_update") && (data.phase === "PICK" || !data.phase)) {
+        /* =========================
+           BINGO COUNTDOWN / PICK
+        ========================= */
+        if (
+            (data.type === "countdown" || data.type === "time_update") &&
+            (data.phase === "PICK" || !data.phase)
+        ) {
             currentGameId = data.game_id || currentGameId;
             updateCountdownUI(data);
             recentBallsList = [];
         }
 
+        /* =========================
+           TAKEN CARDS
+        ========================= */
         if (data.type === "taken_cards_update") {
             updateTakenCardsUI(data.taken_cards);
         }
 
-        if (data.type === "phase_change" && (data.phase === "DRAW" || data.phase === "GAME_START")) {
-            showPage("bingoLive");
-            clear75Board();
-            currentCardIndex = 0;
-            renderMyBoughtCards();
-            updateRecentBallsUI();
+        /* =========================
+           BINGO GAME START
+           
+           ⚠️ IMPORTANT:
+           Only open Bingo Live if the user
+           is already inside Bingo.
+        ========================= */
+        if (
+            data.type === "phase_change" &&
+            (data.phase === "DRAW" || data.phase === "GAME_START")
+        ) {
+            const userIsInBingo =
+                bingoSelectionView &&
+                !bingoSelectionView.hidden;
+
+            const userIsWatchingBingo =
+                bingoGameView &&
+                !bingoGameView.hidden;
+
+            if (userIsInBingo || userIsWatchingBingo) {
+                showPage("bingoLive");
+                clear75Board();
+                currentCardIndex = 0;
+                renderMyBoughtCards();
+                updateRecentBallsUI();
+            }
         }
 
+        /* =========================
+           BINGO BALL DRAW
+           
+           ⚠️ IMPORTANT:
+           Do NOT force the user into Bingo
+           if they are playing Slots/another game.
+        ========================= */
         if (data.type === "ball") {
-            showPage("bingoLive");
-            handleBallDraw(data);
+
+            const userIsWatchingBingo =
+                bingoGameView &&
+                !bingoGameView.hidden;
+
+            if (userIsWatchingBingo) {
+                handleBallDraw(data);
+            }
         }
 
+        /* =========================
+           BINGO GAME OVER
+           
+           Only show Bingo result if the
+           user is currently watching Bingo.
+        ========================= */
         if (data.type === "game_over") {
-            handleGameOver(data);
+
+            const userIsWatchingBingo =
+                bingoGameView &&
+                !bingoGameView.hidden;
+
+            if (userIsWatchingBingo) {
+                handleGameOver(data);
+            }
         }
     };
 
@@ -1052,7 +1107,6 @@ document.addEventListener("DOMContentLoaded", () => {
     setupFormSubmitListeners();
     updateBalanceUI("0.00");
     render600BingoCards();
-    connectBingoWebSocket();
    
  // 🏆 የቅርብ አሸናፊዎችን ዳታ መሳብ እና ሰዓት ቆጣሪ ማስጀመር
     fetchRecentWinners();
