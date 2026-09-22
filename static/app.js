@@ -25,6 +25,20 @@ let bingoSocket = null;
 let takenCardsList = [];
 
 let recentBallsList = []; 
+
+// 🎰 Lucky Slots
+let selectedSlotBet = 10;
+let slotSpinning = false;
+
+const slotSymbols = [
+    "🍒",
+    "🍋",
+    "🔔",
+    "⭐",
+    "💎",
+    "7️⃣"
+];
+
 let soundEnabled = true;
 let isAutoMark = true;
 let markedCellsMap = {}; 
@@ -64,6 +78,7 @@ const homeView = document.getElementById("homeView");
 const profileView = document.getElementById("profileView");
 const bingoSelectionView = document.getElementById("bingoSelectionView");
 const bingoGameView = document.getElementById("bingoGameView");
+const slotsView = document.getElementById("slotsView");
 
 const depositModal = document.getElementById("depositModal");
 const withdrawModal = document.getElementById("withdrawModal");
@@ -169,6 +184,12 @@ document.querySelectorAll(".game-card").forEach(card => {
             render600BingoCards();
             clear75Board();
             connectBingoWebSocket();
+            return;
+        }
+
+        if (game === "slots") {
+            showPage("slots");
+            updateSlotsBalance();
             return;
         }
 
@@ -950,6 +971,7 @@ function hideAllViews() {
     if (profileView) profileView.hidden = true;
     if (bingoSelectionView) bingoSelectionView.hidden = true;
     if (bingoGameView) bingoGameView.hidden = true;
+    if (slotsView) slotsView.hidden = true;
 }
 
 function showPage(pageName) {
@@ -969,6 +991,9 @@ function showPage(pageName) {
         if (bingoSelectionView) bingoSelectionView.hidden = false;
     } else if (pageName === "bingoLive") {
         if (bingoGameView) bingoGameView.hidden = false;
+    } else if (pageName === "slots") {
+        if (slotsView) slotsView.hidden = false;
+        updateSlotsBalance();
     } else {
         if (homeView) homeView.hidden = false;
     }
@@ -1085,3 +1110,318 @@ function rotateWinnerDisplay() {
         currentWinnerIndex = (currentWinnerIndex + 1) % recentWinners.length;
     }, 400);
 }
+
+// =========================================================
+// 🎰 LUCKY SLOTS
+// =========================================================
+
+function updateSlotsBalance() {
+    const slotsBalanceEl = document.getElementById("slotsBalance");
+
+    if (!slotsBalanceEl) return;
+
+    const balance = parseFloat(userData.balance || 0);
+
+    slotsBalanceEl.textContent =
+        `${balance.toFixed(2)} ETB`;
+}
+
+
+// ---------------------------------------------------------
+// BET BUTTONS
+// ---------------------------------------------------------
+
+document.querySelectorAll(".slot-bet-btn").forEach(button => {
+    button.addEventListener("click", () => {
+
+        if (slotSpinning) return;
+
+        const bet = parseFloat(button.dataset.slotBet);
+
+        if (!bet) return;
+
+        selectedSlotBet = bet;
+
+        document.querySelectorAll(".slot-bet-btn").forEach(btn => {
+            btn.classList.remove("active");
+        });
+
+        button.classList.add("active");
+
+        const resultText =
+            document.getElementById("slotResultText");
+
+        if (resultText) {
+            resultText.textContent =
+                `${selectedSlotBet} ETB selected — Ready to spin 🎰`;
+        }
+
+        if (window.Telegram?.WebApp?.HapticFeedback) {
+            window.Telegram.WebApp.HapticFeedback.selectionChanged();
+        }
+    });
+});
+
+
+// ---------------------------------------------------------
+// SPIN ANIMATION
+// ---------------------------------------------------------
+
+function startSlotAnimation() {
+
+    const reels = [
+        document.getElementById("slotReel1"),
+        document.getElementById("slotReel2"),
+        document.getElementById("slotReel3")
+    ];
+
+    reels.forEach(reel => {
+        if (reel) {
+            reel.classList.add("spinning");
+        }
+    });
+
+    const animationInterval = setInterval(() => {
+
+        reels.forEach(reel => {
+
+            if (!reel) return;
+
+            const randomIndex =
+                Math.floor(Math.random() * slotSymbols.length);
+
+            reel.textContent =
+                slotSymbols[randomIndex];
+        });
+
+    }, 90);
+
+    return {
+        stop: () => {
+            clearInterval(animationInterval);
+
+            reels.forEach(reel => {
+                if (reel) {
+                    reel.classList.remove("spinning");
+                }
+            });
+        }
+    };
+}
+
+
+// ---------------------------------------------------------
+// SPIN RESULT
+// ---------------------------------------------------------
+
+function showSlotResult(data) {
+
+    const reel1 = document.getElementById("slotReel1");
+    const reel2 = document.getElementById("slotReel2");
+    const reel3 = document.getElementById("slotReel3");
+
+    if (reel1) reel1.textContent = data.symbols[0];
+    if (reel2) reel2.textContent = data.symbols[1];
+    if (reel3) reel3.textContent = data.symbols[2];
+
+    const resultText =
+        document.getElementById("slotResultText");
+
+    if (!resultText) return;
+
+    if (data.win_amount > 0) {
+
+        resultText.textContent =
+            `🎉 YOU WON ${Number(data.win_amount).toFixed(2)} ETB — ${data.multiplier}x!`;
+
+        resultText.style.color = "#2ed573";
+
+        if (window.Telegram?.WebApp?.HapticFeedback) {
+            window.Telegram.WebApp.HapticFeedback.notificationOccurred(
+                "success"
+            );
+        }
+
+    } else {
+
+        resultText.textContent =
+            "😔 No win this time. Try again!";
+
+        resultText.style.color = "#ff6b6b";
+    }
+}
+
+
+// ---------------------------------------------------------
+// MAIN SPIN
+// ---------------------------------------------------------
+
+async function spinLuckySlots() {
+
+    if (slotSpinning) return;
+
+    if (!userData.telegram_id) {
+        showMessage(
+            "Telegram Error",
+            "Please open the game from Telegram.",
+            "⚠️"
+        );
+        return;
+    }
+
+    const balance =
+        parseFloat(userData.balance || 0);
+
+    if (balance < selectedSlotBet) {
+
+        showMessage(
+            "Insufficient Balance",
+            `Your balance is ${balance.toFixed(2)} ETB. You need ${selectedSlotBet.toFixed(2)} ETB to spin.`,
+            "💰"
+        );
+
+        return;
+    }
+
+    const spinBtn =
+        document.getElementById("slotSpinBtn");
+
+    const resultText =
+        document.getElementById("slotResultText");
+
+    slotSpinning = true;
+
+    if (spinBtn) {
+        spinBtn.disabled = true;
+        spinBtn.textContent = "🎰 SPINNING...";
+    }
+
+    if (resultText) {
+        resultText.textContent =
+            "🎰 Good luck...";
+        resultText.style.color = "";
+    }
+
+    const animation =
+        startSlotAnimation();
+
+    try {
+
+        const response = await fetch(
+            "/api/slots/spin",
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    telegram_id: String(userData.telegram_id),
+                    bet_amount: selectedSlotBet
+                })
+            }
+        );
+
+        let data = {};
+
+        try {
+            data = await response.json();
+        } catch (e) {
+            data = {};
+        }
+
+        if (!response.ok) {
+
+            animation.stop();
+
+            const errorMessage =
+                data.detail ||
+                data.message ||
+                "Spin failed. Please try again.";
+
+            showMessage(
+                "Spin Error",
+                errorMessage,
+                "⚠️"
+            );
+
+            return;
+        }
+
+        // Give the animation a little time
+        await new Promise(resolve =>
+            setTimeout(resolve, 700)
+        );
+
+        animation.stop();
+
+        showSlotResult(data);
+
+        if (data.balance !== undefined) {
+
+            userData.balance =
+                Number(data.balance).toFixed(2);
+
+            updateBalanceUI(userData.balance);
+            updateSlotsBalance();
+
+        } else {
+
+            await syncAndFetchUser();
+            updateSlotsBalance();
+        }
+
+    } catch (error) {
+
+        console.error(
+            "Lucky Slots Error:",
+            error
+        );
+
+        animation.stop();
+
+        showMessage(
+            "Connection Error",
+            "The spin could not be completed. Please try again.",
+            "⚠️"
+        );
+
+    } finally {
+
+        slotSpinning = false;
+
+        if (spinBtn) {
+            spinBtn.disabled = false;
+            spinBtn.textContent = "🎰 SPIN";
+        }
+    }
+}
+
+
+// ---------------------------------------------------------
+// SPIN BUTTON
+// ---------------------------------------------------------
+
+document.getElementById("slotSpinBtn")?.addEventListener(
+    "click",
+    spinLuckySlots
+);
+
+
+// ---------------------------------------------------------
+// BACK BUTTON
+// ---------------------------------------------------------
+
+document.getElementById("slotsBackBtn")?.addEventListener(
+    "click",
+    () => {
+
+        if (slotSpinning) return;
+
+        showPage("home");
+
+        window.scrollTo({
+            top: 0,
+            behavior: "smooth"
+        });
+    }
+);
