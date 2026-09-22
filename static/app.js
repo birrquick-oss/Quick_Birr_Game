@@ -193,6 +193,11 @@ document.querySelectorAll(".game-card").forEach(card => {
             return;
         }
 
+        if (game === "plinko") {
+            openPlinkoGame();
+            return;
+        }
+
         const names = {
             slots: "Lucky Slots", plinko: "Plinko", roulette: "European Roulette",
             blackjack: "Blackjack", mines: "Mines"
@@ -477,7 +482,7 @@ function handleGameOver(data) {
                     <div style="font-size:16px; margin-bottom: 10px;">
                         <p style="margin:4px 0;">👤 <b>ስም፦</b> <span style="color:#00ffcc; float:right; font-weight:bold;">${wName}</span></p>
                         <p style="margin:4px 0;">📞 <b>ስልክ፦</b> <span style="color:#3aafaa; float:right; font-weight:bold;">${phoneNum}</span></p>
-                        <p style="margin:4px 0;">🎫 <b>ካርድ፦</b> <span style="color:#ffbc00; float:right; font-weight:bold;">#${cNum}</span></p>
+                        <p style="margin:4px 0;">🎫 <b>ካርቴላ፦</b> <span style="color:#ffbc00; float:right; font-weight:bold;">#${cNum}</span></p>
                     </div>
                     ${gridHtml}
                     <div style="background: rgba(0,255,0,0.1); border: 1px dashed #00ff00; padding: 8px; border-radius: 10px; text-align: center; margin-top: 10px;">
@@ -518,7 +523,7 @@ function handleGameOver(data) {
                 <div style="font-size:16px; margin-bottom: 10px;">
                     <p style="margin:4px 0;">👤 <b>ስም፦</b> <span style="color:#00ffcc; float:right; font-weight:bold;">${winnerName}</span></p>
                     <p style="margin:4px 0;">📞 <b>ስልክ፦</b> <span style="color:#3aafaa; float:right; font-weight:bold;">${phoneNum}</span></p>
-                    <p style="margin:4px 0;">🎫 <b>ካርድ፦</b> <span style="color:#ffbc00; float:right; font-weight:bold;">#${cardNum}</span></p>
+                    <p style="margin:4px 0;">🎫 <b>ካርቴላ፦</b> <span style="color:#ffbc00; float:right; font-weight:bold;">#${cardNum}</span></p>
                 </div>
                 ${gridHtml}
                 <div style="background: rgba(0,255,0,0.1); border: 1px dashed #00ff00; padding: 10px; border-radius: 10px; text-align: center; margin-top: 10px;">
@@ -1027,6 +1032,7 @@ function hideAllViews() {
     if (bingoSelectionView) bingoSelectionView.hidden = true;
     if (bingoGameView) bingoGameView.hidden = true;
     if (slotsView) slotsView.hidden = true;
+    if (plinkoView) plinkoView.hidden = true;
 }
 
 function showPage(pageName) {
@@ -1049,6 +1055,10 @@ function showPage(pageName) {
     } else if (pageName === "slots") {
         if (slotsView) slotsView.hidden = false;
         updateSlotsBalance();
+       
+    } else if (pageName === "plinko") {
+        if (plinkoView) plinkoView.hidden = false;
+        updatePlinkoBalance();   
     } else {
         if (homeView) homeView.hidden = false;
     }
@@ -1479,3 +1489,833 @@ document.getElementById("slotsBackBtn")?.addEventListener(
         });
     }
 );
+
+/* =========================================================
+   QUICK_BIRR GAMES - PLINKO
+   Backend-connected Plinko Game
+   ========================================================= */
+
+let selectedPlinkoBet = 10;
+let plinkoPlaying = false;
+
+/* =========================================================
+   ELEMENTS
+========================================================= */
+
+const plinkoView = document.getElementById("plinkoView");
+const plinkoBoard = document.getElementById("plinkoBoard");
+const plinkoBall = document.getElementById("plinkoBall");
+const plinkoBalanceEl = document.getElementById("plinkoBalance");
+const plinkoResultText = document.getElementById("plinkoResultText");
+const plinkoDropBtn = document.getElementById("plinkoDropBtn");
+
+const plinkoMultiplierElements =
+    document.querySelectorAll(".plinko-multiplier");
+
+
+/* =========================================================
+   MULTIPLIERS
+========================================================= */
+
+const plinkoMultipliers = [
+    0,
+    0.5,
+    1,
+    2,
+    5,
+    10,
+    5,
+    2,
+    1,
+    0.5,
+    0
+];
+
+
+/* =========================================================
+   BALANCE
+========================================================= */
+
+function updatePlinkoBalance() {
+
+    if (!plinkoBalanceEl) return;
+
+    const balance =
+        parseFloat(userData.balance || 0);
+
+    plinkoBalanceEl.textContent =
+        `${balance.toFixed(2)} ETB`;
+
+    if (balance <= 0) {
+        plinkoBalanceEl.classList.add("low");
+    } else {
+        plinkoBalanceEl.classList.remove("low");
+    }
+}
+
+
+/* =========================================================
+   OPEN PLINKO
+========================================================= */
+
+function openPlinkoGame() {
+
+    showPage("plinko");
+
+    updatePlinkoBalance();
+
+    resetPlinkoBoard();
+
+    if (plinkoResultText) {
+        plinkoResultText.textContent =
+            "Choose your bet and drop the ball";
+
+        plinkoResultText.classList.remove(
+            "win",
+            "jackpot"
+        );
+    }
+}
+
+
+/* =========================================================
+   RESET BOARD
+========================================================= */
+
+function resetPlinkoBoard() {
+
+    if (plinkoBall) {
+
+        plinkoBall.classList.remove(
+            "active",
+            "drop-animation"
+        );
+
+        plinkoBall.style.left = "50%";
+        plinkoBall.style.transform =
+            "translateX(-50%)";
+    }
+
+    plinkoMultiplierElements.forEach(
+        element => {
+            element.classList.remove("win");
+        }
+    );
+}
+
+
+/* =========================================================
+   BET BUTTONS
+========================================================= */
+
+document.querySelectorAll(
+    ".plinko-bet-btn"
+).forEach(button => {
+
+    button.addEventListener("click", () => {
+
+        if (plinkoPlaying) return;
+
+        const bet =
+            parseFloat(
+                button.dataset.plinkoBet
+            );
+
+        if (!bet) return;
+
+        selectedPlinkoBet = bet;
+
+        document.querySelectorAll(
+            ".plinko-bet-btn"
+        ).forEach(btn => {
+            btn.classList.remove("active");
+        });
+
+        button.classList.add("active");
+
+        if (plinkoResultText) {
+            plinkoResultText.textContent =
+                `${bet} ETB selected — Ready to drop 🎯`;
+
+            plinkoResultText.classList.remove(
+                "win",
+                "jackpot"
+            );
+        }
+
+        if (
+            window.Telegram?.WebApp?.HapticFeedback
+        ) {
+            window.Telegram.WebApp.HapticFeedback
+                .selectionChanged();
+        }
+    });
+});
+
+
+/* =========================================================
+   BALL ANIMATION
+========================================================= */
+
+function animatePlinkoBall(resultIndex) {
+
+    return new Promise(resolve => {
+
+        if (!plinkoBall) {
+            resolve();
+            return;
+        }
+
+        resetPlinkoBoard();
+
+        /*
+         * Convert result index into horizontal
+         * position.
+         *
+         * 0  = far left
+         * 5  = center
+         * 10 = far right
+         */
+
+        const boardWidth =
+            plinkoBoard?.clientWidth || 430;
+
+        const horizontalPositions = [
+            8,
+            16,
+            25,
+            34,
+            42,
+            50,
+            58,
+            66,
+            75,
+            84,
+            92
+        ];
+
+        const targetPercent =
+            horizontalPositions[
+                Math.max(
+                    0,
+                    Math.min(
+                        resultIndex,
+                        horizontalPositions.length - 1
+                    )
+                )
+            ];
+
+        /*
+         * Start ball
+         */
+
+        plinkoBall.style.left = "50%";
+        plinkoBall.style.top = "18px";
+
+        plinkoBall.classList.add("active");
+
+        /*
+         * Small delay makes the ball
+         * visibly appear before dropping.
+         */
+
+        requestAnimationFrame(() => {
+
+            setTimeout(() => {
+
+                /*
+                 * Use CSS animation first.
+                 */
+
+                plinkoBall.classList.add(
+                    "drop-animation"
+                );
+
+                /*
+                 * During the fall,
+                 * gradually move toward
+                 * the final result slot.
+                 */
+
+                const startTime =
+                    performance.now();
+
+                const duration = 1450;
+
+                function moveBall(now) {
+
+                    const elapsed =
+                        now - startTime;
+
+                    const progress =
+                        Math.min(
+                            elapsed / duration,
+                            1
+                        );
+
+                    /*
+                     * Ease-out movement.
+                     */
+
+                    const eased =
+                        1 -
+                        Math.pow(
+                            1 - progress,
+                            2
+                        );
+
+                    /*
+                     * Start from center.
+                     */
+
+                    const currentPercent =
+                        50 +
+                        (targetPercent - 50) *
+                        eased;
+
+                    plinkoBall.style.left =
+                        `${currentPercent}%`;
+
+                    if (progress < 1) {
+
+                        requestAnimationFrame(
+                            moveBall
+                        );
+
+                    } else {
+
+                        /*
+                         * Keep ball at final position.
+                         */
+
+                        plinkoBall.style.left =
+                            `${targetPercent}%`;
+
+                        setTimeout(
+                            resolve,
+                            120
+                        );
+                    }
+                }
+
+                requestAnimationFrame(
+                    moveBall
+                );
+
+            }, 80);
+        });
+    });
+}
+
+
+/* =========================================================
+   HIGHLIGHT RESULT
+========================================================= */
+
+function highlightPlinkoResult(
+    resultIndex,
+    multiplier,
+    winAmount
+) {
+
+    plinkoMultiplierElements.forEach(
+        element => {
+            element.classList.remove("win");
+        }
+    );
+
+    const resultElement =
+        plinkoMultiplierElements[
+            resultIndex
+        ];
+
+    if (resultElement) {
+        resultElement.classList.add("win");
+    }
+
+    if (!plinkoResultText) return;
+
+    if (multiplier >= 10) {
+
+        plinkoResultText.textContent =
+            `🎉 JACKPOT! +${Number(winAmount).toFixed(2)} ETB — 10x!`;
+
+        plinkoResultText.classList.add(
+            "jackpot"
+        );
+
+        if (
+            window.Telegram?.WebApp?.HapticFeedback
+        ) {
+            window.Telegram.WebApp.HapticFeedback
+                .notificationOccurred("success");
+        }
+
+    } else if (multiplier >= 1) {
+
+        plinkoResultText.textContent =
+            `🎉 YOU WON ${Number(winAmount).toFixed(2)} ETB — ${multiplier}x!`;
+
+        plinkoResultText.classList.add(
+            "win"
+        );
+
+        if (
+            window.Telegram?.WebApp?.HapticFeedback
+        ) {
+            window.Telegram.WebApp.HapticFeedback
+                .notificationOccurred("success");
+        }
+
+    } else if (multiplier > 0) {
+
+        plinkoResultText.textContent =
+            `💰 ${Number(winAmount).toFixed(2)} ETB returned — ${multiplier}x`;
+
+        plinkoResultText.classList.add(
+            "win"
+        );
+
+    } else {
+
+        plinkoResultText.textContent =
+            "😢 No prize this time. Try again!";
+
+        plinkoResultText.classList.remove(
+            "win",
+            "jackpot"
+        );
+    }
+}
+
+
+/* =========================================================
+   DROP BALL
+========================================================= */
+
+async function dropPlinkoBall() {
+
+    if (plinkoPlaying) return;
+
+    /*
+     * Telegram validation
+     */
+
+    if (!userData.telegram_id) {
+
+        showMessage(
+            "Telegram Error",
+            "Please open the game from Telegram.",
+            "⚠️"
+        );
+
+        return;
+    }
+
+
+    /*
+     * Current balance
+     */
+
+    const balance =
+        parseFloat(userData.balance || 0);
+
+
+    /*
+     * Insufficient balance
+     */
+
+    if (balance < selectedPlinkoBet) {
+
+        showMessage(
+            "Insufficient Balance",
+            `Your balance is ${balance.toFixed(2)} ETB. You need ${selectedPlinkoBet.toFixed(2)} ETB to play.`,
+            "💰"
+        );
+
+        return;
+    }
+
+
+    /*
+     * Start game
+     */
+
+    plinkoPlaying = true;
+
+
+    if (plinkoDropBtn) {
+
+        plinkoDropBtn.disabled = true;
+
+        plinkoDropBtn.textContent =
+            "🎯 DROPPING...";
+    }
+
+
+    if (plinkoResultText) {
+
+        plinkoResultText.textContent =
+            "🎯 Ball is dropping...";
+
+        plinkoResultText.classList.remove(
+            "win",
+            "jackpot"
+        );
+    }
+
+
+    try {
+
+        /*
+         * Call backend
+         */
+
+        const response =
+            await fetch(
+                "/api/plinko/drop",
+                {
+                    method: "POST",
+
+                    headers: {
+                        "Content-Type":
+                            "application/json"
+                    },
+
+                    body: JSON.stringify({
+                        telegram_id:
+                            String(
+                                userData.telegram_id
+                            ),
+
+                        bet_amount:
+                            selectedPlinkoBet
+                    })
+                }
+            );
+
+
+        /*
+         * Read response
+         */
+
+        let data = {};
+
+        try {
+            data =
+                await response.json();
+        } catch (e) {
+            data = {};
+        }
+
+
+        /*
+         * Backend error
+         */
+
+        if (!response.ok) {
+
+            showMessage(
+                "Plinko Error",
+                data.detail ||
+                data.message ||
+                "Plinko game could not be completed.",
+                "⚠️"
+            );
+
+            return;
+        }
+
+
+        /*
+         * Validate result
+         */
+
+        const resultIndex =
+            Number(data.result_index);
+
+        const multiplier =
+            Number(data.multiplier);
+
+        const winAmount =
+            Number(data.win_amount);
+
+
+        /*
+         * Animate ball
+         */
+
+        await animatePlinkoBall(
+            resultIndex
+        );
+
+
+        /*
+         * Show result
+         */
+
+        highlightPlinkoResult(
+            resultIndex,
+            multiplier,
+            winAmount
+        );
+
+
+        /*
+         * Update balance
+         */
+
+        if (
+            data.balance !== undefined &&
+            data.balance !== null
+        ) {
+
+            userData.balance =
+                Number(data.balance)
+                    .toFixed(2);
+
+            updateBalanceUI(
+                userData.balance
+            );
+
+            updatePlinkoBalance();
+
+        } else {
+
+            await syncAndFetchUser();
+
+            updatePlinkoBalance();
+        }
+
+
+        /*
+         * Haptic feedback
+         */
+
+        if (
+            window.Telegram?.WebApp?.HapticFeedback
+        ) {
+
+            if (multiplier > 0) {
+
+                window.Telegram.WebApp
+                    .HapticFeedback
+                    .notificationOccurred(
+                        "success"
+                    );
+
+            } else {
+
+                window.Telegram.WebApp
+                    .HapticFeedback
+                    .notificationOccurred(
+                        "warning"
+                    );
+            }
+        }
+
+    } catch (error) {
+
+        console.error(
+            "Plinko Error:",
+            error
+        );
+
+        showMessage(
+            "Connection Error",
+            "The Plinko game could not be completed. Please try again.",
+            "⚠️"
+        );
+
+    } finally {
+
+        /*
+         * Re-enable game
+         */
+
+        plinkoPlaying = false;
+
+        if (plinkoDropBtn) {
+
+            plinkoDropBtn.disabled = false;
+
+            plinkoDropBtn.textContent =
+                "🎯 DROP BALL";
+        }
+    }
+}
+
+
+/* =========================================================
+   DROP BUTTON
+========================================================= */
+
+plinkoDropBtn?.addEventListener(
+    "click",
+    dropPlinkoBall
+);
+
+
+/* =========================================================
+   PLINKO BACK BUTTON
+========================================================= */
+
+document.getElementById(
+    "plinkoBackBtn"
+)?.addEventListener(
+    "click",
+    () => {
+
+        if (plinkoPlaying) return;
+
+        showPage("home");
+
+        window.scrollTo({
+            top: 0,
+            behavior: "smooth"
+        });
+    }
+);
+
+
+/* =========================================================
+   ADD PLINKO TO GAME CARD NAVIGATION
+========================================================= */
+
+document.querySelectorAll(
+    ".game-card"
+).forEach(card => {
+
+    /*
+     * Prevent duplicate handler from
+     * breaking existing games.
+     *
+     * We handle Plinko only here.
+     */
+
+    if (card.dataset.game !== "plinko") {
+        return;
+    }
+
+    card.addEventListener(
+        "click",
+        () => {
+            openPlinkoGame();
+        }
+    );
+});
+
+
+/* =========================================================
+   EXTEND showPage()
+   =========================================================
+   Because the original showPage() knows only
+   home/profile/bingo/slots.
+========================================================= */
+
+const originalShowPage =
+    showPage;
+
+showPage = function(pageName) {
+
+    /*
+     * Plinko page
+     */
+
+    if (pageName === "plinko") {
+
+        /*
+         * Hide all existing views
+         */
+
+        hideAllViews();
+
+        /*
+         * Show Plinko
+         */
+
+        if (plinkoView) {
+            plinkoView.hidden = false;
+        }
+
+        /*
+         * Update navigation state
+         */
+
+        document.querySelectorAll(
+            ".nav-item"
+        ).forEach(nav => {
+            nav.classList.remove("active");
+        });
+
+        /*
+         * Update balance
+         */
+
+        updatePlinkoBalance();
+
+        window.scrollTo({
+            top: 0,
+            behavior: "smooth"
+        });
+
+        return;
+    }
+
+
+    /*
+     * Existing pages continue
+     * using the original function.
+     */
+
+    originalShowPage(pageName);
+};
+
+
+/* =========================================================
+   INITIAL PLINKO STATE
+========================================================= */
+
+function initializePlinko() {
+
+    /*
+     * Make sure default bet is active.
+     */
+
+    document.querySelectorAll(
+        ".plinko-bet-btn"
+    ).forEach(button => {
+
+        const bet =
+            Number(
+                button.dataset.plinkoBet
+            );
+
+        if (bet === selectedPlinkoBet) {
+            button.classList.add("active");
+        } else {
+            button.classList.remove("active");
+        }
+    });
+
+    updatePlinkoBalance();
+}
+
+
+/* =========================================================
+   DOM READY
+========================================================= */
+
+if (
+    document.readyState === "loading"
+) {
+
+    document.addEventListener(
+        "DOMContentLoaded",
+        initializePlinko
+    );
+
+} else {
+
+    initializePlinko();
+}
