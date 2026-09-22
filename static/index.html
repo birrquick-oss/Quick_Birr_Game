@@ -102,7 +102,7 @@
                         <div class="game-info">
                             <h3>Plinko</h3>
                             <p>Drop & Win</p>
-                            <span class="game-price">Coming Soon</span>
+                            <span class="game-price">10 / 20 / 50 ETB</span>
                         </div>
                     </button>
 
@@ -405,6 +405,204 @@
         <div class="slot-payout-row">
             <span>7️⃣ 7️⃣ 7️⃣</span>
             <strong>20x</strong>
+        </div>
+
+    </div>
+
+</div>
+<!-- =====================================================
+     PLINKO GAME
+===================================================== -->
+<div id="plinkoView" class="plinko-view" hidden>
+
+    <div class="plinko-header">
+        <button id="plinkoBackBtn" class="plinko-back-btn" type="button">
+            ←
+        </button>
+
+        <div class="plinko-title">
+            🎯 Plinko
+        </div>
+
+        <div id="plinkoBalance" class="plinko-balance">
+            0.00 ETB
+        </div>
+    </div>
+
+    <div class="plinko-machine">
+
+        <div class="plinko-machine-title">
+            DROP & WIN
+        </div>
+
+        <div class="plinko-board-wrap">
+
+            <div id="plinkoBoard" class="plinko-board">
+
+                <div id="plinkoBall" class="plinko-ball">
+                    🔵
+                </div>
+
+                <!-- Pegs -->
+                <div class="plinko-row row-1">
+                    <span>•</span>
+                    <span>•</span>
+                    <span>•</span>
+                    <span>•</span>
+                    <span>•</span>
+                </div>
+
+                <div class="plinko-row row-2">
+                    <span>•</span>
+                    <span>•</span>
+                    <span>•</span>
+                    <span>•</span>
+                    <span>•</span>
+                    <span>•</span>
+                </div>
+
+                <div class="plinko-row row-3">
+                    <span>•</span>
+                    <span>•</span>
+                    <span>•</span>
+                    <span>•</span>
+                    <span>•</span>
+                    <span>•</span>
+                    <span>•</span>
+                </div>
+
+                <div class="plinko-row row-4">
+                    <span>•</span>
+                    <span>•</span>
+                    <span>•</span>
+                    <span>•</span>
+                    <span>•</span>
+                    <span>•</span>
+                    <span>•</span>
+                    <span>•</span>
+                </div>
+
+                <div class="plinko-row row-5">
+                    <span>•</span>
+                    <span>•</span>
+                    <span>•</span>
+                    <span>•</span>
+                    <span>•</span>
+                    <span>•</span>
+                    <span>•</span>
+                    <span>•</span>
+                    <span>•</span>
+                </div>
+
+                <div class="plinko-row row-6">
+                    <span>•</span>
+                    <span>•</span>
+                    <span>•</span>
+                    <span>•</span>
+                    <span>•</span>
+                    <span>•</span>
+                    <span>•</span>
+                    <span>•</span>
+                    <span>•</span>
+                    <span>•</span>
+                </div>
+
+            </div>
+
+            <!-- Multipliers -->
+            <div class="plinko-multipliers">
+
+                <div class="plinko-multiplier">0x</div>
+                <div class="plinko-multiplier">0.5x</div>
+                <div class="plinko-multiplier">1x</div>
+                <div class="plinko-multiplier">2x</div>
+                <div class="plinko-multiplier">5x</div>
+                <div class="plinko-multiplier jackpot">10x</div>
+                <div class="plinko-multiplier">5x</div>
+                <div class="plinko-multiplier">2x</div>
+                <div class="plinko-multiplier">1x</div>
+                <div class="plinko-multiplier">0.5x</div>
+                <div class="plinko-multiplier">0x</div>
+
+            </div>
+
+        </div>
+
+        <div id="plinkoResultText" class="plinko-result-text">
+            Choose your bet and drop the ball
+        </div>
+
+    </div>
+
+    <div class="plinko-section-title">
+        SELECT BET
+    </div>
+
+    <div class="plinko-bet-buttons">
+
+        <button
+            type="button"
+            class="plinko-bet-btn active"
+            data-plinko-bet="10"
+        >
+            10 ETB
+        </button>
+
+        <button
+            type="button"
+            class="plinko-bet-btn"
+            data-plinko-bet="20"
+        >
+            20 ETB
+        </button>
+
+        <button
+            type="button"
+            class="plinko-bet-btn"
+            data-plinko-bet="50"
+        >
+            50 ETB
+        </button>
+
+    </div>
+
+    <button
+        id="plinkoDropBtn"
+        class="plinko-drop-btn"
+        type="button"
+    >
+        🎯 DROP BALL
+    </button>
+
+    <div class="plinko-payout-card">
+
+        <div class="plinko-payout-title">
+            🎯 PLINKO MULTIPLIERS
+        </div>
+
+        <div class="plinko-payout-row">
+            <span>Center Jackpot</span>
+            <strong>10x</strong>
+        </div>
+
+        <div class="plinko-payout-row">
+            <span>High Win</span>
+            <strong>5x</strong>
+        </div>
+
+        <div class="plinko-payout-row">
+            <span>Medium Win</span>
+            <strong>2x</strong>
+        </div>
+
+        <div class="plinko-payout-row">
+            <span>Return</span>
+            <strong>1x</strong>
+        </div>
+
+        <div class="plinko-payout-row">
+            <span>Partial Return</span>
+            <strong>0.5x</strong>
         </div>
 
     </div>
