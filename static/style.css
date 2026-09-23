@@ -1964,3 +1964,491 @@ button {
         font-size: 18px;
     }
 }
+
+/* =====================================================
+   ROULETTE GAME
+===================================================== */
+
+.roulette-view {
+    position: relative;
+    width: 100%;
+    min-height: 100vh;
+    padding: 14px 12px 35px;
+    box-sizing: border-box;
+    overflow-x: hidden;
+}
+
+.roulette-header {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 15px;
+}
+
+.roulette-back-btn {
+    width: 42px;
+    height: 42px;
+    border: 0;
+    border-radius: 12px;
+    background: #1a2230;
+    color: #ffffff;
+    font-size: 25px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.roulette-back-btn:active {
+    transform: scale(0.94);
+}
+
+.roulette-title {
+    font-size: 20px;
+    font-weight: 800;
+    color: #ffffff;
+    text-align: center;
+    flex: 1;
+}
+
+.roulette-balance {
+    min-width: 82px;
+    padding: 9px 8px;
+    border-radius: 10px;
+    background: #182333;
+    color: #2ed573;
+    font-size: 12px;
+    font-weight: 800;
+    text-align: center;
+}
+
+
+/* =====================================================
+   ROULETTE MACHINE
+===================================================== */
+
+.roulette-machine {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 16px 12px 20px;
+    border-radius: 20px;
+    background: linear-gradient(145deg, #121b28, #0c131d);
+    border: 1px solid rgba(255,255,255,0.06);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+}
+
+.roulette-machine-title {
+    text-align: center;
+    color: #ffffff;
+    font-size: 15px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    margin-bottom: 14px;
+}
+
+
+/* =====================================================
+   WHEEL
+===================================================== */
+
+.roulette-wheel-wrap {
+    position: relative;
+    width: 290px;
+    height: 290px;
+    margin: 0 auto 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.roulette-wheel {
+    position: relative;
+    width: 270px;
+    height: 270px;
+    border-radius: 50%;
+    border: 10px solid #d4af37;
+    background:
+        conic-gradient(
+            #16803c 0deg 9.73deg,
+            #111111 9.73deg 19.46deg,
+            #c62828 19.46deg 29.19deg,
+            #111111 29.19deg 38.92deg,
+            #c62828 38.92deg 48.65deg,
+            #111111 48.65deg 58.38deg,
+            #c62828 58.38deg 68.11deg,
+            #111111 68.11deg 77.84deg,
+            #c62828 77.84deg 87.57deg,
+            #111111 87.57deg 97.30deg,
+            #c62828 97.30deg 107.03deg,
+            #111111 107.03deg 116.76deg,
+            #c62828 116.76deg 126.49deg,
+            #111111 126.49deg 136.22deg,
+            #c62828 136.22deg 145.95deg,
+            #111111 145.95deg 155.68deg,
+            #c62828 155.68deg 165.41deg,
+            #111111 165.41deg 175.14deg,
+            #c62828 175.14deg 184.87deg,
+            #111111 184.87deg 194.60deg,
+            #c62828 194.60deg 204.33deg,
+            #111111 204.33deg 214.06deg,
+            #c62828 214.06deg 223.79deg,
+            #111111 223.79deg 233.52deg,
+            #c62828 233.52deg 243.25deg,
+            #111111 243.25deg 252.98deg,
+            #c62828 252.98deg 262.71deg,
+            #111111 262.71deg 272.44deg,
+            #c62828 272.44deg 282.17deg,
+            #111111 282.17deg 291.90deg,
+            #c62828 291.90deg 301.63deg,
+            #111111 301.63deg 311.36deg,
+            #c62828 311.36deg 321.09deg,
+            #111111 321.09deg 330.82deg,
+            #c62828 330.82deg 340.55deg,
+            #111111 340.55deg 350.28deg,
+            #16803c 350.28deg 360deg
+        );
+    box-shadow:
+        inset 0 0 0 5px #101010,
+        inset 0 0 25px rgba(0,0,0,0.8),
+        0 8px 25px rgba(0,0,0,0.5);
+    transition: transform 4s cubic-bezier(0.12, 0.7, 0.15, 1);
+}
+
+.roulette-wheel::before {
+    content: "";
+    position: absolute;
+    inset: 18px;
+    border-radius: 50%;
+    border: 2px solid rgba(255,255,255,0.35);
+    box-shadow:
+        inset 0 0 0 7px rgba(0,0,0,0.25),
+        inset 0 0 20px rgba(0,0,0,0.5);
+}
+
+.roulette-wheel::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 90px;
+    height: 90px;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    background: radial-gradient(circle, #f2cf63 0%, #b8860b 60%, #6d4c08 100%);
+    border: 5px solid #e4bd4f;
+    box-shadow: 0 0 20px rgba(0,0,0,0.6);
+}
+
+.roulette-wheel-center {
+    position: absolute;
+    z-index: 5;
+    left: 50%;
+    top: 50%;
+    width: 68px;
+    height: 68px;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    background: #111923;
+    border: 3px solid #f1c84c;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0 18px rgba(0,0,0,0.7);
+}
+
+.roulette-wheel-center span {
+    font-size: 27px;
+    font-weight: 900;
+    color: #ffffff;
+}
+
+.roulette-pointer {
+    position: absolute;
+    z-index: 10;
+    top: -2px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: #f1c84c;
+    font-size: 28px;
+    text-shadow: 0 2px 6px rgba(0,0,0,0.8);
+}
+
+
+/* =====================================================
+   RESULT
+===================================================== */
+
+.roulette-result-text {
+    min-height: 24px;
+    text-align: center;
+    color: #b8c2d0;
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.roulette-result-text.win {
+    color: #2ed573;
+}
+
+.roulette-result-text.lose {
+    color: #ff4757;
+}
+
+
+/* =====================================================
+   SECTION TITLES
+===================================================== */
+
+.roulette-section-title {
+    margin: 20px 0 10px;
+    color: #ffffff;
+    font-size: 14px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+}
+
+
+/* =====================================================
+   BET AMOUNTS
+===================================================== */
+
+.roulette-bet-buttons {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 9px;
+}
+
+.roulette-bet-btn {
+    min-height: 44px;
+    border: 1px solid #273447;
+    border-radius: 11px;
+    background: #141d29;
+    color: #d8dee8;
+    font-size: 14px;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.roulette-bet-btn.active {
+    background: #f1c84c;
+    border-color: #f1c84c;
+    color: #101010;
+    box-shadow: 0 0 12px rgba(241,200,76,0.25);
+}
+
+.roulette-bet-btn:active {
+    transform: scale(0.97);
+}
+
+
+/* =====================================================
+   COLOR BETS
+===================================================== */
+
+.roulette-color-buttons {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+}
+
+.roulette-color-btn {
+    min-height: 55px;
+    border-radius: 12px;
+    border: 2px solid transparent;
+    color: #ffffff;
+    font-size: 12px;
+    font-weight: 900;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+}
+
+.roulette-color-btn span {
+    font-size: 11px;
+    opacity: 0.85;
+}
+
+.roulette-color-btn.red {
+    background: #a91f2b;
+}
+
+.roulette-color-btn.black {
+    background: #080b10;
+    border-color: #303844;
+}
+
+.roulette-color-btn.green {
+    background: #167a3b;
+}
+
+.roulette-color-btn.selected {
+    border-color: #f1c84c;
+    box-shadow: 0 0 14px rgba(241,200,76,0.35);
+    transform: translateY(-1px);
+}
+
+
+/* =====================================================
+   NUMBER GRID
+===================================================== */
+
+.roulette-number-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 5px;
+}
+
+.roulette-number-btn {
+    min-height: 38px;
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 7px;
+    color: #ffffff;
+    font-size: 12px;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.roulette-number-btn.red {
+    background: #a91f2b;
+}
+
+.roulette-number-btn.black {
+    background: #101318;
+}
+
+.roulette-number-btn.zero {
+    background: #167a3b;
+}
+
+.roulette-number-btn.selected {
+    border: 2px solid #f1c84c;
+    box-shadow: 0 0 10px rgba(241,200,76,0.4);
+}
+
+.roulette-number-btn:active {
+    transform: scale(0.94);
+}
+
+
+/* =====================================================
+   SPIN BUTTON
+===================================================== */
+
+.roulette-spin-btn {
+    width: 100%;
+    min-height: 54px;
+    margin-top: 20px;
+    border: 0;
+    border-radius: 14px;
+    background: linear-gradient(135deg, #f5d45f, #d9a928);
+    color: #101010;
+    font-size: 17px;
+    font-weight: 900;
+    cursor: pointer;
+    box-shadow: 0 7px 18px rgba(0,0,0,0.3);
+}
+
+.roulette-spin-btn:active {
+    transform: scale(0.98);
+}
+
+.roulette-spin-btn:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+
+/* =====================================================
+   PAYOUT CARD
+===================================================== */
+
+.roulette-payout-card {
+    margin-top: 20px;
+    padding: 15px;
+    border-radius: 15px;
+    background: #121b27;
+    border: 1px solid rgba(255,255,255,0.06);
+}
+
+.roulette-payout-title {
+    color: #ffffff;
+    font-size: 14px;
+    font-weight: 900;
+    margin-bottom: 10px;
+}
+
+.roulette-payout-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 9px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    color: #c7cfda;
+    font-size: 13px;
+}
+
+.roulette-payout-row:last-child {
+    border-bottom: 0;
+}
+
+.roulette-payout-row strong {
+    color: #f1c84c;
+}
+
+
+/* =====================================================
+   MOBILE
+===================================================== */
+
+@media (max-width: 430px) {
+
+    .roulette-wheel-wrap {
+        width: 270px;
+        height: 270px;
+    }
+
+    .roulette-wheel {
+        width: 250px;
+        height: 250px;
+    }
+
+    .roulette-number-grid {
+        grid-template-columns: repeat(6, 1fr);
+        gap: 4px;
+    }
+
+    .roulette-number-btn {
+        min-height: 36px;
+        font-size: 11px;
+    }
+}
+
+@media (max-width: 360px) {
+
+    .roulette-wheel-wrap {
+        width: 245px;
+        height: 245px;
+    }
+
+    .roulette-wheel {
+        width: 225px;
+        height: 225px;
+    }
+
+    .roulette-wheel-center {
+        width: 60px;
+        height: 60px;
+    }
+
+    .roulette-wheel-center span {
+        font-size: 23px;
+    }
+
+    .roulette-color-btn {
+        font-size: 10px;
+    }
+}
