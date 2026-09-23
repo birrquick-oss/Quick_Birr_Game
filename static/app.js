@@ -79,6 +79,7 @@ const profileView = document.getElementById("profileView");
 const bingoSelectionView = document.getElementById("bingoSelectionView");
 const bingoGameView = document.getElementById("bingoGameView");
 const slotsView = document.getElementById("slotsView");
+const rouletteView = document.getElementById("rouletteView");
 
 const depositModal = document.getElementById("depositModal");
 const withdrawModal = document.getElementById("withdrawModal");
@@ -191,6 +192,12 @@ document.querySelectorAll(".game-card").forEach(card => {
             showPage("slots");
             updateSlotsBalance();
             return;
+        }
+
+        if (game === "roulette") {
+           showPage("roulette");
+           updateRouletteBalance();
+           return;
         }
 
         if (game === "plinko") {
@@ -1033,6 +1040,7 @@ function hideAllViews() {
     if (bingoGameView) bingoGameView.hidden = true;
     if (slotsView) slotsView.hidden = true;
     if (plinkoView) plinkoView.hidden = true;
+    if (rouletteView) rouletteView.hidden = true;
 }
 
 function showPage(pageName) {
@@ -1055,10 +1063,12 @@ function showPage(pageName) {
     } else if (pageName === "slots") {
         if (slotsView) slotsView.hidden = false;
         updateSlotsBalance();
-       
     } else if (pageName === "plinko") {
         if (plinkoView) plinkoView.hidden = false;
-        updatePlinkoBalance();   
+        updatePlinkoBalance(); 
+    } else if (pageName === "roulette") {
+        if (rouletteView) rouletteView.hidden = false;
+        updateRouletteBalance();
     } else {
         if (homeView) homeView.hidden = false;
     }
