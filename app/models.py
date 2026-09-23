@@ -534,3 +534,81 @@ class RouletteSpin(Base):
         nullable=False,
         index=True
     )
+
+# =========================================================
+# 🃏 BLACKJACK GAME
+# =========================================================
+
+class BlackjackGame(Base):
+    __tablename__ = "blackjack_games"
+
+    id = Column(Integer, primary_key=True, index=True)
+
+    user_id = Column(
+        Integer,
+        ForeignKey("users.id"),
+        nullable=False,
+        index=True
+    )
+
+    bet_amount = Column(
+        Float,
+        nullable=False
+    )
+
+    # JSON strings
+    player_cards = Column(
+        Text,
+        nullable=False
+    )
+
+    dealer_cards = Column(
+        Text,
+        nullable=False
+    )
+
+    deck = Column(
+        Text,
+        nullable=False
+    )
+
+    status = Column(
+        String(20),
+        default="playing",
+        nullable=False,
+        index=True
+    )
+
+    result = Column(
+        String(30),
+        nullable=True
+    )
+
+    payout = Column(
+        Float,
+        default=0.0,
+        nullable=False
+    )
+
+    balance_after = Column(
+        Float,
+        nullable=False
+    )
+
+    reference = Column(
+        String(255),
+        nullable=True,
+        index=True
+    )
+
+    created_at = Column(
+        DateTime,
+        default=lambda: datetime.now(timezone.utc),
+        nullable=False,
+        index=True
+    )
+
+    completed_at = Column(
+        DateTime,
+        nullable=True
+    )
