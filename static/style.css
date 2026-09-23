@@ -2452,3 +2452,439 @@ button {
         font-size: 10px;
     }
 }
+
+/* =====================================================
+   🃏 BLACKJACK GAME
+===================================================== */
+
+.blackjack-view {
+    padding: 12px 12px 100px;
+    min-height: 100vh;
+    box-sizing: border-box;
+}
+
+/* HEADER */
+
+.blackjack-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 14px;
+}
+
+.blackjack-back-btn {
+    width: 42px;
+    height: 42px;
+    border: none;
+    border-radius: 12px;
+    background: #1a2230;
+    color: #ffffff;
+    font-size: 25px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.blackjack-title {
+    flex: 1;
+    text-align: center;
+    font-size: 21px;
+    font-weight: 800;
+    color: #ffffff;
+}
+
+.blackjack-balance {
+    min-width: 82px;
+    padding: 9px 10px;
+    border-radius: 10px;
+    background: #17202d;
+    color: #2ed573;
+    font-size: 13px;
+    font-weight: 800;
+    text-align: center;
+}
+
+
+/* =====================================================
+   BLACKJACK TABLE
+===================================================== */
+
+.blackjack-table {
+    position: relative;
+    overflow: hidden;
+    border-radius: 22px;
+    padding: 18px 12px 20px;
+    margin-bottom: 18px;
+
+    background:
+        radial-gradient(circle at center,
+            rgba(46, 213, 115, 0.14),
+            transparent 55%),
+        linear-gradient(
+            145deg,
+            #092b20,
+            #063b29 50%,
+            #08261d
+        );
+
+    border: 1px solid rgba(255,255,255,0.08);
+    box-shadow:
+        0 12px 30px rgba(0,0,0,0.35),
+        inset 0 0 30px rgba(0,0,0,0.25);
+}
+
+.blackjack-table-title {
+    text-align: center;
+    color: #f5f5f5;
+    font-size: 15px;
+    font-weight: 900;
+    letter-spacing: 1.5px;
+    margin-bottom: 18px;
+}
+
+
+/* PLAYER AREA */
+
+.blackjack-player-area {
+    margin: 12px 0 18px;
+}
+
+.blackjack-player-label {
+    text-align: center;
+    color: rgba(255,255,255,0.72);
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    margin-bottom: 9px;
+}
+
+
+/* CARDS */
+
+.blackjack-cards {
+    min-height: 88px;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    gap: 7px;
+    flex-wrap: wrap;
+}
+
+.blackjack-card {
+    width: 58px;
+    height: 82px;
+
+    border-radius: 9px;
+
+    background: #ffffff;
+    color: #111111;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+
+    box-shadow:
+        0 5px 12px rgba(0,0,0,0.35);
+
+    font-weight: 900;
+
+    animation: blackjackCardIn 0.25s ease-out;
+}
+
+.blackjack-card.red {
+    color: #e63946;
+}
+
+.blackjack-card.black {
+    color: #111111;
+}
+
+.blackjack-card-rank {
+    font-size: 22px;
+    line-height: 1;
+}
+
+.blackjack-card-suit {
+    font-size: 25px;
+    line-height: 1;
+    margin-top: 4px;
+}
+
+
+/* CARD BACK */
+
+.blackjack-card.back {
+    background:
+        linear-gradient(
+            135deg,
+            #182a50,
+            #243f78
+        );
+
+    border: 3px solid #ffffff;
+    color: #ffffff;
+
+    font-size: 28px;
+}
+
+
+/* CARD VALUE */
+
+.blackjack-card-value {
+    text-align: center;
+    margin-top: 8px;
+
+    color: #ffffff;
+    font-size: 13px;
+    font-weight: 800;
+}
+
+
+/* RESULT */
+
+.blackjack-result-text {
+    min-height: 38px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    text-align: center;
+
+    padding: 8px 10px;
+    margin: 5px 0 10px;
+
+    border-radius: 10px;
+
+    background: rgba(0,0,0,0.22);
+
+    color: #ffffff;
+    font-size: 14px;
+    font-weight: 800;
+}
+
+
+/* =====================================================
+   BET SECTION
+===================================================== */
+
+.blackjack-section-title {
+    margin: 14px 0 9px;
+
+    color: rgba(255,255,255,0.75);
+
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.8px;
+}
+
+.blackjack-bet-buttons {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 9px;
+}
+
+.blackjack-bet-btn {
+    min-height: 44px;
+
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 12px;
+
+    background: #17202d;
+    color: #ffffff;
+
+    font-size: 14px;
+    font-weight: 800;
+
+    cursor: pointer;
+    transition: 0.2s ease;
+}
+
+.blackjack-bet-btn.active {
+    background: #2ed573;
+    color: #06150e;
+    border-color: #2ed573;
+
+    box-shadow:
+        0 0 14px rgba(46,213,115,0.25);
+}
+
+
+/* =====================================================
+   ACTION BUTTONS
+===================================================== */
+
+.blackjack-actions {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+
+    margin-top: 15px;
+}
+
+.blackjack-actions button {
+    min-height: 48px;
+
+    border: none;
+    border-radius: 13px;
+
+    font-size: 14px;
+    font-weight: 900;
+
+    cursor: pointer;
+    transition:
+        transform 0.15s ease,
+        opacity 0.15s ease;
+}
+
+.blackjack-actions button:active {
+    transform: scale(0.97);
+}
+
+.blackjack-actions button:disabled {
+    opacity: 0.38;
+    cursor: not-allowed;
+}
+
+
+/* START */
+
+.blackjack-start-btn {
+    grid-column: 1 / -1;
+
+    background: linear-gradient(
+        135deg,
+        #2ed573,
+        #20bf6b
+    );
+
+    color: #06150e;
+
+    box-shadow:
+        0 8px 20px rgba(46,213,115,0.18);
+}
+
+
+/* HIT */
+
+.blackjack-hit-btn {
+    background: #3498db;
+    color: #ffffff;
+}
+
+
+/* STAND */
+
+.blackjack-stand-btn {
+    background: #f39c12;
+    color: #171006;
+}
+
+
+/* NEW GAME */
+
+.blackjack-new-btn {
+    grid-column: 1 / -1;
+
+    background: #8e44ad;
+    color: #ffffff;
+}
+
+
+/* =====================================================
+   PAYOUT CARD
+===================================================== */
+
+.blackjack-payout-card {
+    margin-top: 18px;
+
+    padding: 15px;
+
+    border-radius: 16px;
+
+    background: #111925;
+
+    border: 1px solid rgba(255,255,255,0.06);
+}
+
+.blackjack-payout-title {
+    text-align: center;
+
+    color: #ffffff;
+
+    font-size: 13px;
+    font-weight: 900;
+
+    margin-bottom: 12px;
+}
+
+.blackjack-payout-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    padding: 9px 0;
+
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+
+    color: rgba(255,255,255,0.75);
+
+    font-size: 13px;
+}
+
+.blackjack-payout-row:last-child {
+    border-bottom: none;
+}
+
+.blackjack-payout-row strong {
+    color: #2ed573;
+    font-size: 14px;
+}
+
+
+/* =====================================================
+   ANIMATION
+===================================================== */
+
+@keyframes blackjackCardIn {
+    from {
+        opacity: 0;
+        transform: translateY(-15px) rotate(-4deg);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) rotate(0);
+    }
+}
+
+
+/* =====================================================
+   MOBILE
+===================================================== */
+
+@media (max-width: 380px) {
+
+    .blackjack-card {
+        width: 52px;
+        height: 75px;
+    }
+
+    .blackjack-card-rank {
+        font-size: 19px;
+    }
+
+    .blackjack-card-suit {
+        font-size: 22px;
+    }
+
+    .blackjack-title {
+        font-size: 19px;
+    }
+
+}
