@@ -449,3 +449,88 @@ class PlayerCard(Base):
         default=10.0,
         nullable=False
     )
+
+# =========================================================
+# ROULETTE GAME
+# =========================================================
+
+class RouletteSpin(Base):
+    __tablename__ = "roulette_spins"
+
+    id = Column(
+        Integer,
+        primary_key=True,
+        index=True
+    )
+
+    user_id = Column(
+        Integer,
+        ForeignKey("users.id"),
+        nullable=False,
+        index=True
+    )
+
+    # Amount placed on the spin
+    bet_amount = Column(
+        Float,
+        nullable=False
+    )
+
+    # Bet type:
+    # red / black / green / number
+    bet_type = Column(
+        String(50),
+        nullable=False,
+        index=True
+    )
+
+    # Selected number when bet_type = number
+    bet_value = Column(
+        Integer,
+        nullable=True
+    )
+
+    # Winning number: 0 - 36
+    winning_number = Column(
+        Integer,
+        nullable=False
+    )
+
+    # red / black / green
+    winning_color = Column(
+        String(20),
+        nullable=False
+    )
+
+    # Applied multiplier
+    multiplier = Column(
+        Float,
+        default=0.0,
+        nullable=False
+    )
+
+    # Amount returned to player
+    payout = Column(
+        Float,
+        default=0.0,
+        nullable=False
+    )
+
+    # User balance after spin
+    balance_after = Column(
+        Float,
+        nullable=False
+    )
+
+    reference = Column(
+        String(255),
+        nullable=True,
+        index=True
+    )
+
+    created_at = Column(
+        DateTime,
+        default=lambda: datetime.now(timezone.utc),
+        nullable=False,
+        index=True
+    )
