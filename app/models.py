@@ -650,7 +650,7 @@ class MinesGame(Base):
     )
 
     # JSON string containing revealed safe/mine positions
-    revealed_positions = Column(
+    revealed_tiles = Column(
         Text,
         nullable=False,
         default="[]"
