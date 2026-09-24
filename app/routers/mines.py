@@ -47,6 +47,7 @@ class MinesStartRequest(BaseModel):
         gt=0
     )
 
+    # API field stays mine_count
     mine_count: int
 
 
@@ -434,7 +435,6 @@ def start_mines(
 
     user.balance = balance_after_stake
 
-
     reference = make_reference()
 
 
@@ -448,7 +448,6 @@ def start_mines(
 
         bet_amount=bet_amount,
 
-        # IMPORTANT:
         # Database column is mines_count
         mines_count=mine_count,
 
@@ -456,7 +455,8 @@ def start_mines(
             mine_positions
         ),
 
-        revealed_positions="[]",
+        # Database column is revealed_tiles
+        revealed_tiles="[]",
 
         multiplier=1.0,
 
@@ -703,8 +703,8 @@ def reveal_mines_tile(
         game.mine_positions
     )
 
-    revealed_positions = load_json_list(
-        game.revealed_positions
+    revealed_tiles = load_json_list(
+        game.revealed_tiles
     )
 
 
@@ -712,7 +712,7 @@ def reveal_mines_tile(
     # PREVENT DOUBLE REVEAL
     # -----------------------------------------------------
 
-    if tile_index in revealed_positions:
+    if tile_index in revealed_tiles:
 
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -726,12 +726,12 @@ def reveal_mines_tile(
 
     if tile_index in mine_positions:
 
-        revealed_positions.append(
+        revealed_tiles.append(
             tile_index
         )
 
-        game.revealed_positions = save_json_list(
-            revealed_positions
+        game.revealed_tiles = save_json_list(
+            revealed_tiles
         )
 
         game.status = "finished"
@@ -816,19 +816,19 @@ def reveal_mines_tile(
     # SAFE TILE
     # =====================================================
 
-    revealed_positions.append(
+    revealed_tiles.append(
         tile_index
     )
 
-    game.revealed_positions = save_json_list(
-        revealed_positions
+    game.revealed_tiles = save_json_list(
+        revealed_tiles
     )
 
 
     safe_count = len(
         [
             position
-            for position in revealed_positions
+            for position in revealed_tiles
             if position not in mine_positions
         ]
     )
@@ -982,6 +982,9 @@ def reveal_mines_tile(
 
             "result":
             "win",
+
+            "mine_positions":
+            mine_positions,
 
             "message":
             (
@@ -1174,16 +1177,16 @@ def cashout_mines(
 
 
     # -----------------------------------------------------
-    # LOAD REVEALED POSITIONS
+    # LOAD REVEALED TILES
     # -----------------------------------------------------
 
-    revealed_positions = load_json_list(
-        game.revealed_positions
+    revealed_tiles = load_json_list(
+        game.revealed_tiles
     )
 
 
     safe_count = len(
-        revealed_positions
+        revealed_tiles
     )
 
 
