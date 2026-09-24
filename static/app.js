@@ -59,6 +59,9 @@ const plinkoMultipliers = [
 // 🎡 Roulette
 let selectedRouletteBet = 10;
 let rouletteSpinning = false;
+// 🃏 Blackjack
+let selectedBlackjackBet = 10;
+let blackjackPlaying = false;
 
 let soundEnabled = true;
 let isAutoMark = true;
@@ -102,6 +105,7 @@ const bingoGameView = document.getElementById("bingoGameView");
 const slotsView = document.getElementById("slotsView");
 const plinkoView = document.getElementById("plinkoView");
 const rouletteView = document.getElementById("rouletteView");
+const blackjackView = document.getElementById("blackjackView");
 
 const depositModal = document.getElementById("depositModal");
 const withdrawModal = document.getElementById("withdrawModal");
@@ -225,6 +229,12 @@ document.querySelectorAll(".game-card").forEach(card => {
         if (game === "roulette") {
             showPage("roulette");
             updateRouletteBalance();
+            return;
+        }
+
+        if (game === "blackjack") {
+            showPage("blackjack");
+            updateBlackjackBalance();
             return;
         }
 
@@ -1067,6 +1077,7 @@ function hideAllViews() {
     if (slotsView) slotsView.hidden = true;
     if (plinkoView) plinkoView.hidden = true;
     if (rouletteView) rouletteView.hidden = true;
+    if (blackjackView) blackjackView.hidden = true;
 }
 
 function showPage(pageName) {
@@ -1095,6 +1106,9 @@ function showPage(pageName) {
     } else if (pageName === "roulette") {
         if (rouletteView) rouletteView.hidden = false;
         if (typeof updateRouletteBalance === "function") updateRouletteBalance();
+    } else if (pageName === "blackjack") {
+        if (blackjackView) blackjackView.hidden = false;
+        if (typeof updateBlackjackBalance === "function") updateBlackjackBalance();
     } else {
         if (homeView) homeView.hidden = false;
     }
@@ -2175,3 +2189,844 @@ function setSpinButtonState(enabled) {
         spinBtn.disabled = !enabled;
     }
 }
+
+// =========================================================
+// BLACKJACK GAME LOGIC & ENGINE
+// =========================================================
+
+// 🃏 Blackjack Active State Management
+let blackjackState = {
+    selectedBetAmount: 10.0,
+    isPlaying: false
+};
+
+// ---------------------------------------------------------
+// 1. INITIALIZATION & SETUP
+// ---------------------------------------------------------
+
+document.addEventListener("DOMContentLoaded", () => {
+    initBlackjackEventListeners();
+    updateBlackjackBalance();
+});
+
+// ባላንስ ማደሻ Helper
+function updateBlackjackBalance() {
+    const bBalance = document.getElementById("blackjackBalance");
+
+    if (bBalance && typeof userData !== "undefined") {
+        bBalance.innerText =
+            `${parseFloat(userData.balance || 0).toFixed(2)} ETB`;
+    }
+}
+
+// ---------------------------------------------------------
+// 2. EVENT LISTENERS
+// ---------------------------------------------------------
+
+function initBlackjackEventListeners() {
+
+    // A. Back Button
+    const backBtn = document.getElementById("blackjackBackBtn");
+
+    if (backBtn) {
+        backBtn.addEventListener("click", () => {
+
+            if (blackjackState.isPlaying) return;
+
+            if (typeof showPage === "function") {
+                showPage("home");
+            } else {
+                const blackjackView =
+                    document.getElementById("blackjackView");
+
+                if (blackjackView) {
+                    blackjackView.hidden = true;
+                }
+            }
+        });
+    }
+
+    // B. Bet Amount Selection (10, 20, 50 ETB)
+    const betBtns =
+        document.querySelectorAll(".blackjack-bet-btn");
+
+    betBtns.forEach(btn => {
+
+        btn.addEventListener("click", (e) => {
+
+            if (blackjackState.isPlaying) return;
+
+            const amount = parseFloat(
+                e.currentTarget.dataset.blackjackBet
+            );
+
+            if ([10, 20, 50].includes(amount)) {
+
+                blackjackState.selectedBetAmount = amount;
+
+                betBtns.forEach(b =>
+                    b.classList.remove("active")
+                );
+
+                e.currentTarget.classList.add("active");
+            }
+        });
+    });
+
+    // C. START GAME
+    const startBtn =
+        document.getElementById("blackjackStartBtn");
+
+    if (startBtn) {
+        startBtn.addEventListener(
+            "click",
+            startBlackjackGame
+        );
+    }
+
+    // D. HIT
+    const hitBtn =
+        document.getElementById("blackjackHitBtn");
+
+    if (hitBtn) {
+        hitBtn.addEventListener(
+            "click",
+            hitBlackjack
+        );
+    }
+
+    // E. STAND
+    const standBtn =
+        document.getElementById("blackjackStandBtn");
+
+    if (standBtn) {
+        standBtn.addEventListener(
+            "click",
+            standBlackjack
+        );
+    }
+
+    // F. NEW GAME
+    const newBtn =
+        document.getElementById("blackjackNewBtn");
+
+    if (newBtn) {
+        newBtn.addEventListener("click", () => {
+
+            resetBlackjackUI();
+
+            blackjackState.isPlaying = false;
+
+            setBlackjackButtonsState({
+                start: true,
+                hit: false,
+                stand: false,
+                newGame: false
+            });
+
+            updateBlackjackBalance();
+        });
+    }
+}
+
+// ---------------------------------------------------------
+// 3. START BLACKJACK
+// ---------------------------------------------------------
+
+async function startBlackjackGame() {
+
+    if (blackjackState.isPlaying) return;
+
+    const currentBalance =
+        parseFloat(userData?.balance || 0);
+
+    // Balance Check
+    if (
+        currentBalance <
+        blackjackState.selectedBetAmount
+    ) {
+
+        if (typeof showMessage === "function") {
+
+            showMessage(
+                "ባላንስ ማነስ",
+                "የበቂ ባላንስ የለዎትም! እባክዎን ዴፖዚት ያድርጉ።",
+                "💳"
+            );
+
+        } else {
+
+            alert(
+                "የበቂ ባላንስ የለዎትም!"
+            );
+        }
+
+        return;
+    }
+
+    blackjackState.isPlaying = true;
+
+    setBlackjackButtonsState({
+        start: false,
+        hit: false,
+        stand: false,
+        newGame: false
+    });
+
+    updateBlackjackResult(
+        "Dealing cards...",
+        ""
+    );
+
+    const telegramId = String(
+        userData?.telegram_id ||
+        window.myTelegramId ||
+        "12345678"
+    );
+
+    try {
+
+        const response = await fetch(
+            "/api/blackjack/start",
+            {
+                method: "POST",
+
+                headers: {
+                    "Content-Type": "application/json"
+                },
+
+                body: JSON.stringify({
+                    telegram_id: telegramId,
+                    bet_amount:
+                        blackjackState.selectedBetAmount
+                })
+            }
+        );
+
+        const data = await response.json();
+
+        if (!response.ok || !data.success) {
+
+            showBlackjackError(
+                data.detail ||
+                "Blackjack game could not start."
+            );
+
+            blackjackState.isPlaying = false;
+
+            setBlackjackButtonsState({
+                start: true,
+                hit: false,
+                stand: false,
+                newGame: false
+            });
+
+            return;
+        }
+
+        // Save game
+        currentBlackjackGameId = data.game_id;
+
+        // Update balance
+        updateBlackjackBalanceFromResponse(data);
+
+        // Render cards
+        renderBlackjackCards(data);
+
+        // Handle finished natural Blackjack
+        if (data.status === "finished") {
+
+            handleBlackjackResult(data);
+
+            return;
+        }
+
+        // Game continues
+        setBlackjackButtonsState({
+            start: false,
+            hit: true,
+            stand: true,
+            newGame: false
+        });
+
+        updateBlackjackResult(
+            data.message || "Hit or Stand?",
+            ""
+        );
+
+    } catch (error) {
+
+        console.error(
+            "Blackjack Start Error:",
+            error
+        );
+
+        showBlackjackError(
+            "የኔትወርክ ስህተት ተፈጥሯል!"
+        );
+
+        blackjackState.isPlaying = false;
+
+        setBlackjackButtonsState({
+            start: true,
+            hit: false,
+            stand: false,
+            newGame: false
+        });
+    }
+}
+
+// ---------------------------------------------------------
+// 4. HIT
+// ---------------------------------------------------------
+
+async function hitBlackjack() {
+
+    if (!blackjackState.isPlaying) return;
+
+    const telegramId = String(
+        userData?.telegram_id ||
+        window.myTelegramId ||
+        "12345678"
+    );
+
+    setBlackjackButtonsState({
+        start: false,
+        hit: false,
+        stand: false,
+        newGame: false
+    });
+
+    updateBlackjackResult(
+        "Drawing card...",
+        ""
+    );
+
+    try {
+
+        const response = await fetch(
+            "/api/blackjack/hit",
+            {
+                method: "POST",
+
+                headers: {
+                    "Content-Type": "application/json"
+                },
+
+                body: JSON.stringify({
+                    telegram_id: telegramId
+                })
+            }
+        );
+
+        const data = await response.json();
+
+        if (!response.ok || !data.success) {
+
+            showBlackjackError(
+                data.detail ||
+                "Could not draw card."
+            );
+
+            setBlackjackButtonsState({
+                start: false,
+                hit: true,
+                stand: true,
+                newGame: false
+            });
+
+            return;
+        }
+
+        renderBlackjackCards(data);
+
+        updateBlackjackBalanceFromResponse(data);
+
+        // Finished = Bust / 21 / resolved
+        if (data.status === "finished") {
+
+            handleBlackjackResult(data);
+
+            return;
+        }
+
+        // Continue playing
+        setBlackjackButtonsState({
+            start: false,
+            hit: true,
+            stand: true,
+            newGame: false
+        });
+
+        updateBlackjackResult(
+            data.message || "Hit or Stand?",
+            ""
+        );
+
+    } catch (error) {
+
+        console.error(
+            "Blackjack Hit Error:",
+            error
+        );
+
+        showBlackjackError(
+            "የኔትወርክ ስህተት ተፈጥሯል!"
+        );
+
+        setBlackjackButtonsState({
+            start: false,
+            hit: true,
+            stand: true,
+            newGame: false
+        });
+    }
+}
+
+// ---------------------------------------------------------
+// 5. STAND
+// ---------------------------------------------------------
+
+async function standBlackjack() {
+
+    if (!blackjackState.isPlaying) return;
+
+    const telegramId = String(
+        userData?.telegram_id ||
+        window.myTelegramId ||
+        "12345678"
+    );
+
+    setBlackjackButtonsState({
+        start: false,
+        hit: false,
+        stand: false,
+        newGame: false
+    });
+
+    updateBlackjackResult(
+        "Dealer is playing...",
+        ""
+    );
+
+    try {
+
+        const response = await fetch(
+            "/api/blackjack/stand",
+            {
+                method: "POST",
+
+                headers: {
+                    "Content-Type": "application/json"
+                },
+
+                body: JSON.stringify({
+                    telegram_id: telegramId
+                })
+            }
+        );
+
+        const data = await response.json();
+
+        if (!response.ok || !data.success) {
+
+            showBlackjackError(
+                data.detail ||
+                "Could not stand."
+            );
+
+            setBlackjackButtonsState({
+                start: false,
+                hit: true,
+                stand: true,
+                newGame: false
+            });
+
+            return;
+        }
+
+        renderBlackjackCards(data);
+
+        updateBlackjackBalanceFromResponse(data);
+
+        handleBlackjackResult(data);
+
+    } catch (error) {
+
+        console.error(
+            "Blackjack Stand Error:",
+            error
+        );
+
+        showBlackjackError(
+            "የኔትወርክ ስህተት ተፈጥሯል!"
+        );
+
+        setBlackjackButtonsState({
+            start: false,
+            hit: true,
+            stand: true,
+            newGame: false
+        });
+    }
+}
+
+// ---------------------------------------------------------
+// 6. RENDER CARDS
+// ---------------------------------------------------------
+
+function renderBlackjackCards(data) {
+
+    const playerCardsEl =
+        document.getElementById(
+            "blackjackPlayerCards"
+        );
+
+    const dealerCardsEl =
+        document.getElementById(
+            "blackjackDealerCards"
+        );
+
+    const playerValueEl =
+        document.getElementById(
+            "blackjackPlayerValue"
+        );
+
+    const dealerValueEl =
+        document.getElementById(
+            "blackjackDealerValue"
+        );
+
+    if (!playerCardsEl || !dealerCardsEl) return;
+
+    playerCardsEl.innerHTML = "";
+    dealerCardsEl.innerHTML = "";
+
+    // PLAYER CARDS
+    (data.player_cards || []).forEach(card => {
+
+        playerCardsEl.appendChild(
+            createBlackjackCard(card)
+        );
+    });
+
+    // DEALER CARDS
+    (data.dealer_cards || []).forEach(card => {
+
+        dealerCardsEl.appendChild(
+            createBlackjackCard(card)
+        );
+    });
+
+    if (playerValueEl) {
+
+        playerValueEl.innerText =
+            `Value: ${data.player_value ?? "-"}`;
+    }
+
+    if (dealerValueEl) {
+
+        dealerValueEl.innerText =
+            `Value: ${data.dealer_value ?? "-"}`;
+    }
+}
+
+// ---------------------------------------------------------
+// 7. CREATE CARD UI
+// ---------------------------------------------------------
+
+function createBlackjackCard(card) {
+
+    const cardEl =
+        document.createElement("div");
+
+    const isRed =
+        card.suit === "♥" ||
+        card.suit === "♦";
+
+    cardEl.className =
+        `blackjack-card ${isRed ? "red" : "black"}`;
+
+    const rankEl =
+        document.createElement("div");
+
+    rankEl.className =
+        "blackjack-card-rank";
+
+    rankEl.innerText =
+        card.rank;
+
+    const suitEl =
+        document.createElement("div");
+
+    suitEl.className =
+        "blackjack-card-suit";
+
+    suitEl.innerText =
+        card.suit;
+
+    cardEl.appendChild(rankEl);
+    cardEl.appendChild(suitEl);
+
+    return cardEl;
+}
+
+// ---------------------------------------------------------
+// 8. RESULT & BALANCE DISPLAY
+// ---------------------------------------------------------
+
+function updateBlackjackBalanceFromResponse(data) {
+
+    if (data.balance === undefined) return;
+
+    if (typeof userData !== "undefined") {
+        userData.balance = data.balance;
+    }
+
+    const formattedBalance =
+        `${parseFloat(data.balance).toFixed(2)} ETB`;
+
+    const blackjackBalance =
+        document.getElementById(
+            "blackjackBalance"
+        );
+
+    const mainBalance =
+        document.getElementById("balance");
+
+    const dashBalance =
+        document.getElementById("dashBalance");
+
+    if (blackjackBalance) {
+        blackjackBalance.innerText =
+            formattedBalance;
+    }
+
+    if (mainBalance) {
+        mainBalance.innerText =
+            formattedBalance;
+    }
+
+    if (dashBalance) {
+        dashBalance.innerText =
+            formattedBalance;
+    }
+}
+
+// ---------------------------------------------------------
+// 9. RESULT HANDLER
+// ---------------------------------------------------------
+
+function handleBlackjackResult(data) {
+
+    blackjackState.isPlaying = false;
+
+    renderBlackjackCards(data);
+
+    updateBlackjackBalanceFromResponse(data);
+
+    const result =
+        data.result || "";
+
+    let resultClass = "";
+
+    if (
+        result === "win" ||
+        result === "blackjack"
+    ) {
+        resultClass = "win";
+
+    } else if (
+        result === "loss" ||
+        result === "dealer_blackjack"
+    ) {
+        resultClass = "lose";
+    }
+
+    updateBlackjackResult(
+        data.message ||
+        getBlackjackResultMessage(data),
+        resultClass
+    );
+
+    setBlackjackButtonsState({
+        start: false,
+        hit: false,
+        stand: false,
+        newGame: true
+    });
+}
+
+// ---------------------------------------------------------
+// 10. RESULT MESSAGE
+// ---------------------------------------------------------
+
+function getBlackjackResultMessage(data) {
+
+    const result =
+        data.result || "";
+
+    if (result === "blackjack") {
+        return "🃏 BLACKJACK! You win!";
+    }
+
+    if (result === "win") {
+        return "🎉 YOU WIN!";
+    }
+
+    if (result === "push") {
+        return "🤝 PUSH — Bet returned!";
+    }
+
+    if (
+        result === "loss" ||
+        result === "dealer_blackjack"
+    ) {
+        return "😔 YOU LOSE!";
+    }
+
+    return "Game finished.";
+}
+
+// ---------------------------------------------------------
+// 11. RESULT TEXT
+// ---------------------------------------------------------
+
+function updateBlackjackResult(
+    message,
+    statusClass = ""
+) {
+
+    const resultEl =
+        document.getElementById(
+            "blackjackResultText"
+        );
+
+    if (!resultEl) return;
+
+    resultEl.innerText = message;
+
+    resultEl.className =
+        `blackjack-result-text ${statusClass}`;
+}
+
+// ---------------------------------------------------------
+// 12. BUTTON STATES
+// ---------------------------------------------------------
+
+function setBlackjackButtonsState({
+    start,
+    hit,
+    stand,
+    newGame
+}) {
+
+    const startBtn =
+        document.getElementById(
+            "blackjackStartBtn"
+        );
+
+    const hitBtn =
+        document.getElementById(
+            "blackjackHitBtn"
+        );
+
+    const standBtn =
+        document.getElementById(
+            "blackjackStandBtn"
+        );
+
+    const newBtn =
+        document.getElementById(
+            "blackjackNewBtn"
+        );
+
+    if (startBtn) {
+        startBtn.disabled = !start;
+    }
+
+    if (hitBtn) {
+        hitBtn.disabled = !hit;
+    }
+
+    if (standBtn) {
+        standBtn.disabled = !stand;
+    }
+
+    if (newBtn) {
+        newBtn.hidden = !newGame;
+    }
+}
+
+// ---------------------------------------------------------
+// 13. RESET UI
+// ---------------------------------------------------------
+
+function resetBlackjackUI() {
+
+    const playerCardsEl =
+        document.getElementById(
+            "blackjackPlayerCards"
+        );
+
+    const dealerCardsEl =
+        document.getElementById(
+            "blackjackDealerCards"
+        );
+
+    const playerValueEl =
+        document.getElementById(
+            "blackjackPlayerValue"
+        );
+
+    const dealerValueEl =
+        document.getElementById(
+            "blackjackDealerValue"
+        );
+
+    if (playerCardsEl) {
+        playerCardsEl.innerHTML = "";
+    }
+
+    if (dealerCardsEl) {
+        dealerCardsEl.innerHTML = "";
+    }
+
+    if (playerValueEl) {
+        playerValueEl.innerText =
+            "Value: -";
+    }
+
+    if (dealerValueEl) {
+        dealerValueEl.innerText =
+            "Value: -";
+    }
+
+    updateBlackjackResult(
+        "Choose your bet and start the game",
+        ""
+    );
+}
+
+// ---------------------------------------------------------
+// 14. ERROR HANDLER
+// ---------------------------------------------------------
+
+function showBlackjackError(message) {
+
+    if (typeof showMessage === "function") {
+
+        showMessage(
+            "Blackjack",
+            message,
+            "❌"
+        );
+
+    } else {
+
+        alert(message);
+    }
+}
+
+// Current Blackjack Game ID
+let currentBlackjackGameId = null;
