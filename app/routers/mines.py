@@ -1,18 +1,19 @@
 import json
-import secrets
+import random
 import uuid
 from datetime import datetime, timezone
-from typing import List
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from app.database import SessionLocal
-from app.models import User, WalletTransaction, MinesGame  # ሟሟላቱን ያረጋግጡ
+from app.models import User, WalletTransaction, MinesGame  # MinesGame Model መጠቀምህ እርግጠኛ ሁን
+
 
 router = APIRouter(
     prefix="/api/mines",
-    tags=["Mines Game"]
+    tags=["Mines"]
 )
 
 
@@ -24,38 +25,64 @@ def get_db():
         db.close()
 
 
+GRID_SIZE = 25
 ALLOWED_BETS = {10.0, 20.0, 50.0}
-ALLOWED_MINES = {1, 3, 5, 10}
+ALLOWED_MINES = {3, 5, 10}
 
 
 class StartMinesRequest(BaseModel):
     telegram_id: str
     bet_amount: float = Field(gt=0)
-    mine_count: int = Field(default=3)
+    mine_count: int = Field(default=3)  # ከ Frontend የሚመጣውን የቦምብ ብዛት ይቀበላል
 
 
-class RevealTileRequest(BaseModel):
+class RevealMinesRequest(BaseModel):
     telegram_id: str
-    game_id: int
-    tile_index: int = Field(ge=0, le=24)
+    game_id: int | None = None
+    tile_index: int = Field(ge=0, le=GRID_SIZE - 1)  # Frontend tile_index ስለሚልክ
 
 
-class CashoutRequest(BaseModel):
+class CashoutMinesRequest(BaseModel):
     telegram_id: str
-    game_id: int
+    game_id: int | None = None
 
 
-def calculate_multiplier(gems_found: int, mine_count: int) -> float:
+def get_user(db: Session, telegram_id: str):
+    return (
+        db.query(User)
+        .filter(User.telegram_id == telegram_id)
+        .with_for_update()
+        .first()
+    )
+
+
+def get_active_round(db: Session, user_id: int):
+    return (
+        db.query(MinesGame)
+        .filter(
+            MinesGame.user_id == user_id,
+            MinesGame.status == "playing"
+        )
+        .order_by(MinesGame.id.desc())
+        .first()
+    )
+
+
+def calculate_multiplier(safe_count: int, mine_count: int) -> float:
+    if safe_count <= 0:
+        return 1.0
+    
     total_tiles = 25
     multiplier = 1.0
-    for i in range(gems_found):
+    for i in range(safe_count):
         multiplier *= (total_tiles - i) / (total_tiles - mine_count - i)
-    return round(multiplier * 0.95, 2)  # 5% House Edge
+    return round(multiplier * 0.95, 2)  # 5% House edge
 
 
 # =========================================================
 # START GAME
 # =========================================================
+
 @router.post("/start")
 def start_mines(request: StartMinesRequest, db: Session = Depends(get_db)):
     telegram_id = str(request.telegram_id).strip()
@@ -63,192 +90,193 @@ def start_mines(request: StartMinesRequest, db: Session = Depends(get_db)):
     mine_count = int(request.mine_count)
 
     if bet_amount not in ALLOWED_BETS:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="የተሳሳተ የውርርድ መጠን።")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="የተሳሳተ የውርርድ መጠን። 10, 20 ወይም 50 ETB ይምረጡ።"
+        )
 
     if mine_count not in ALLOWED_MINES:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="የተሳሳተ የቦምብ ብዛት።")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="የተሳሳተ የቦምብ ብዛት። (3, 5, 10 ይምረጡ)"
+        )
 
-    user = db.query(User).filter(User.telegram_id == telegram_id).with_for_update().first()
+    user = get_user(db, telegram_id)
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="ተጠቃሚው አልተገኘም።")
 
     if getattr(user, "is_banned", False):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="አካውንትዎ ታግዷል።")
 
+    # ያልተጠናቀቀ ጨዋታ ካለ ማረጋገጥ
+    existing_round = get_active_round(db, user.id)
+    if existing_round:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="እባክዎን አስቀድመው የጀመሩትን ጨዋታ ያጠናቅቁ።")
+
     current_balance = round(float(user.balance or 0), 2)
     if current_balance < bet_amount:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"በቂ ባላንስ የለዎትም! ({current_balance:.2f} ETB)")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="በቂ ባላንስ የለዎትም!")
 
-    # Deduct Stake
-    balance_after_stake = round(current_balance - bet_amount, 2)
-    user.balance = balance_after_stake
+    # ቦምቦችን በዘደይ መደበቅ
+    mine_positions = sorted(random.sample(range(GRID_SIZE), mine_count))
+
+    # ሂሳብ መቀነስ
+    balance_after = round(current_balance - bet_amount, 2)
+    user.balance = balance_after
     reference = f"MINES-{uuid.uuid4().hex[:16]}"
 
     stake_tx = WalletTransaction(
         user_id=user.id,
         transaction_type="game_stake_mines",
         amount=-bet_amount,
-        balance_after=balance_after_stake,
+        balance_after=balance_after,
         game="mines",
         reference=reference,
-        description="Mines game stake"
+        description="Mines stake"
     )
     db.add(stake_tx)
 
-    # Pick Random Mine Positions (0-24)
-    all_indices = list(range(25))
-    mine_positions = secrets.SystemRandom().sample(all_indices, mine_count)
-
-    # Create Game Record in DB using MinesGame Model
-    new_game = MinesGame(
+    mines_game = MinesGame(
         user_id=user.id,
         bet_amount=bet_amount,
         mine_count=mine_count,
         mine_positions=json.dumps(mine_positions),
-        revealed_positions=json.dumps([]),
+        revealed_positions="[]",
         multiplier=1.0,
-        status="playing",
         payout=0.0,
-        balance_after=balance_after_stake,
+        balance_after=balance_after,
+        status="playing",
         reference=reference
     )
-    db.add(new_game)
+    db.add(mines_game)
 
     try:
         db.commit()
+        db.refresh(mines_game)
         db.refresh(user)
-        db.refresh(new_game)
     except Exception:
         db.rollback()
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="ጨዋታውን ማስጀመር አልተቻለም።")
 
     return {
         "success": True,
-        "game_id": new_game.id,
-        "message": "💎 Choose a tile!",
-        "balance": balance_after_stake,
-        "bet_amount": bet_amount,
+        "game_id": mines_game.id,
         "mine_count": mine_count,
-        "multiplier": 1.0
+        "bet_amount": bet_amount,
+        "multiplier": 1.0,
+        "payout": 0.0,
+        "balance": round(float(user.balance), 2),
+        "message": "💎 ጨዋታው ተጀምሯል! ሳጥን ይምረጡ።"
     }
 
 
 # =========================================================
 # REVEAL TILE
 # =========================================================
-@router.post("/reveal")
-def reveal_tile(request: RevealTileRequest, db: Session = Depends(get_db)):
-    telegram_id = str(request.telegram_id).strip()
-    tile_index = request.tile_index
 
-    user = db.query(User).filter(User.telegram_id == telegram_id).first()
+@router.post("/reveal")
+def reveal_mines_tile(request: RevealMinesRequest, db: Session = Depends(get_db)):
+    telegram_id = str(request.telegram_id).strip()
+    position = int(request.tile_index)
+
+    user = get_user(db, telegram_id)
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="ተጠቃሚው አልተገኘም።")
 
-    # Fetch active game from Database
-    game = db.query(MinesGame).filter(
-        MinesGame.id == request.game_id,
-        MinesGame.user_id == user.id,
-        MinesGame.status == "playing"
-    ).first()
-
-    if not game:
+    mines_game = get_active_round(db, user.id)
+    if not mines_game:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="ምንም የነቃ ጨዋታ አልተገኘም።")
 
-    mine_positions = json.loads(game.mine_positions)
-    revealed_positions = json.loads(game.revealed_positions)
+    mine_positions = json.loads(mines_game.mine_positions)
+    revealed_positions = json.loads(mines_game.revealed_positions or "[]")
 
-    if tile_index in revealed_positions:
+    if position in revealed_positions:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="ይህ ሳጥን ቀደም ብሎ ተከፍቷል።")
 
-    # Hit Mine? (Loss)
-    if tile_index in mine_positions:
-        game.status = "completed"
-        game.result = "loss"
-        game.payout = 0.0
-        game.completed_at = datetime.now(timezone.utc)
-        
+    # ቦምብ ከተነካ (ተሸነፈ)
+    if position in mine_positions:
+        mines_game.status = "completed"
+        mines_game.result = "loss"
+        mines_game.completed_at = datetime.now(timezone.utc)
+        mines_game.multiplier = 0.0
+        mines_game.payout = 0.0
         db.commit()
 
         return {
             "success": True,
             "is_mine": True,
-            "message": "💣 ቦምቡ ፈነዳ! ተሸንፈዋል።",
-            "mine_positions": mine_positions
+            "mine_positions": mine_positions,
+            "multiplier": 0.0,
+            "payout": 0.0,
+            "balance": round(float(user.balance), 2),
+            "message": "💣 ቦምቡ ፈነዳ! ተሸንፈዋል።"
         }
 
-    # Hit Gem! (Safe Tile)
-    revealed_positions.append(tile_index)
-    game.revealed_positions = json.dumps(revealed_positions)
+    # 💎 ትክክለኛ ሳጥን ከተከፈተ
+    revealed_positions.append(position)
+    safe_count = len(revealed_positions)
+    multiplier = calculate_multiplier(safe_count, mines_game.mine_count)
+    payout = round(mines_game.bet_amount * multiplier, 2)
 
-    gems_found = len(revealed_positions)
-    current_multiplier = calculate_multiplier(gems_found, game.mine_count)
-    game.multiplier = current_multiplier
-
+    mines_game.revealed_positions = json.dumps(revealed_positions)
+    mines_game.multiplier = multiplier
+    mines_game.payout = payout
     db.commit()
 
     return {
         "success": True,
         "is_mine": False,
-        "gems_found": gems_found,
-        "multiplier": current_multiplier,
-        "message": f"💎 SAFE! Multiplier: {current_multiplier}x"
+        "position": position,
+        "multiplier": multiplier,
+        "payout": payout,
+        "balance": round(float(user.balance), 2),
+        "message": f"💎 SAFE! Multiplier: {multiplier}x"
     }
 
 
 # =========================================================
 # CASHOUT
 # =========================================================
+
 @router.post("/cashout")
-def cashout_mines(request: CashoutRequest, db: Session = Depends(get_db)):
+def cashout_mines(request: CashoutMinesRequest, db: Session = Depends(get_db)):
     telegram_id = str(request.telegram_id).strip()
 
-    user = db.query(User).filter(User.telegram_id == telegram_id).with_for_update().first()
+    user = get_user(db, telegram_id)
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="ተጠቃሚው አልተገኘም።")
 
-    # Fetch active game from Database
-    game = db.query(MinesGame).filter(
-        MinesGame.id == request.game_id,
-        MinesGame.user_id == user.id,
-        MinesGame.status == "playing"
-    ).first()
-
-    if not game:
+    mines_game = get_active_round(db, user.id)
+    if not mines_game:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="ምንም የነቃ ጨዋታ አልተገኘም።")
 
-    revealed_positions = json.loads(game.revealed_positions)
-    gems_found = len(revealed_positions)
-
-    if gems_found == 0:
+    revealed_positions = json.loads(mines_game.revealed_positions or "[]")
+    if not revealed_positions:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="ወደ ገንዘብ ለመቀየር ቢያንስ 1 ሳጥን መክፈት አለብዎት።")
 
-    multiplier = calculate_multiplier(gems_found, game.mine_count)
-    win_amount = round(game.bet_amount * multiplier, 2)
+    payout = round(float(mines_game.payout or 0), 2)
+    multiplier = float(mines_game.multiplier or 1)
 
-    final_balance = round(float(user.balance or 0) + win_amount, 2)
-    user.balance = final_balance
+    # ጨዋታውን ማጠናቀቅ እና ገንዘብ መጨመር
+    mines_game.status = "completed"
+    mines_game.result = "win"
+    mines_game.completed_at = datetime.now(timezone.utc)
 
-    # Update Game state in DB
-    game.status = "completed"
-    game.result = "win"
-    game.payout = win_amount
-    game.balance_after = final_balance
-    game.completed_at = datetime.now(timezone.utc)
+    user.balance = round(float(user.balance) + payout, 2)
+    mines_game.balance_after = user.balance
 
-    # Record Win Transaction
     win_tx = WalletTransaction(
         user_id=user.id,
         transaction_type="game_win_mines",
-        amount=win_amount,
-        balance_after=final_balance,
+        amount=payout,
+        balance_after=user.balance,
         game="mines",
-        reference=game.reference,
-        description=f"Mines Cashout - {multiplier}x ({gems_found} gems)"
+        reference=f"MINES-CASH-{uuid.uuid4().hex[:12]}",
+        description=f"Mines cashout - {multiplier}x"
     )
     db.add(win_tx)
 
-    mine_positions = json.loads(game.mine_positions)
+    mine_positions = json.loads(mines_game.mine_positions)
 
     try:
         db.commit()
@@ -259,9 +287,9 @@ def cashout_mines(request: CashoutRequest, db: Session = Depends(get_db)):
 
     return {
         "success": True,
-        "payout": win_amount,
+        "payout": payout,
         "multiplier": multiplier,
-        "balance": final_balance,
+        "balance": round(float(user.balance), 2),
         "mine_positions": mine_positions,
-        "message": f"💰 CASH OUT: {win_amount:.2f} ETB"
+        "message": f"💰 CASH OUT: {payout:.2f} ETB"
     }
