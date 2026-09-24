@@ -614,7 +614,7 @@ class BlackjackGame(Base):
     )
 
 # =========================================================
-# 💎 MINES GAME MODEL
+# 💣 MINES GAME
 # =========================================================
 
 class MinesGame(Base):
@@ -638,43 +638,46 @@ class MinesGame(Base):
         nullable=False
     )
 
-    mines_count = Column(
+    mine_count = Column(
         Integer,
-        default=3,
         nullable=False
     )
 
-    # JSON strings e.g. "[2, 8, 15]"
+    # JSON string containing mine positions
     mine_positions = Column(
         Text,
         nullable=False
     )
 
-    # JSON strings e.g. "[0, 1, 4]"
-    revealed_tiles = Column(
+    # JSON string containing revealed safe/mine positions
+    revealed_positions = Column(
         Text,
-        default="[]",
-        nullable=False
-    )
-
-    # playing / cashout / hit_mine
-    status = Column(
-        String(20),
-        default="playing",
         nullable=False,
-        index=True
+        default="[]"
     )
 
     multiplier = Column(
         Float,
-        default=1.0,
-        nullable=False
+        nullable=False,
+        default=1.0
+    )
+
+    status = Column(
+        String(20),
+        nullable=False,
+        default="playing",
+        index=True
+    )
+
+    result = Column(
+        String(30),
+        nullable=True
     )
 
     payout = Column(
         Float,
-        default=0.0,
-        nullable=False
+        nullable=False,
+        default=0.0
     )
 
     balance_after = Column(
