@@ -638,7 +638,7 @@ class MinesGame(Base):
         nullable=False
     )
 
-    mine_count = Column(
+    mines_count = Column(
         Integer,
         nullable=False
     )
