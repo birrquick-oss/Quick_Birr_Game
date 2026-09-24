@@ -88,19 +88,6 @@ TOTAL_TILES = 25
 # =========================================================
 # MULTIPLIER TABLE
 # =========================================================
-#
-# Multiplier is applied after each SAFE tile.
-#
-# The values are intentionally stored server-side.
-#
-# Index:
-# 0 = before first safe tile
-# 1 = after first safe tile
-# 2 = after second safe tile
-# etc.
-#
-# Separate table for 3, 5 and 10 mines.
-# =========================================================
 
 MULTIPLIERS = {
 
@@ -461,7 +448,9 @@ def start_mines(
 
         bet_amount=bet_amount,
 
-        mine_count=mine_count,
+        # IMPORTANT:
+        # Database column is mines_count
+        mines_count=mine_count,
 
         mine_positions=save_json_list(
             mine_positions
@@ -579,8 +568,8 @@ def start_mines(
 
         "message":
         (
-            f"💣 Mines started! "
-            f"Find the safe tiles."
+            "💣 Mines started! "
+            "Find the safe tiles."
         )
     }
 
@@ -784,10 +773,6 @@ def reveal_mines_tile(
             )
 
 
-        # -------------------------------------------------
-        # RESPONSE
-        # -------------------------------------------------
-
         return {
 
             "success": True,
@@ -854,7 +839,7 @@ def reveal_mines_tile(
     # =====================================================
 
     multiplier = get_multiplier(
-        game.mine_count,
+        game.mines_count,
         safe_count
     )
 
@@ -877,7 +862,7 @@ def reveal_mines_tile(
 
     safe_tiles_total = (
         TOTAL_TILES -
-        game.mine_count
+        game.mines_count
     )
 
 
@@ -1218,7 +1203,7 @@ def cashout_mines(
     # =====================================================
 
     multiplier = get_multiplier(
-        game.mine_count,
+        game.mines_count,
         safe_count
     )
 
