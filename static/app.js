@@ -62,6 +62,10 @@ let rouletteSpinning = false;
 // 🃏 Blackjack
 let selectedBlackjackBet = 10;
 let blackjackPlaying = false;
+// 💎 Mines
+let selectedMinesBet = 10;
+let selectedMinesCount = 3;
+let minesPlaying = false;
 
 let soundEnabled = true;
 let isAutoMark = true;
@@ -106,6 +110,7 @@ const slotsView = document.getElementById("slotsView");
 const plinkoView = document.getElementById("plinkoView");
 const rouletteView = document.getElementById("rouletteView");
 const blackjackView = document.getElementById("blackjackView");
+const minesView = document.getElementById("minesView");
 
 const depositModal = document.getElementById("depositModal");
 const withdrawModal = document.getElementById("withdrawModal");
@@ -237,6 +242,13 @@ document.querySelectorAll(".game-card").forEach(card => {
             updateBlackjackBalance();
             return;
         }
+       
+        if (game === "mines") {
+            showPage("mines");
+            updateMinesBalance();
+            return;
+        }
+
 
         const names = {
             slots: "Lucky Slots", plinko: "Plinko", roulette: "European Roulette",
@@ -1078,6 +1090,7 @@ function hideAllViews() {
     if (plinkoView) plinkoView.hidden = true;
     if (rouletteView) rouletteView.hidden = true;
     if (blackjackView) blackjackView.hidden = true;
+    if (minesView) minesView.hidden = true;
 }
 
 function showPage(pageName) {
@@ -1109,6 +1122,9 @@ function showPage(pageName) {
     } else if (pageName === "blackjack") {
         if (blackjackView) blackjackView.hidden = false;
         if (typeof updateBlackjackBalance === "function") updateBlackjackBalance();
+    } else if (pageName === "mines") {
+        if (minesView) minesView.hidden = false;
+        if (typeof updateMinesBalance === "function") updateMinesBalance();
     } else {
         if (homeView) homeView.hidden = false;
     }
@@ -3030,3 +3046,287 @@ function showBlackjackError(message) {
 
 // Current Blackjack Game ID
 let currentBlackjackGameId = null;
+
+/* =========================================================
+   QUICK_BIRR GAMES - MINES ENGINE
+   Grid base Diamond & Bomb game
+   ========================================================= */
+
+let minesState = {
+    betAmount: 10,
+    minesCount: 3,
+    isPlaying: false,
+    gemsFound: 0,
+    currentMultiplier: 1.0,
+    revealedCells: []
+};
+
+// 1. Mines Balance Update Function
+function updateMinesBalance() {
+    const el = document.getElementById("minesBalance");
+    if (el && typeof userData !== "undefined") {
+        el.innerText = `${parseFloat(userData.balance || 0).toFixed(2)} ETB`;
+    }
+}
+
+// 2. Render 5x5 Grid (25 Cells)
+function renderMinesGrid() {
+    const grid = document.getElementById("minesGrid");
+    if (!grid) return;
+
+    grid.innerHTML = "";
+    for (let i = 0; i < 25; i++) {
+        const btn = document.createElement("button");
+        btn.className = "mines-cell";
+        btn.dataset.index = i;
+        btn.type = "button";
+        btn.addEventListener("click", () => handleMinesCellClick(i));
+        grid.appendChild(btn);
+    }
+}
+
+// 3. Setup Controls & Event Listeners
+function initMinesEventListeners() {
+    // Back Button
+    document.getElementById("minesBackBtn")?.addEventListener("click", () => {
+        if (minesState.isPlaying) return;
+        showPage("home");
+    });
+
+    // Bet Amount Selector
+    document.querySelectorAll(".mines-bet-btn").forEach(btn => {
+        btn.addEventListener("click", (e) => {
+            if (minesState.isPlaying) return;
+            const amount = parseFloat(e.currentTarget.dataset.minesBet);
+            if (amount) {
+                minesState.betAmount = amount;
+                document.querySelectorAll(".mines-bet-btn").forEach(b => b.classList.remove("active"));
+                e.currentTarget.classList.add("active");
+            }
+        });
+    });
+
+    // Mines Count Selector
+    const minesSelect = document.getElementById("minesCountSelect");
+    if (minesSelect) {
+        minesSelect.addEventListener("change", (e) => {
+            if (minesState.isPlaying) return;
+            minesState.minesCount = parseInt(e.target.value) || 3;
+        });
+    }
+
+    // Start Game Button
+    document.getElementById("minesStartBtn")?.addEventListener("click", startMinesGame);
+
+    // Cashout Button
+    document.getElementById("minesCashoutBtn")?.addEventListener("click", cashoutMinesGame);
+}
+
+// 4. Start Game (Backend Fast API Request)
+async function startMinesGame() {
+    if (minesState.isPlaying) return;
+
+    const currentBalance = parseFloat(userData?.balance || 0);
+    if (currentBalance < minesState.betAmount) {
+        if (typeof showMessage === "function") {
+            showMessage("ባላንስ ማነስ", "የበቂ ባላንስ የለዎትም! እባክዎን ዴፖዚት ያድርጉ።", "💳");
+        } else {
+            alert("የበቂ ባላንስ የለዎትም!");
+        }
+        return;
+    }
+
+    const telegramId = String(userData?.telegram_id || window.Telegram?.WebApp?.initDataUnsafe?.user?.id || "12345678");
+
+    try {
+        const response = await fetch("/api/mines/start", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                telegram_id: telegramId,
+                bet_amount: minesState.betAmount,
+                mines_count: minesState.minesCount
+            })
+        });
+
+        const data = await response.json();
+        if (!response.ok || !data.success) {
+            if (typeof showMessage === "function") {
+                showMessage("ስህተት", data.detail || "ጨዋታውን ማስጀመር አልተቻለም!", "❌");
+            }
+            return;
+        }
+
+        // Reset Local State
+        minesState.isPlaying = true;
+        minesState.gemsFound = 0;
+        minesState.currentMultiplier = 1.0;
+        minesState.revealedCells = [];
+
+        // Update Balance
+        if (data.balance !== undefined) {
+            userData.balance = data.balance;
+            updateMinesBalance();
+            if (typeof updateBalanceUI === "function") updateBalanceUI(userData.balance);
+        }
+
+        renderMinesGrid();
+        toggleMinesControls(true);
+        updateMinesStatus("Select a tile to reveal 💎", "");
+
+    } catch (error) {
+        console.error("Mines Start Error:", error);
+        if (typeof showMessage === "function") {
+            showMessage("ኔትወርክ ስህተት", "የኔትወርክ ስህተት ተፈጥሯል!", "📡");
+        }
+    }
+}
+
+// 5. Click Cell / Reveal Tile
+async function handleMinesCellClick(index) {
+    if (!minesState.isPlaying || minesState.revealedCells.includes(index)) return;
+
+    const cellBtn = document.querySelector(`.mines-cell[data-index="${index}"]`);
+    if (cellBtn) cellBtn.disabled = true;
+
+    const telegramId = String(userData?.telegram_id || "12345678");
+
+    try {
+        const response = await fetch("/api/mines/reveal", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                telegram_id: telegramId,
+                tile_index: index
+            })
+        });
+
+        const data = await response.json();
+        if (!response.ok || !data.success) {
+            if (typeof showMessage === "function") {
+                showMessage("ስህተት", data.detail || "ምርጫውን ማሳየት አልተቻለም!", "❌");
+            }
+            return;
+        }
+
+        minesState.revealedCells.push(index);
+
+        if (data.is_mine) {
+            // Hit Mine / Game Over
+            cellBtn.classList.add("mine");
+            cellBtn.innerText = "💣";
+            revealAllMines(data.mine_positions || []);
+            
+            minesState.isPlaying = false;
+            toggleMinesControls(false);
+            updateMinesStatus("💣 BOOM! Game Over.", "lose");
+
+            if (window.Telegram?.WebApp?.HapticFeedback) {
+                window.Telegram.WebApp.HapticFeedback.notificationOccurred("error");
+            }
+
+        } else {
+            // Gem Found!
+            cellBtn.classList.add("gem");
+            cellBtn.innerText = "💎";
+            
+            minesState.gemsFound++;
+            minesState.currentMultiplier = data.next_multiplier;
+
+            const winEstimate = (minesState.betAmount * data.current_multiplier).toFixed(2);
+            updateMinesStatus(`Found 💎! Current Win: ${winEstimate} ETB (${data.current_multiplier}x)`, "win");
+
+            // Enable Cashout Button
+            const cashoutBtn = document.getElementById("minesCashoutBtn");
+            if (cashoutBtn) {
+                cashoutBtn.disabled = false;
+                cashoutBtn.innerText = `💰 CASHOUT ${winEstimate} ETB`;
+            }
+
+            if (window.Telegram?.WebApp?.HapticFeedback) {
+                window.Telegram.WebApp.HapticFeedback.notificationOccurred("success");
+            }
+        }
+
+    } catch (error) {
+        console.error("Mines Reveal Error:", error);
+    }
+}
+
+// 6. Cashout Winnings
+async function cashoutMinesGame() {
+    if (!minesState.isPlaying || minesState.gemsFound === 0) return;
+
+    const telegramId = String(userData?.telegram_id || "12345678");
+
+    try {
+        const response = await fetch("/api/mines/cashout", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ telegram_id: telegramId })
+        });
+
+        const data = await response.json();
+        if (!response.ok || !data.success) {
+            if (typeof showMessage === "function") {
+                showMessage("ስህተት", data.detail || "Cashout ማድረግ አልተቻለም!", "❌");
+            }
+            return;
+        }
+
+        minesState.isPlaying = false;
+        toggleMinesControls(false);
+
+        if (data.balance !== undefined) {
+            userData.balance = data.balance;
+            updateMinesBalance();
+            if (typeof updateBalanceUI === "function") updateBalanceUI(userData.balance);
+        }
+
+        updateMinesStatus(`🎉 Won ${parseFloat(data.win_amount).toFixed(2)} ETB!`, "win");
+        revealAllMines(data.mine_positions || []);
+
+    } catch (error) {
+        console.error("Mines Cashout Error:", error);
+    }
+}
+
+// Helper Functions
+function revealAllMines(positions) {
+    document.querySelectorAll(".mines-cell").forEach((cell, idx) => {
+        if (positions.includes(idx)) {
+            cell.classList.add("mine");
+            cell.innerText = "💣";
+        }
+        cell.disabled = true;
+    });
+}
+
+function toggleMinesControls(isPlaying) {
+    const startBtn = document.getElementById("minesStartBtn");
+    const cashoutBtn = document.getElementById("minesCashoutBtn");
+    const minesSelect = document.getElementById("minesCountSelect");
+
+    if (startBtn) startBtn.hidden = isPlaying;
+    if (minesSelect) minesSelect.disabled = isPlaying;
+
+    if (cashoutBtn) {
+        cashoutBtn.hidden = !isPlaying;
+        cashoutBtn.disabled = true; // Disabled until 1st gem is found
+        cashoutBtn.innerText = "💰 CASHOUT";
+    }
+}
+
+function updateMinesStatus(msg, statusClass = "") {
+    const statusText = document.getElementById("minesStatusText");
+    if (statusText) {
+        statusText.innerText = msg;
+        statusText.className = `mines-status-text ${statusClass}`;
+    }
+}
+
+// Init Mines UI on Document Ready
+document.addEventListener("DOMContentLoaded", () => {
+    renderMinesGrid();
+    initMinesEventListeners();
+});
