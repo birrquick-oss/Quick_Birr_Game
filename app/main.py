@@ -20,6 +20,7 @@ from app.routers.slots import router as slots_router
 from app.routers.plinko import router as plinko_router
 from app.routers.roulette import router as roulette_router
 from app.routers.blackjack import router as blackjack_router
+from app.routers.mines import router as mines_router
 from app.websocket import router as websocket_router, manager
 from app.game_engine import engine
 
@@ -100,6 +101,7 @@ app.include_router(slots_router)
 app.include_router(plinko_router)
 app.include_router(roulette_router)
 app.include_router(blackjack_router)
+app.include_router(mines_router)
 app.include_router(websocket_router)
 
 
