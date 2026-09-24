@@ -612,3 +612,90 @@ class BlackjackGame(Base):
         DateTime,
         nullable=True
     )
+
+# =========================================================
+# 💎 MINES GAME MODEL
+# =========================================================
+
+class MinesGame(Base):
+    __tablename__ = "mines_games"
+
+    id = Column(
+        Integer,
+        primary_key=True,
+        index=True
+    )
+
+    user_id = Column(
+        Integer,
+        ForeignKey("users.id"),
+        nullable=False,
+        index=True
+    )
+
+    bet_amount = Column(
+        Float,
+        nullable=False
+    )
+
+    mines_count = Column(
+        Integer,
+        default=3,
+        nullable=False
+    )
+
+    # JSON strings e.g. "[2, 8, 15]"
+    mine_positions = Column(
+        Text,
+        nullable=False
+    )
+
+    # JSON strings e.g. "[0, 1, 4]"
+    revealed_tiles = Column(
+        Text,
+        default="[]",
+        nullable=False
+    )
+
+    # playing / cashout / hit_mine
+    status = Column(
+        String(20),
+        default="playing",
+        nullable=False,
+        index=True
+    )
+
+    multiplier = Column(
+        Float,
+        default=1.0,
+        nullable=False
+    )
+
+    payout = Column(
+        Float,
+        default=0.0,
+        nullable=False
+    )
+
+    balance_after = Column(
+        Float,
+        nullable=False
+    )
+
+    reference = Column(
+        String(255),
+        nullable=True,
+        index=True
+    )
+
+    created_at = Column(
+        DateTime,
+        default=lambda: datetime.now(timezone.utc),
+        nullable=False,
+        index=True
+    )
+
+    completed_at = Column(
+        DateTime,
+        nullable=True
+    )
