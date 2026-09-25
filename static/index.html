@@ -141,6 +141,58 @@
                             <span class="game-price">10 / 20 / 50 ETB</span>
                         </div>
                     </button>
+
+                    <!-- ADDED NEW GAME 1: CRASH / AVIATOR -->
+                    <button class="game-card crash-card" data-game="crash" type="button">
+                        <div class="game-image">
+                            <span class="game-icon">🚀</span>
+                            <span class="game-star">★</span>
+                        </div>
+                        <div class="game-info">
+                            <h3>Crash / Aviator</h3>
+                            <p>Cash Out Before Crash</p>
+                            <span class="game-price">10 / 20 / 50 ETB</span>
+                        </div>
+                    </button>
+
+                    <!-- ADDED NEW GAME 2: KENO -->
+                    <button class="game-card keno-card" data-game="keno" type="button">
+                        <div class="game-image">
+                            <span class="game-icon">🔢</span>
+                            <span class="game-star">★</span>
+                        </div>
+                        <div class="game-info">
+                            <h3>Keno</h3>
+                            <p>Pick Your Numbers</p>
+                            <span class="game-price">10 / 20 / 50 ETB</span>
+                        </div>
+                    </button>
+
+                    <!-- ADDED NEW GAME 3: FISHING -->
+                    <button class="game-card fishing-card" data-game="fishing" type="button">
+                        <div class="game-image">
+                            <span class="game-icon">🎣</span>
+                            <span class="game-star">★</span>
+                        </div>
+                        <div class="game-info">
+                            <h3>Fishing</h3>
+                            <p>Catch Big Wins</p>
+                            <span class="game-price">10 / 20 / 50 ETB</span>
+                        </div>
+                    </button>
+
+                    <!-- ADDED NEW GAME 4: CHICKEN ROAD -->
+                    <button class="game-card chicken-card" data-game="chicken" type="button">
+                        <div class="game-image">
+                            <span class="game-icon">🐔</span>
+                            <span class="game-star">★</span>
+                        </div>
+                        <div class="game-info">
+                            <h3>Chicken Road</h3>
+                            <p>Cross the Road</p>
+                            <span class="game-price">10 / 20 / 50 ETB</span>
+                        </div>
+                    </button>
                 </div>
             </section>
 
@@ -161,7 +213,7 @@
                     <span>Players</span>
                 </div>
                 <div class="stat-box">
-                    <strong>6+</strong>
+                    <strong>10+</strong>
                     <span>Games</span>
                 </div>
                 <div class="stat-box">
@@ -249,270 +301,60 @@
             </div>
         </div>
 
-        
-<!-- =====================================================
-     LUCKY SLOTS VIEW
-===================================================== -->
-
+<!-- SLOTS VIEW -->
 <div id="slotsView" class="slots-view" hidden>
-
     <div class="slots-header">
-
-        <button
-            id="slotsBackBtn"
-            class="slots-back-btn"
-            type="button"
-        >
-            ←
-        </button>
-
-        <div class="slots-title">
-            🎰 Lucky Slots
-        </div>
-
-        <div
-            id="slotsBalance"
-            class="slots-balance"
-        >
-            0.00 ETB
-        </div>
-
+        <button id="slotsBackBtn" class="slots-back-btn" type="button">←</button>
+        <div class="slots-title">🎰 Lucky Slots</div>
+        <div id="slotsBalance" class="slots-balance">0.00 ETB</div>
     </div>
-
-
-    <!-- SLOT MACHINE -->
-
     <div class="slots-machine">
-
-        <div class="slots-machine-title">
-            LUCKY SLOTS
-        </div>
-
+        <div class="slots-machine-title">LUCKY SLOTS</div>
         <div class="slots-reels">
-
-            <div
-                id="slotReel1"
-                class="slot-reel"
-            >
-                🍒
-            </div>
-
-            <div
-                id="slotReel2"
-                class="slot-reel"
-            >
-                🍋
-            </div>
-
-            <div
-                id="slotReel3"
-                class="slot-reel"
-            >
-                🔔
-            </div>
-
+            <div id="slotReel1" class="slot-reel">🍒</div>
+            <div id="slotReel2" class="slot-reel">🍋</div>
+            <div id="slotReel3" class="slot-reel">🔔</div>
         </div>
-
-        <div
-            id="slotResultText"
-            class="slot-result-text"
-        >
-            Choose your bet and spin
-        </div>
-
+        <div id="slotResultText" class="slot-result-text">Choose your bet and spin</div>
     </div>
-
-
-    <!-- BET -->
-
-    <div class="slot-section-title">
-        SELECT BET
-    </div>
-
+    <div class="slot-section-title">SELECT BET</div>
     <div class="slot-bet-buttons">
-
-        <button
-            type="button"
-            class="slot-bet-btn active"
-            data-slot-bet="10"
-        >
-            10 ETB
-        </button>
-
-        <button
-            type="button"
-            class="slot-bet-btn"
-            data-slot-bet="20"
-        >
-            20 ETB
-        </button>
-
-        <button
-            type="button"
-            class="slot-bet-btn"
-            data-slot-bet="50"
-        >
-            50 ETB
-        </button>
-
+        <button type="button" class="slot-bet-btn active" data-slot-bet="10">10 ETB</button>
+        <button type="button" class="slot-bet-btn" data-slot-bet="20">20 ETB</button>
+        <button type="button" class="slot-bet-btn" data-slot-bet="50">50 ETB</button>
     </div>
-
-
-    <!-- SPIN -->
-
-    <button
-        id="slotSpinBtn"
-        class="slot-spin-btn"
-        type="button"
-    >
-        🎰 SPIN
-    </button>
-
-
-    <!-- PAYOUT -->
-
+    <button id="slotSpinBtn" class="slot-spin-btn" type="button">🎰 SPIN</button>
     <div class="slot-payout-card">
-
-        <div class="slot-payout-title">
-            🎯 TRIPLE MATCH PAYOUT
-        </div>
-
-        <div class="slot-payout-row">
-            <span>🍒 🍒 🍒</span>
-            <strong>3x</strong>
-        </div>
-
-        <div class="slot-payout-row">
-            <span>🍋 🍋 🍋</span>
-            <strong>4x</strong>
-        </div>
-
-        <div class="slot-payout-row">
-            <span>🔔 🔔 🔔</span>
-            <strong>5x</strong>
-        </div>
-
-        <div class="slot-payout-row">
-            <span>⭐ ⭐ ⭐</span>
-            <strong>8x</strong>
-        </div>
-
-        <div class="slot-payout-row">
-            <span>💎 💎 💎</span>
-            <strong>12x</strong>
-        </div>
-
-        <div class="slot-payout-row">
-            <span>7️⃣ 7️⃣ 7️⃣</span>
-            <strong>20x</strong>
-        </div>
-
+        <div class="slot-payout-title">🎯 TRIPLE MATCH PAYOUT</div>
+        <div class="slot-payout-row"><span>🍒 🍒 🍒</span><strong>3x</strong></div>
+        <div class="slot-payout-row"><span>🍋 🍋 🍋</span><strong>4x</strong></div>
+        <div class="slot-payout-row"><span>🔔 🔔 🔔</span><strong>5x</strong></div>
+        <div class="slot-payout-row"><span>⭐ ⭐ ⭐</span><strong>8x</strong></div>
+        <div class="slot-payout-row"><span>💎 💎 💎</span><strong>12x</strong></div>
+        <div class="slot-payout-row"><span>7️⃣ 7️⃣ 7️⃣</span><strong>20x</strong></div>
     </div>
-
 </div>
-        
-<!-- =====================================================
-     PLINKO GAME
-===================================================== -->
+
+<!-- PLINKO GAME -->
 <div id="plinkoView" class="plinko-view" hidden>
-
     <div class="plinko-header">
-        <button id="plinkoBackBtn" class="plinko-back-btn" type="button">
-            ←
-        </button>
-
-        <div class="plinko-title">
-            🎯 Plinko
-        </div>
-
-        <div id="plinkoBalance" class="plinko-balance">
-            0.00 ETB
-        </div>
+        <button id="plinkoBackBtn" class="plinko-back-btn" type="button">←</button>
+        <div class="plinko-title">🎯 Plinko</div>
+        <div id="plinkoBalance" class="plinko-balance">0.00 ETB</div>
     </div>
-
     <div class="plinko-machine">
-
-        <div class="plinko-machine-title">
-            DROP & WIN
-        </div>
-
+        <div class="plinko-machine-title">DROP & WIN</div>
         <div class="plinko-board-wrap">
-
             <div id="plinkoBoard" class="plinko-board">
-
-                <div id="plinkoBall" class="plinko-ball">
-                    🔵
-                </div>
-
-                <!-- Pegs -->
-                <div class="plinko-row row-1">
-                    <span>•</span>
-                    <span>•</span>
-                    <span>•</span>
-                    <span>•</span>
-                    <span>•</span>
-                </div>
-
-                <div class="plinko-row row-2">
-                    <span>•</span>
-                    <span>•</span>
-                    <span>•</span>
-                    <span>•</span>
-                    <span>•</span>
-                    <span>•</span>
-                </div>
-
-                <div class="plinko-row row-3">
-                    <span>•</span>
-                    <span>•</span>
-                    <span>•</span>
-                    <span>•</span>
-                    <span>•</span>
-                    <span>•</span>
-                    <span>•</span>
-                </div>
-
-                <div class="plinko-row row-4">
-                    <span>•</span>
-                    <span>•</span>
-                    <span>•</span>
-                    <span>•</span>
-                    <span>•</span>
-                    <span>•</span>
-                    <span>•</span>
-                    <span>•</span>
-                </div>
-
-                <div class="plinko-row row-5">
-                    <span>•</span>
-                    <span>•</span>
-                    <span>•</span>
-                    <span>•</span>
-                    <span>•</span>
-                    <span>•</span>
-                    <span>•</span>
-                    <span>•</span>
-                    <span>•</span>
-                </div>
-
-                <div class="plinko-row row-6">
-                    <span>•</span>
-                    <span>•</span>
-                    <span>•</span>
-                    <span>•</span>
-                    <span>•</span>
-                    <span>•</span>
-                    <span>•</span>
-                    <span>•</span>
-                    <span>•</span>
-                    <span>•</span>
-                </div>
-
+                <div id="plinkoBall" class="plinko-ball">🔵</div>
+                <div class="plinko-row row-1"><span>•</span><span>•</span><span>•</span><span>•</span><span>•</span></div>
+                <div class="plinko-row row-2"><span>•</span><span>•</span><span>•</span><span>•</span><span>•</span><span>•</span></div>
+                <div class="plinko-row row-3"><span>•</span><span>•</span><span>•</span><span>•</span><span>•</span><span>•</span><span>•</span></div>
+                <div class="plinko-row row-4"><span>•</span><span>•</span><span>•</span><span>•</span><span>•</span><span>•</span><span>•</span><span>•</span></div>
+                <div class="plinko-row row-5"><span>•</span><span>•</span><span>•</span><span>•</span><span>•</span><span>•</span><span>•</span><span>•</span><span>•</span></div>
+                <div class="plinko-row row-6"><span>•</span><span>•</span><span>•</span><span>•</span><span>•</span><span>•</span><span>•</span><span>•</span><span>•</span><span>•</span></div>
             </div>
-
-            <!-- Multipliers -->
             <div class="plinko-multipliers">
-
                 <div class="plinko-multiplier">0x</div>
                 <div class="plinko-multiplier">0.5x</div>
                 <div class="plinko-multiplier">1x</div>
@@ -524,685 +366,247 @@
                 <div class="plinko-multiplier">1x</div>
                 <div class="plinko-multiplier">0.5x</div>
                 <div class="plinko-multiplier">0x</div>
-
             </div>
-
         </div>
-
-        <div id="plinkoResultText" class="plinko-result-text">
-            Choose your bet and drop the ball
-        </div>
-
+        <div id="plinkoResultText" class="plinko-result-text">Choose your bet and drop the ball</div>
     </div>
-
-    <div class="plinko-section-title">
-        SELECT BET
-    </div>
-
+    <div class="plinko-section-title">SELECT BET</div>
     <div class="plinko-bet-buttons">
-
-        <button
-            type="button"
-            class="plinko-bet-btn active"
-            data-plinko-bet="10"
-        >
-            10 ETB
-        </button>
-
-        <button
-            type="button"
-            class="plinko-bet-btn"
-            data-plinko-bet="20"
-        >
-            20 ETB
-        </button>
-
-        <button
-            type="button"
-            class="plinko-bet-btn"
-            data-plinko-bet="50"
-        >
-            50 ETB
-        </button>
-
+        <button type="button" class="plinko-bet-btn active" data-plinko-bet="10">10 ETB</button>
+        <button type="button" class="plinko-bet-btn" data-plinko-bet="20">20 ETB</button>
+        <button type="button" class="plinko-bet-btn" data-plinko-bet="50">50 ETB</button>
     </div>
-
-    <button
-        id="plinkoDropBtn"
-        class="plinko-drop-btn"
-        type="button"
-    >
-        🎯 DROP BALL
-    </button>
-
-    <div class="plinko-payout-card">
-
-        <div class="plinko-payout-title">
-            🎯 PLINKO MULTIPLIERS
-        </div>
-
-        <div class="plinko-payout-row">
-            <span>Center Jackpot</span>
-            <strong>10x</strong>
-        </div>
-
-        <div class="plinko-payout-row">
-            <span>High Win</span>
-            <strong>5x</strong>
-        </div>
-
-        <div class="plinko-payout-row">
-            <span>Medium Win</span>
-            <strong>2x</strong>
-        </div>
-
-        <div class="plinko-payout-row">
-            <span>Return</span>
-            <strong>1x</strong>
-        </div>
-
-        <div class="plinko-payout-row">
-            <span>Partial Return</span>
-            <strong>0.5x</strong>
-        </div>
-
-    </div>
-
+    <button id="plinkoDropBtn" class="plinko-drop-btn" type="button">🎯 DROP BALL</button>
 </div>
-        
-<!-- =====================================================
-     ROULETTE GAME
-===================================================== -->
 
+<!-- ROULETTE GAME -->
 <div id="rouletteView" class="roulette-view" hidden>
-
-    <!-- HEADER -->
     <div class="roulette-header">
-
-        <button
-            id="rouletteBackBtn"
-            class="roulette-back-btn"
-            type="button"
-        >
-            ←
-        </button>
-
-        <div class="roulette-title">
-            🎡 Roulette
-        </div>
-
-        <div
-            id="rouletteBalance"
-            class="roulette-balance"
-        >
-            0.00 ETB
-        </div>
-
+        <button id="rouletteBackBtn" class="roulette-back-btn" type="button">←</button>
+        <div class="roulette-title">🎡 Roulette</div>
+        <div id="rouletteBalance" class="roulette-balance">0.00 ETB</div>
     </div>
-
-
-    <!-- ROULETTE WHEEL -->
-
     <div class="roulette-machine">
-
-        <div class="roulette-machine-title">
-            EUROPEAN ROULETTE
-        </div>
-
+        <div class="roulette-machine-title">EUROPEAN ROULETTE</div>
         <div class="roulette-wheel-wrap">
-
             <div id="rouletteWheel" class="roulette-wheel">
-
-                <div class="roulette-wheel-center">
-                    <span id="rouletteResultNumber">0</span>
-                </div>
-
+                <div class="roulette-wheel-center"><span id="rouletteResultNumber">0</span></div>
             </div>
-
-            <div class="roulette-pointer">
-                ▼
-            </div>
-
+            <div class="roulette-pointer">▼</div>
         </div>
-
-
-        <div
-            id="rouletteResultText"
-            class="roulette-result-text"
-        >
-            Choose your bet and spin
-        </div>
-
+        <div id="rouletteResultText" class="roulette-result-text">Choose your bet and spin</div>
     </div>
-
-
-    <!-- BET AMOUNT -->
-
-    <div class="roulette-section-title">
-        SELECT BET
-    </div>
-
+    <div class="roulette-section-title">SELECT BET</div>
     <div class="roulette-bet-buttons">
-
-        <button
-            type="button"
-            class="roulette-bet-btn active"
-            data-roulette-bet="10"
-        >
-            10 ETB
-        </button>
-
-        <button
-            type="button"
-            class="roulette-bet-btn"
-            data-roulette-bet="20"
-        >
-            20 ETB
-        </button>
-
-        <button
-            type="button"
-            class="roulette-bet-btn"
-            data-roulette-bet="50"
-        >
-            50 ETB
-        </button>
-
+        <button type="button" class="roulette-bet-btn active" data-roulette-bet="10">10 ETB</button>
+        <button type="button" class="roulette-bet-btn" data-roulette-bet="20">20 ETB</button>
+        <button type="button" class="roulette-bet-btn" data-roulette-bet="50">50 ETB</button>
     </div>
-
-
-    <!-- COLOR BETS -->
-
-    <div class="roulette-section-title">
-        BET ON COLOR
-    </div>
-
+    <div class="roulette-section-title">BET ON COLOR</div>
     <div class="roulette-color-buttons">
-
-        <button
-            type="button"
-            class="roulette-color-btn red"
-            data-roulette-type="red"
-        >
-            🔴 RED
-            <span>2x</span>
-        </button>
-
-        <button
-            type="button"
-            class="roulette-color-btn black"
-            data-roulette-type="black"
-        >
-            ⚫ BLACK
-            <span>2x</span>
-        </button>
-
-        <button
-            type="button"
-            class="roulette-color-btn green"
-            data-roulette-type="green"
-        >
-            🟢 GREEN 0
-            <span>35x</span>
-        </button>
-
+        <button type="button" class="roulette-color-btn red" data-roulette-type="red">🔴 RED <span>2x</span></button>
+        <button type="button" class="roulette-color-btn black" data-roulette-type="black">⚫ BLACK <span>2x</span></button>
+        <button type="button" class="roulette-color-btn green" data-roulette-type="green">🟢 GREEN 0 <span>35x</span></button>
     </div>
-
-
-    <!-- NUMBER BET -->
-
-    <div class="roulette-section-title">
-        BET ON NUMBER
-    </div>
-
-    <div
-        id="rouletteNumberGrid"
-        class="roulette-number-grid"
-    >
-        <!-- Numbers generated by app.js -->
-    </div>
-
-
-    <!-- SPIN -->
-
-    <button
-        id="rouletteSpinBtn"
-        class="roulette-spin-btn"
-        type="button"
-    >
-        🎡 SPIN
-    </button>
-
-
-    <!-- PAYOUT INFO -->
-
-    <div class="roulette-payout-card">
-
-        <div class="roulette-payout-title">
-            🎯 ROULETTE PAYOUTS
-        </div>
-
-        <div class="roulette-payout-row">
-            <span>🔴 Red</span>
-            <strong>2x</strong>
-        </div>
-
-        <div class="roulette-payout-row">
-            <span>⚫ Black</span>
-            <strong>2x</strong>
-        </div>
-
-        <div class="roulette-payout-row">
-            <span>🟢 Zero</span>
-            <strong>35x</strong>
-        </div>
-
-        <div class="roulette-payout-row">
-            <span>🎯 Single Number</span>
-            <strong>35x</strong>
-        </div>
-
-    </div>
-
+    <div class="roulette-section-title">BET ON NUMBER</div>
+    <div id="rouletteNumberGrid" class="roulette-number-grid"></div>
+    <button id="rouletteSpinBtn" class="roulette-spin-btn" type="button">🎡 SPIN</button>
 </div>
-        
-<!-- =====================================================
-     BLACKJACK GAME
-===================================================== -->
 
+<!-- BLACKJACK GAME -->
 <div id="blackjackView" class="blackjack-view" hidden>
-
-    <!-- HEADER -->
     <div class="blackjack-header">
-
-        <button
-            id="blackjackBackBtn"
-            class="blackjack-back-btn"
-            type="button"
-        >
-            ←
-        </button>
-
-        <div class="blackjack-title">
-            🃏 Blackjack
-        </div>
-
-        <div
-            id="blackjackBalance"
-            class="blackjack-balance"
-        >
-            0.00 ETB
-        </div>
-
+        <button id="blackjackBackBtn" class="blackjack-back-btn" type="button">←</button>
+        <div class="blackjack-title">🃏 Blackjack</div>
+        <div id="blackjackBalance" class="blackjack-balance">0.00 ETB</div>
     </div>
-
-
-    <!-- GAME TABLE -->
     <div class="blackjack-table">
-
-        <div class="blackjack-table-title">
-            ♠️ BLACKJACK ♥️
-        </div>
-
-
-        <!-- DEALER -->
+        <div class="blackjack-table-title">♠️ BLACKJACK ♥️</div>
         <div class="blackjack-player-area">
-
-            <div class="blackjack-player-label">
-                DEALER
-            </div>
-
-            <div
-                id="blackjackDealerCards"
-                class="blackjack-cards"
-            >
-                <!-- Dealer cards generated by app.js -->
-            </div>
-
-            <div
-                id="blackjackDealerValue"
-                class="blackjack-card-value"
-            >
-                Value: -
-            </div>
-
+            <div class="blackjack-player-label">DEALER</div>
+            <div id="blackjackDealerCards" class="blackjack-cards"></div>
+            <div id="blackjackDealerValue" class="blackjack-card-value">Value: -</div>
         </div>
-
-
-        <!-- RESULT -->
-        <div
-            id="blackjackResultText"
-            class="blackjack-result-text"
-        >
-            Choose your bet and start the game
-        </div>
-
-
-        <!-- PLAYER -->
+        <div id="blackjackResultText" class="blackjack-result-text">Choose your bet and start the game</div>
         <div class="blackjack-player-area">
-
-            <div class="blackjack-player-label">
-                YOU
-            </div>
-
-            <div
-                id="blackjackPlayerCards"
-                class="blackjack-cards"
-            >
-                <!-- Player cards generated by app.js -->
-            </div>
-
-            <div
-                id="blackjackPlayerValue"
-                class="blackjack-card-value"
-            >
-                Value: -
-            </div>
-
+            <div class="blackjack-player-label">YOU</div>
+            <div id="blackjackPlayerCards" class="blackjack-cards"></div>
+            <div id="blackjackPlayerValue" class="blackjack-card-value">Value: -</div>
         </div>
-
     </div>
-
-
-    <!-- BET AMOUNT -->
-
-    <div class="blackjack-section-title">
-        SELECT BET
-    </div>
-
+    <div class="blackjack-section-title">SELECT BET</div>
     <div class="blackjack-bet-buttons">
-
-        <button
-            type="button"
-            class="blackjack-bet-btn active"
-            data-blackjack-bet="10"
-        >
-            10 ETB
-        </button>
-
-        <button
-            type="button"
-            class="blackjack-bet-btn"
-            data-blackjack-bet="20"
-        >
-            20 ETB
-        </button>
-
-        <button
-            type="button"
-            class="blackjack-bet-btn"
-            data-blackjack-bet="50"
-        >
-            50 ETB
-        </button>
-
+        <button type="button" class="blackjack-bet-btn active" data-blackjack-bet="10">10 ETB</button>
+        <button type="button" class="blackjack-bet-btn" data-blackjack-bet="20">20 ETB</button>
+        <button type="button" class="blackjack-bet-btn" data-blackjack-bet="50">50 ETB</button>
     </div>
-
-
-    <!-- GAME ACTIONS -->
-
     <div class="blackjack-actions">
-
-        <button
-            id="blackjackStartBtn"
-            class="blackjack-start-btn"
-            type="button"
-        >
-            🃏 START GAME
-        </button>
-
-        <button
-            id="blackjackHitBtn"
-            class="blackjack-hit-btn"
-            type="button"
-            disabled
-        >
-            👊 HIT
-        </button>
-
-        <button
-            id="blackjackStandBtn"
-            class="blackjack-stand-btn"
-            type="button"
-            disabled
-        >
-            ✋ STAND
-        </button>
-
-        <button
-            id="blackjackNewBtn"
-            class="blackjack-new-btn"
-            type="button"
-            hidden
-        >
-            🔄 NEW GAME
-        </button>
-
+        <button id="blackjackStartBtn" class="blackjack-start-btn" type="button">🃏 START GAME</button>
+        <button id="blackjackHitBtn" class="blackjack-hit-btn" type="button" disabled>👊 HIT</button>
+        <button id="blackjackStandBtn" class="blackjack-stand-btn" type="button" disabled>✋ STAND</button>
+        <button id="blackjackNewBtn" class="blackjack-new-btn" type="button" hidden>🔄 NEW GAME</button>
     </div>
+</div>
 
-
-    <!-- PAYOUT INFO -->
-
-    <div class="blackjack-payout-card">
-
-        <div class="blackjack-payout-title">
-            🎯 BLACKJACK PAYOUTS
-        </div>
-
-        <div class="blackjack-payout-row">
-            <span>🃏 Blackjack</span>
-            <strong>2.5x</strong>
-        </div>
-
-        <div class="blackjack-payout-row">
-            <span>🏆 Win</span>
-            <strong>2x</strong>
-        </div>
-
-        <div class="blackjack-payout-row">
-            <span>🤝 Push</span>
-            <strong>1x</strong>
-        </div>
-
-        <div class="blackjack-payout-row">
-            <span>💥 Bust</span>
-            <strong>0x</strong>
-        </div>
-
+<!-- MINES GAME -->
+<div id="minesView" class="mines-view" hidden>
+    <div class="mines-header">
+        <button id="minesBackBtn" class="mines-back-btn" type="button">←</button>
+        <div class="mines-title">💣 Mines</div>
+        <div id="minesBalance" class="mines-balance">0.00 ETB</div>
     </div>
-
+    <div class="mines-table">
+        <div class="mines-table-title">💣 MINES 💎</div>
+        <div id="minesResultText" class="mines-result-text">Choose your bet and start the game</div>
+        <div id="minesBoard" class="mines-board"></div>
+        <div id="minesMultiplier" class="mines-multiplier">1.00x</div>
+    </div>
+    <div class="mines-section-title">SELECT BET</div>
+    <div class="mines-bet-buttons">
+        <button type="button" class="mines-bet-btn active" data-mines-bet="10">10 ETB</button>
+        <button type="button" class="mines-bet-btn" data-mines-bet="20">20 ETB</button>
+        <button type="button" class="mines-bet-btn" data-mines-bet="50">50 ETB</button>
+    </div>
+    <div class="mines-section-title">SELECT MINES</div>
+    <div class="mines-count-buttons">
+        <button type="button" class="mines-count-btn active" data-mines-count="3">💣 3</button>
+        <button type="button" class="mines-count-btn" data-mines-count="5">💣 5</button>
+        <button type="button" class="mines-count-btn" data-mines-count="10">💣 10</button>
+    </div>
+    <div class="mines-actions">
+        <button id="minesStartBtn" class="mines-start-btn" type="button">💣 START GAME</button>
+        <button id="minesCashoutBtn" class="mines-cashout-btn" type="button" disabled>💰 CASH OUT</button>
+        <button id="minesNewBtn" class="mines-new-btn" type="button" hidden>🔄 NEW GAME</button>
+    </div>
 </div>
         
 <!-- =====================================================
-     MINES GAME
+     1. CRASH / AVIATOR GAME VIEW
 ===================================================== -->
-
-<div id="minesView" class="mines-view" hidden>
-
-    <!-- HEADER -->
-    <div class="mines-header">
-
-        <button
-            id="minesBackBtn"
-            class="mines-back-btn"
-            type="button"
-        >
-            ←
-        </button>
-
-        <div class="mines-title">
-            💣 Mines
-        </div>
-
-        <div
-            id="minesBalance"
-            class="mines-balance"
-        >
-            0.00 ETB
-        </div>
-
+<div id="crashView" class="crash-view" hidden>
+    <div class="crash-header">
+        <button id="crashBackBtn" class="crash-back-btn" type="button">←</button>
+        <div class="crash-title">🚀 Crash / Aviator</div>
+        <div id="crashBalance" class="crash-balance">0.00 ETB</div>
     </div>
 
-
-    <!-- GAME TABLE -->
-    <div class="mines-table">
-
-        <div class="mines-table-title">
-            💣 MINES 💎
+    <div class="crash-display-area">
+        <div class="crash-canvas-container">
+            <div id="crashMultiplierText" class="crash-multiplier">1.00x</div>
+            <div id="crashStatusText" class="crash-status">Waiting for Next Round...</div>
         </div>
-
-        <div
-            id="minesResultText"
-            class="mines-result-text"
-        >
-            Choose your bet and start the game
-        </div>
-
-        <!-- MINES BOARD -->
-        <div
-            id="minesBoard"
-            class="mines-board"
-        >
-            <!-- 25 tiles generated by app.js -->
-        </div>
-
-        <!-- MULTIPLIER -->
-        <div
-            id="minesMultiplier"
-            class="mines-multiplier"
-        >
-            1.00x
-        </div>
-
     </div>
 
-
-    <!-- BET AMOUNT -->
-    <div class="mines-section-title">
-        SELECT BET
+    <div class="crash-section-title">SELECT BET</div>
+    <div class="crash-bet-buttons">
+        <button type="button" class="crash-bet-btn active" data-crash-bet="10">10 ETB</button>
+        <button type="button" class="crash-bet-btn" data-crash-bet="20">20 ETB</button>
+        <button type="button" class="crash-bet-btn" data-crash-bet="50">50 ETB</button>
     </div>
 
-    <div class="mines-bet-buttons">
-
-        <button
-            type="button"
-            class="mines-bet-btn active"
-            data-mines-bet="10"
-        >
-            10 ETB
-        </button>
-
-        <button
-            type="button"
-            class="mines-bet-btn"
-            data-mines-bet="20"
-        >
-            20 ETB
-        </button>
-
-        <button
-            type="button"
-            class="mines-bet-btn"
-            data-mines-bet="50"
-        >
-            50 ETB
-        </button>
-
+    <div class="crash-actions">
+        <button id="crashStartBtn" class="crash-start-btn" type="button">🚀 BET & FLY</button>
+        <button id="crashCashoutBtn" class="crash-cashout-btn" type="button" disabled>💰 CASH OUT</button>
     </div>
-
-
-    <!-- MINE COUNT -->
-    <div class="mines-section-title">
-        SELECT MINES
-    </div>
-
-    <div class="mines-count-buttons">
-
-        <button
-            type="button"
-            class="mines-count-btn active"
-            data-mines-count="3"
-        >
-            💣 3
-        </button>
-
-        <button
-            type="button"
-            class="mines-count-btn"
-            data-mines-count="5"
-        >
-            💣 5
-        </button>
-
-        <button
-            type="button"
-            class="mines-count-btn"
-            data-mines-count="10"
-        >
-            💣 10
-        </button>
-
-    </div>
-
-
-    <!-- GAME ACTIONS -->
-    <div class="mines-actions">
-
-        <button
-            id="minesStartBtn"
-            class="mines-start-btn"
-            type="button"
-        >
-            💣 START GAME
-        </button>
-
-        <button
-            id="minesCashoutBtn"
-            class="mines-cashout-btn"
-            type="button"
-            disabled
-        >
-            💰 CASH OUT
-        </button>
-
-        <button
-            id="minesNewBtn"
-            class="mines-new-btn"
-            type="button"
-            hidden
-        >
-            🔄 NEW GAME
-        </button>
-
-    </div>
-
-
-    <!-- PAYOUT INFO -->
-    <div class="mines-payout-card">
-
-        <div class="mines-payout-title">
-            🎯 MINES
-        </div>
-
-        <div class="mines-payout-row">
-            <span>💎 Safe Tile</span>
-            <strong>Multiplier ↑</strong>
-        </div>
-
-        <div class="mines-payout-row">
-            <span>💣 Mine</span>
-            <strong>0x</strong>
-        </div>
-
-        <div class="mines-payout-row">
-            <span>💰 Cash Out</span>
-            <strong>Collect Win</strong>
-        </div>
-
-    </div>
-
 </div>
-        
+
+<!-- =====================================================
+     2. KENO GAME VIEW
+===================================================== -->
+<div id="kenoView" class="keno-view" hidden>
+    <div class="keno-header">
+        <button id="kenoBackBtn" class="keno-back-btn" type="button">←</button>
+        <div class="keno-title">🔢 Keno</div>
+        <div id="kenoBalance" class="keno-balance">0.00 ETB</div>
+    </div>
+
+    <div class="keno-container">
+        <div class="keno-info-bar">
+            <span>Selected: <strong id="kenoSelectedCount">0</strong> / 10</span>
+            <button id="kenoAutoPickBtn" type="button" class="keno-small-btn">🎲 Auto Pick</button>
+            <button id="kenoClearBtn" type="button" class="keno-small-btn">❌ Clear</button>
+        </div>
+
+        <div id="kenoGrid" class="keno-grid">
+            <!-- 1 to 80 Numbers generated by JS -->
+        </div>
+
+        <div id="kenoResultText" class="keno-result-text">Pick 1 to 10 numbers to start</div>
+    </div>
+
+    <div class="keno-section-title">SELECT BET</div>
+    <div class="keno-bet-buttons">
+        <button type="button" class="keno-bet-btn active" data-keno-bet="10">10 ETB</button>
+        <button type="button" class="keno-bet-btn" data-keno-bet="20">20 ETB</button>
+        <button type="button" class="keno-bet-btn" data-keno-bet="50">50 ETB</button>
+    </div>
+
+    <button id="kenoPlayBtn" class="keno-play-btn" type="button">🔢 PLAY KENO</button>
+</div>
+
+<!-- =====================================================
+     3. FISHING GAME VIEW
+===================================================== -->
+<div id="fishingView" class="fishing-view" hidden>
+    <div class="fishing-header">
+        <button id="fishingBackBtn" class="fishing-back-btn" type="button">←</button>
+        <div class="fishing-title">🎣 Fishing</div>
+        <div id="fishingBalance" class="fishing-balance">0.00 ETB</div>
+    </div>
+
+    <div class="fishing-pond-area">
+        <div id="fishingPond" class="fishing-pond">
+            <div id="fishingResultMsg" class="fishing-result-msg">Cast your rod to catch fish!</div>
+            <div class="fish-item fish-1">🐟</div>
+            <div class="fish-item fish-2">🐠</div>
+            <div class="fish-item fish-3">🐙</div>
+            <div class="fish-item fish-4">🦈</div>
+        </div>
+    </div>
+
+    <div class="fishing-section-title">SELECT CANNON / BET</div>
+    <div class="fishing-bet-buttons">
+        <button type="button" class="fishing-bet-btn active" data-fishing-bet="10">10 ETB</button>
+        <button type="button" class="fishing-bet-btn" data-fishing-bet="20">20 ETB</button>
+        <button type="button" class="fishing-bet-btn" data-fishing-bet="50">50 ETB</button>
+    </div>
+
+    <button id="fishingCastBtn" class="fishing-cast-btn" type="button">🎣 CAST ROD / SHOOT</button>
+</div>
+
+<!-- =====================================================
+     4. CHICKEN ROAD GAME VIEW
+===================================================== -->
+<div id="chickenView" class="chicken-view" hidden>
+    <div class="chicken-header">
+        <button id="chickenBackBtn" class="chicken-back-btn" type="button">←</button>
+        <div class="chicken-title">🐔 Chicken Road</div>
+        <div id="chickenBalance" class="chicken-balance">0.00 ETB</div>
+    </div>
+
+    <div class="chicken-road-container">
+        <div id="chickenStatusText" class="chicken-status-text">Cross the steps without roasting!</div>
+
+        <div id="chickenLanes" class="chicken-lanes">
+            <!-- 5 to 8 difficulty rows generated by JS -->
+        </div>
+
+        <div id="chickenMultiplierText" class="chicken-multiplier">Multiplier: 1.00x</div>
+    </div>
+
+    <div class="chicken-section-title">SELECT BET</div>
+    <div class="chicken-bet-buttons">
+        <button type="button" class="chicken-bet-btn active" data-chicken-bet="10">10 ETB</button>
+        <button type="button" class="chicken-bet-btn" data-chicken-bet="20">20 ETB</button>
+        <button type="button" class="chicken-bet-btn" data-chicken-bet="50">50 ETB</button>
+    </div>
+
+    <div class="chicken-actions">
+        <button id="chickenStartBtn" class="chicken-start-btn" type="button">🐔 START WALK</button>
+        <button id="chickenCashoutBtn" class="chicken-cashout-btn" type="button" disabled>💰 CASH OUT</button>
+    </div>
+</div>
+
         <!-- PROFILE VIEW -->
         <div id="profileView" class="page-view" hidden>
             <div class="profile-dashboard">
@@ -1310,9 +714,9 @@
                 <span>🏦 CBE Bank:</span>
                 <span class="acc-num">1000406099141 <span class="copy-icon">📋</span></span>
             </div>
-            <div class="account-item" data-copy="214157098">
+            <div class="account-item" data-copy="+251910032722">
                 <span>🦅 Abyssinia:</span>
-                <span class="acc-num">214157098 <span class="copy-icon">📋</span></span>
+                <span class="acc-num">+251910032722 <span class="copy-icon">📋</span></span>
             </div>
             <div class="account-item" data-copy="013201588359000">
                 <span>🏛️ Awash Bank:</span>
@@ -1400,7 +804,7 @@
 </div>
 
 <!-- Main JavaScript File -->
-<script src="/static/app.js?v=3.3.0"></script>
+<script src="/static/app.js?v=3.4.0"></script>
 <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
 <script>eruda.init();</script>
 
