@@ -213,24 +213,6 @@ def get_user(
     )
 
 
-def get_active_game(
-    db: Session,
-    user_id: int
-):
-
-    return (
-        db.query(MinesGame)
-        .filter(
-            MinesGame.user_id == user_id,
-            MinesGame.status == "playing"
-        )
-        .order_by(
-            MinesGame.id.desc()
-        )
-        .first()
-    )
-
-
 def load_json_list(
     value: str
 ):
@@ -363,24 +345,22 @@ def start_mines(
 
 
     # -----------------------------------------------------
-    # CHECK ACTIVE GAME
+    # AUTO-CLOSE PREVIOUS UNFINISHED GAMES
     # -----------------------------------------------------
 
-    active_game = get_active_game(
-        db,
-        user.id
+    old_games = (
+        db.query(MinesGame)
+        .filter(
+            MinesGame.user_id == user.id,
+            MinesGame.status == "playing"
+        )
+        .all()
     )
 
-
-    if active_game:
-
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=(
-                "You already have an active "
-                "Mines game."
-            )
-        )
+    for old_game in old_games:
+        old_game.status = "finished"
+        old_game.result = "abandoned"
+        old_game.completed_at = datetime.now(timezone.utc)
 
 
     # -----------------------------------------------------
