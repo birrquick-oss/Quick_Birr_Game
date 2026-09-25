@@ -2889,6 +2889,12 @@ button {
 
 }
 
+/* በ Home Page/Grid ላይ ያለው Blackjack ካርድ ከሌሎቹ ጋር እኩል እንዲሆን */
+.game-card.blackjack-card {
+    width: 100% !important;
+    height: auto !important;
+}
+
 /* =========================================================
    💣 MINES GAME
 ========================================================= */
