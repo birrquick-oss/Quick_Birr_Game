@@ -116,6 +116,26 @@ const minesView = document.getElementById("minesView");
 const depositModal = document.getElementById("depositModal");
 const withdrawModal = document.getElementById("withdrawModal");
 
+// 🚀 New Game Elements
+const crashView = document.getElementById("crashView");
+const kenoView = document.getElementById("kenoView");
+const fishingView = document.getElementById("fishingView");
+const chickenView = document.getElementById("chickenView");
+
+// 🚀 New Game States
+let selectedCrashBet = 10;
+let crashPlaying = false;
+
+let selectedKenoBet = 10;
+let selectedKenoNumbers = [];
+let kenoPlaying = false;
+
+let selectedFishingBet = 10;
+let fishingPlaying = false;
+
+let selectedChickenBet = 10;
+let chickenPlaying = false;
+
 /* =========================
    HELPER FUNCTIONS
 ========================= */
@@ -243,17 +263,43 @@ document.querySelectorAll(".game-card").forEach(card => {
             updateBlackjackBalance();
             return;
         }
-       
+
         if (game === "mines") {
             showPage("mines");
             updateMinesBalance();
             return;
         }
 
+        // 🚀 አዳዲስ 4 ጨዋታዎች
+        if (game === "crash") {
+            showPage("crash");
+            updateCrashBalance();
+            return;
+        }
+
+        if (game === "keno") {
+            showPage("keno");
+            updateKenoBalance();
+            if (typeof initKenoGrid === "function") initKenoGrid();
+            return;
+        }
+
+        if (game === "fishing") {
+            showPage("fishing");
+            updateFishingBalance();
+            return;
+        }
+
+        if (game === "chicken") {
+            showPage("chicken");
+            updateChickenBalance();
+            return;
+        }
 
         const names = {
             slots: "Lucky Slots", plinko: "Plinko", roulette: "European Roulette",
-            blackjack: "Blackjack", mines: "Mines"
+            blackjack: "Blackjack", mines: "Mines", crash: "Crash / Aviator",
+            keno: "Keno", fishing: "Fishing", chicken: "Chicken Road"
         };
         showMessage(names[game] || "Game", "ይህ ጨዋታ በቅርብ ቀን ይለቀቃል!", "🎮");
     });
@@ -1092,6 +1138,12 @@ function hideAllViews() {
     if (rouletteView) rouletteView.hidden = true;
     if (blackjackView) blackjackView.hidden = true;
     if (minesView) minesView.hidden = true;
+
+    // 🚀 አዳዲስ Views
+    if (crashView) crashView.hidden = true;
+    if (kenoView) kenoView.hidden = true;
+    if (fishingView) fishingView.hidden = true;
+    if (chickenView) chickenView.hidden = true;
 }
 
 function showPage(pageName) {
@@ -1126,6 +1178,18 @@ function showPage(pageName) {
     } else if (pageName === "mines") {
         if (minesView) minesView.hidden = false;
         if (typeof updateMinesBalance === "function") updateMinesBalance();
+    } else if (pageName === "crash") {
+        if (crashView) crashView.hidden = false;
+        if (typeof updateCrashBalance === "function") updateCrashBalance();
+    } else if (pageName === "keno") {
+        if (kenoView) kenoView.hidden = false;
+        if (typeof updateKenoBalance === "function") updateKenoBalance();
+    } else if (pageName === "fishing") {
+        if (fishingView) fishingView.hidden = false;
+        if (typeof updateFishingBalance === "function") updateFishingBalance();
+    } else if (pageName === "chicken") {
+        if (chickenView) chickenView.hidden = false;
+        if (typeof updateChickenBalance === "function") updateChickenBalance();
     } else {
         if (homeView) homeView.hidden = false;
     }
@@ -3969,3 +4033,331 @@ function showMinesError(message) {
 
     }
 }
+
+/* =========================================================
+   4 NEW GAMES LOGIC (Crash, Keno, Fishing, Chicken)
+========================================================= */
+
+// Balance Helper Functions for New Games
+function updateCrashBalance() {
+    const el = document.getElementById("crashBalance");
+    if (el) el.innerText = `${userData.balance} ETB`;
+}
+function updateKenoBalance() {
+    const el = document.getElementById("kenoBalance");
+    if (el) el.innerText = `${userData.balance} ETB`;
+}
+function updateFishingBalance() {
+    const el = document.getElementById("fishingBalance");
+    if (el) el.innerText = `${userData.balance} ETB`;
+}
+function updateChickenBalance() {
+    const el = document.getElementById("chickenBalance");
+    if (el) el.innerText = `${userData.balance} ETB`;
+}
+
+// ------------------- 1. CRASH / AVIATOR -------------------
+let crashTimer = null;
+let currentCrashMultiplier = 1.00;
+let crashPoint = 1.00;
+
+document.querySelectorAll('.crash-bet-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+        document.querySelectorAll('.crash-bet-btn').forEach(b => b.classList.remove('active'));
+        e.target.classList.add('active');
+        selectedCrashBet = parseFloat(e.target.getAttribute('data-crash-bet'));
+    });
+});
+
+document.getElementById('crashBackBtn')?.addEventListener('click', () => showPage('home'));
+
+document.getElementById('crashStartBtn')?.addEventListener('click', () => {
+    if (parseFloat(userData.balance) < selectedCrashBet) {
+        showMessage("ስህተት", "በቂ ባላንስ የለዎትም!", "⚠️");
+        return;
+    }
+
+    userData.balance = (parseFloat(userData.balance) - selectedCrashBet).toFixed(2);
+    if (typeof updateGlobalBalances === "function") updateGlobalBalances();
+    updateCrashBalance();
+
+    crashPlaying = true;
+    currentCrashMultiplier = 1.00;
+    crashPoint = (Math.random() * 4 + 1.2).toFixed(2);
+
+    document.getElementById('crashStartBtn').disabled = true;
+    document.getElementById('crashCashoutBtn').disabled = false;
+    document.getElementById('crashStatusText').innerText = "Fly Rocket Fly! 🚀";
+
+    crashTimer = setInterval(() => {
+        currentCrashMultiplier += 0.05;
+        document.getElementById('crashMultiplierText').innerText = currentCrashMultiplier.toFixed(2) + "x";
+
+        if (currentCrashMultiplier >= crashPoint) {
+            clearInterval(crashTimer);
+            crashPlaying = false;
+            document.getElementById('crashMultiplierText').innerText = "💥 CRASHED!";
+            document.getElementById('crashStatusText').innerText = `Crashed at ${crashPoint}x`;
+            document.getElementById('crashStartBtn').disabled = false;
+            document.getElementById('crashCashoutBtn').disabled = true;
+        }
+    }, 100);
+});
+
+document.getElementById('crashCashoutBtn')?.addEventListener('click', () => {
+    if (!crashPlaying) return;
+
+    clearInterval(crashTimer);
+    crashPlaying = false;
+
+    let winAmount = selectedCrashBet * currentCrashMultiplier;
+    userData.balance = (parseFloat(userData.balance) + winAmount).toFixed(2);
+    if (typeof updateGlobalBalances === "function") updateGlobalBalances();
+    updateCrashBalance();
+
+    document.getElementById('crashStatusText').innerText = `🎉 CASHED OUT! Won ${winAmount.toFixed(2)} ETB`;
+    document.getElementById('crashStartBtn').disabled = false;
+    document.getElementById('crashCashoutBtn').disabled = true;
+});
+
+
+// ------------------- 2. KENO GAME -------------------
+function initKenoGrid() {
+    const grid = document.getElementById('kenoGrid');
+    if (!grid) return;
+    grid.innerHTML = '';
+    selectedKenoNumbers = [];
+    document.getElementById('kenoSelectedCount').innerText = 0;
+
+    for (let i = 1; i <= 80; i++) {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'keno-num-btn';
+        btn.innerText = i;
+        btn.setAttribute('data-num', i);
+        
+        btn.addEventListener('click', () => {
+            if (kenoPlaying) return;
+            const idx = selectedKenoNumbers.indexOf(i);
+            if (idx > -1) {
+                selectedKenoNumbers.splice(idx, 1);
+                btn.classList.remove('selected');
+            } else {
+                if (selectedKenoNumbers.length >= 10) {
+                    showMessage("ማሳሰቢያ", "ከ 10 በላይ ቁጥሮችን መምረጥ አይችሉም!", "ℹ️");
+                    return;
+                }
+                selectedKenoNumbers.push(i);
+                btn.classList.add('selected');
+            }
+            document.getElementById('kenoSelectedCount').innerText = selectedKenoNumbers.length;
+        });
+        grid.appendChild(btn);
+    }
+}
+
+document.querySelectorAll('.keno-bet-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+        document.querySelectorAll('.keno-bet-btn').forEach(b => b.classList.remove('active'));
+        e.target.classList.add('active');
+        selectedKenoBet = parseFloat(e.target.getAttribute('data-keno-bet'));
+    });
+});
+
+document.getElementById('kenoBackBtn')?.addEventListener('click', () => showPage('home'));
+
+document.getElementById('kenoAutoPickBtn')?.addEventListener('click', () => {
+    if (kenoPlaying) return;
+    initKenoGrid();
+    while (selectedKenoNumbers.length < 5) {
+        let rand = Math.floor(Math.random() * 80) + 1;
+        if (!selectedKenoNumbers.includes(rand)) {
+            selectedKenoNumbers.push(rand);
+        }
+    }
+    document.querySelectorAll('.keno-num-btn').forEach(btn => {
+        let num = parseInt(btn.getAttribute('data-num'));
+        if (selectedKenoNumbers.includes(num)) btn.classList.add('selected');
+    });
+    document.getElementById('kenoSelectedCount').innerText = selectedKenoNumbers.length;
+});
+
+document.getElementById('kenoClearBtn')?.addEventListener('click', () => {
+    if (!kenoPlaying) initKenoGrid();
+});
+
+document.getElementById('kenoPlayBtn')?.addEventListener('click', () => {
+    if (selectedKenoNumbers.length === 0) {
+        showMessage("ስህተት", "እባክዎን ቢያንስ 1 ቁጥር ይምረጡ!", "⚠️");
+        return;
+    }
+    if (parseFloat(userData.balance) < selectedKenoBet) {
+        showMessage("ስህተት", "በቂ ባላንስ የለዎትም!", "⚠️");
+        return;
+    }
+
+    userData.balance = (parseFloat(userData.balance) - selectedKenoBet).toFixed(2);
+    if (typeof updateGlobalBalances === "function") updateGlobalBalances();
+    updateKenoBalance();
+
+    kenoPlaying = true;
+    let drawn = [];
+    while (drawn.length < 20) {
+        let rand = Math.floor(Math.random() * 80) + 1;
+        if (!drawn.includes(rand)) drawn.push(rand);
+    }
+
+    let hits = 0;
+    document.querySelectorAll('.keno-num-btn').forEach(btn => {
+        let num = parseInt(btn.getAttribute('data-num'));
+        if (drawn.includes(num)) {
+            if (selectedKenoNumbers.includes(num)) {
+                btn.classList.add('hit');
+                hits++;
+            }
+        }
+    });
+
+    let winMult = hits > 0 ? hits * 0.7 : 0;
+    let winAmount = selectedKenoBet * winMult;
+
+    if (winAmount > 0) {
+        userData.balance = (parseFloat(userData.balance) + winAmount).toFixed(2);
+        if (typeof updateGlobalBalances === "function") updateGlobalBalances();
+        updateKenoBalance();
+        document.getElementById('kenoResultText').innerText = `🎉 ${hits} ቁጥሮች ገጥመዋል! ${winAmount.toFixed(2)} ETB አሸንፈዋል!`;
+    } else {
+        document.getElementById('kenoResultText').innerText = `😞 ${hits} ቁጥሮች ገጥመዋል። እንደገና ይሞክሩ!`;
+    }
+
+    kenoPlaying = false;
+});
+
+
+// ------------------- 3. FISHING GAME -------------------
+document.querySelectorAll('.fishing-bet-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+        document.querySelectorAll('.fishing-bet-btn').forEach(b => b.classList.remove('active'));
+        e.target.classList.add('active');
+        selectedFishingBet = parseFloat(e.target.getAttribute('data-fishing-bet'));
+    });
+});
+
+document.getElementById('fishingBackBtn')?.addEventListener('click', () => showPage('home'));
+
+document.getElementById('fishingCastBtn')?.addEventListener('click', () => {
+    if (parseFloat(userData.balance) < selectedFishingBet) {
+        showMessage("ስህተት", "በቂ ባላንስ የለዎትም!", "⚠️");
+        return;
+    }
+
+    userData.balance = (parseFloat(userData.balance) - selectedFishingBet).toFixed(2);
+    if (typeof updateGlobalBalances === "function") updateGlobalBalances();
+    updateFishingBalance();
+
+    const resultMsg = document.getElementById('fishingResultMsg');
+    resultMsg.innerText = "🎣 Casting Fishing Rod...";
+
+    setTimeout(() => {
+        let chance = Math.random();
+        if (chance > 0.4) {
+            let mult = (Math.random() * 2 + 1.1).toFixed(2);
+            let winAmount = selectedFishingBet * mult;
+            userData.balance = (parseFloat(userData.balance) + winAmount).toFixed(2);
+            if (typeof updateGlobalBalances === "function") updateGlobalBalances();
+            updateFishingBalance();
+            resultMsg.innerText = `🐟 Catch! You won ${winAmount.toFixed(2)} ETB (${mult}x)!`;
+        } else {
+            resultMsg.innerText = "🌊 The fish escaped! Try again.";
+        }
+    }, 1200);
+});
+
+
+// ------------------- 4. CHICKEN ROAD -------------------
+let chickenStep = 0;
+let chickenMult = 1.00;
+
+document.querySelectorAll('.chicken-bet-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+        document.querySelectorAll('.chicken-bet-btn').forEach(b => b.classList.remove('active'));
+        e.target.classList.add('active');
+        selectedChickenBet = parseFloat(e.target.getAttribute('data-chicken-bet'));
+    });
+});
+
+document.getElementById('chickenBackBtn')?.addEventListener('click', () => showPage('home'));
+
+document.getElementById('chickenStartBtn')?.addEventListener('click', () => {
+    if (parseFloat(userData.balance) < selectedChickenBet) {
+        showMessage("ስህተት", "በቂ ባላንስ የለዎትም!", "⚠️");
+        return;
+    }
+
+    userData.balance = (parseFloat(userData.balance) - selectedChickenBet).toFixed(2);
+    if (typeof updateGlobalBalances === "function") updateGlobalBalances();
+    updateChickenBalance();
+
+    chickenPlaying = true;
+    chickenStep = 0;
+    chickenMult = 1.00;
+
+    document.getElementById('chickenStartBtn').disabled = true;
+    document.getElementById('chickenCashoutBtn').disabled = false;
+    document.getElementById('chickenStatusText').innerText = "Tap to cross the road!";
+    document.getElementById('chickenMultiplierText').innerText = "Multiplier: 1.00x";
+
+    renderChickenLanes();
+});
+
+function renderChickenLanes() {
+    const container = document.getElementById('chickenLanes');
+    if (!container) return;
+    container.innerHTML = '';
+
+    for (let i = 1; i <= 5; i++) {
+        const row = document.createElement('div');
+        row.className = 'chicken-lane-row';
+
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'chicken-step-btn';
+        btn.innerText = `Step ${i} 🐔`;
+        btn.addEventListener('click', () => makeChickenStep(i, btn));
+
+        row.appendChild(btn);
+        container.appendChild(row);
+    }
+}
+
+function makeChickenStep(step, btn) {
+    if (!chickenPlaying) return;
+
+    let safe = Math.random() > 0.3;
+    if (safe) {
+        btn.classList.add('safe');
+        chickenMult += 0.4;
+        document.getElementById('chickenMultiplierText').innerText = `Multiplier: ${chickenMult.toFixed(2)}x`;
+        document.getElementById('chickenStatusText').innerText = `Safe Step! (${chickenMult.toFixed(2)}x)`;
+    } else {
+        btn.classList.add('roasted');
+        chickenPlaying = false;
+        document.getElementById('chickenStatusText').innerText = "💥 ROASTED! You lost.";
+        document.getElementById('chickenStartBtn').disabled = false;
+        document.getElementById('chickenCashoutBtn').disabled = true;
+    }
+}
+
+document.getElementById('chickenCashoutBtn')?.addEventListener('click', () => {
+    if (!chickenPlaying) return;
+
+    chickenPlaying = false;
+    let winAmount = selectedChickenBet * chickenMult;
+    userData.balance = (parseFloat(userData.balance) + winAmount).toFixed(2);
+    if (typeof updateGlobalBalances === "function") updateGlobalBalances();
+    updateChickenBalance();
+
+    document.getElementById('chickenStatusText').innerText = `🎉 CASHED OUT! Won ${winAmount.toFixed(2)} ETB`;
+    document.getElementById('chickenStartBtn').disabled = false;
+    document.getElementById('chickenCashoutBtn').disabled = true;
+});
