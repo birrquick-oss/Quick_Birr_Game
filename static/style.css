@@ -3303,17 +3303,32 @@ button {
     color: #2ed573;
 }
 
-.crash-display-area {
-    background: #161d2b;
-    border: 2px solid #232d42;
-    border-radius: 16px;
-    height: 220px;
+.crash-display-box {
     display: flex;
+    flex-direction: column;
     justify-content: center;
     align-items: center;
-    margin-bottom: 20px;
+    background: #121927;
+    border-radius: 16px;
     position: relative;
-    overflow: hidden;
+}
+
+.rocket-icon {
+    font-size: 50px;
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+    transition: all 0.1s linear;
+}
+
+/* ሮኬቱ አየር ላይ ሲሆን እንዲንቀጠቀጥ (Fly Animation) */
+.rocket-icon.flying {
+    animation: shakeRocket 0.2s infinite alternate;
+}
+
+@keyframes shakeRocket {
+    0% { transform: translate(0, 0) rotate(0deg); }
+    100% { transform: translate(2px, -2px) rotate(3deg); }
 }
 
 .crash-canvas-container {
