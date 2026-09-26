@@ -4041,19 +4041,19 @@ function showMinesError(message) {
 // Balance Helper Functions for New Games
 function updateCrashBalance() {
     const el = document.getElementById("crashBalance");
-    if (el) el.innerText = `${userData.balance} ETB`;
+    if (el) el.innerText = `${parseFloat(userData.balance || 0).toFixed(2)} ETB`;
 }
 function updateKenoBalance() {
     const el = document.getElementById("kenoBalance");
-    if (el) el.innerText = `${userData.balance} ETB`;
+    if (el) el.innerText = `${parseFloat(userData.balance || 0).toFixed(2)} ETB`;
 }
 function updateFishingBalance() {
     const el = document.getElementById("fishingBalance");
-    if (el) el.innerText = `${userData.balance} ETB`;
+    if (el) el.innerText = `${parseFloat(userData.balance || 0).toFixed(2)} ETB`;
 }
 function updateChickenBalance() {
     const el = document.getElementById("chickenBalance");
-    if (el) el.innerText = `${userData.balance} ETB`;
+    if (el) el.innerText = `${parseFloat(userData.balance || 0).toFixed(2)} ETB`;
 }
 
 // ------------------- 1. CRASH / AVIATOR -------------------
@@ -4072,12 +4072,13 @@ document.querySelectorAll('.crash-bet-btn').forEach(btn => {
 document.getElementById('crashBackBtn')?.addEventListener('click', () => showPage('home'));
 
 document.getElementById('crashStartBtn')?.addEventListener('click', () => {
-    if (parseFloat(userData.balance) < selectedCrashBet) {
+    if (parseFloat(userData.balance || 0) < selectedCrashBet) {
         showMessage("ስህተት", "በቂ ባላንስ የለዎትም!", "⚠️");
         return;
     }
 
-    userData.balance = (parseFloat(userData.balance) - selectedCrashBet).toFixed(2);
+    userData.balance = (parseFloat(userData.balance || 0) - selectedCrashBet).toFixed(2);
+    if (typeof updateBalanceUI === "function") updateBalanceUI(userData.balance);
     if (typeof updateGlobalBalances === "function") updateGlobalBalances();
     updateCrashBalance();
 
@@ -4089,13 +4090,41 @@ document.getElementById('crashStartBtn')?.addEventListener('click', () => {
     document.getElementById('crashCashoutBtn').disabled = false;
     document.getElementById('crashStatusText').innerText = "Fly Rocket Fly! 🚀";
 
+    // --- Socho'iinsa Rokeetii (Rocket Animation Logic) ---
+    const rocket = document.getElementById('rocketIcon');
+    if (rocket) {
+        rocket.innerText = "🚀";
+        rocket.classList.add('flying');
+        rocket.style.bottom = '20px';
+        rocket.style.left = '20px';
+        rocket.style.display = 'block';
+    }
+
+    let leftPos = 20;
+    let bottomPos = 20;
+
     crashTimer = setInterval(() => {
         currentCrashMultiplier += 0.05;
         document.getElementById('crashMultiplierText').innerText = currentCrashMultiplier.toFixed(2) + "x";
 
+        // Rokeetiin olii fi mirgatti akka balali'u gochuu
+        if (rocket && leftPos < 70 && bottomPos < 70) {
+            leftPos += 0.5;
+            bottomPos += 0.5;
+            rocket.style.left = leftPos + '%';
+            rocket.style.bottom = bottomPos + '%';
+        }
+
+        // Dhoohinsa (Crashed)
         if (currentCrashMultiplier >= crashPoint) {
             clearInterval(crashTimer);
             crashPlaying = false;
+
+            if (rocket) {
+                rocket.classList.remove('flying');
+                rocket.innerText = "💥"; // Mallattoo dhoohinsaa
+            }
+
             document.getElementById('crashMultiplierText').innerText = "💥 CRASHED!";
             document.getElementById('crashStatusText').innerText = `Crashed at ${crashPoint}x`;
             document.getElementById('crashStartBtn').disabled = false;
@@ -4110,8 +4139,14 @@ document.getElementById('crashCashoutBtn')?.addEventListener('click', () => {
     clearInterval(crashTimer);
     crashPlaying = false;
 
+    const rocket = document.getElementById('rocketIcon');
+    if (rocket) {
+        rocket.classList.remove('flying');
+    }
+
     let winAmount = selectedCrashBet * currentCrashMultiplier;
-    userData.balance = (parseFloat(userData.balance) + winAmount).toFixed(2);
+    userData.balance = (parseFloat(userData.balance || 0) + winAmount).toFixed(2);
+    if (typeof updateBalanceUI === "function") updateBalanceUI(userData.balance);
     if (typeof updateGlobalBalances === "function") updateGlobalBalances();
     updateCrashBalance();
 
@@ -4191,12 +4226,13 @@ document.getElementById('kenoPlayBtn')?.addEventListener('click', () => {
         showMessage("ስህተት", "እባክዎን ቢያንስ 1 ቁጥር ይምረጡ!", "⚠️");
         return;
     }
-    if (parseFloat(userData.balance) < selectedKenoBet) {
+    if (parseFloat(userData.balance || 0) < selectedKenoBet) {
         showMessage("ስህተት", "በቂ ባላንስ የለዎትም!", "⚠️");
         return;
     }
 
-    userData.balance = (parseFloat(userData.balance) - selectedKenoBet).toFixed(2);
+    userData.balance = (parseFloat(userData.balance || 0) - selectedKenoBet).toFixed(2);
+    if (typeof updateBalanceUI === "function") updateBalanceUI(userData.balance);
     if (typeof updateGlobalBalances === "function") updateGlobalBalances();
     updateKenoBalance();
 
@@ -4222,7 +4258,8 @@ document.getElementById('kenoPlayBtn')?.addEventListener('click', () => {
     let winAmount = selectedKenoBet * winMult;
 
     if (winAmount > 0) {
-        userData.balance = (parseFloat(userData.balance) + winAmount).toFixed(2);
+        userData.balance = (parseFloat(userData.balance || 0) + winAmount).toFixed(2);
+        if (typeof updateBalanceUI === "function") updateBalanceUI(userData.balance);
         if (typeof updateGlobalBalances === "function") updateGlobalBalances();
         updateKenoBalance();
         document.getElementById('kenoResultText').innerText = `🎉 ${hits} ቁጥሮች ገጥመዋል! ${winAmount.toFixed(2)} ETB አሸንፈዋል!`;
@@ -4246,12 +4283,13 @@ document.querySelectorAll('.fishing-bet-btn').forEach(btn => {
 document.getElementById('fishingBackBtn')?.addEventListener('click', () => showPage('home'));
 
 document.getElementById('fishingCastBtn')?.addEventListener('click', () => {
-    if (parseFloat(userData.balance) < selectedFishingBet) {
+    if (parseFloat(userData.balance || 0) < selectedFishingBet) {
         showMessage("ስህተት", "በቂ ባላንስ የለዎትም!", "⚠️");
         return;
     }
 
-    userData.balance = (parseFloat(userData.balance) - selectedFishingBet).toFixed(2);
+    userData.balance = (parseFloat(userData.balance || 0) - selectedFishingBet).toFixed(2);
+    if (typeof updateBalanceUI === "function") updateBalanceUI(userData.balance);
     if (typeof updateGlobalBalances === "function") updateGlobalBalances();
     updateFishingBalance();
 
@@ -4263,7 +4301,8 @@ document.getElementById('fishingCastBtn')?.addEventListener('click', () => {
         if (chance > 0.4) {
             let mult = (Math.random() * 2 + 1.1).toFixed(2);
             let winAmount = selectedFishingBet * mult;
-            userData.balance = (parseFloat(userData.balance) + winAmount).toFixed(2);
+            userData.balance = (parseFloat(userData.balance || 0) + winAmount).toFixed(2);
+            if (typeof updateBalanceUI === "function") updateBalanceUI(userData.balance);
             if (typeof updateGlobalBalances === "function") updateGlobalBalances();
             updateFishingBalance();
             resultMsg.innerText = `🐟 Catch! You won ${winAmount.toFixed(2)} ETB (${mult}x)!`;
@@ -4289,12 +4328,13 @@ document.querySelectorAll('.chicken-bet-btn').forEach(btn => {
 document.getElementById('chickenBackBtn')?.addEventListener('click', () => showPage('home'));
 
 document.getElementById('chickenStartBtn')?.addEventListener('click', () => {
-    if (parseFloat(userData.balance) < selectedChickenBet) {
+    if (parseFloat(userData.balance || 0) < selectedChickenBet) {
         showMessage("ስህተት", "በቂ ባላንስ የለዎትም!", "⚠️");
         return;
     }
 
-    userData.balance = (parseFloat(userData.balance) - selectedChickenBet).toFixed(2);
+    userData.balance = (parseFloat(userData.balance || 0) - selectedChickenBet).toFixed(2);
+    if (typeof updateBalanceUI === "function") updateBalanceUI(userData.balance);
     if (typeof updateGlobalBalances === "function") updateGlobalBalances();
     updateChickenBalance();
 
@@ -4353,7 +4393,8 @@ document.getElementById('chickenCashoutBtn')?.addEventListener('click', () => {
 
     chickenPlaying = false;
     let winAmount = selectedChickenBet * chickenMult;
-    userData.balance = (parseFloat(userData.balance) + winAmount).toFixed(2);
+    userData.balance = (parseFloat(userData.balance || 0) + winAmount).toFixed(2);
+    if (typeof updateBalanceUI === "function") updateBalanceUI(userData.balance);
     if (typeof updateGlobalBalances === "function") updateGlobalBalances();
     updateChickenBalance();
 
