@@ -9,6 +9,7 @@ from sqlalchemy import (
     Text,
     Boolean,
 )
+from sqlalchemy.orm import relationship
 
 from app.database import Base
 
@@ -60,6 +61,13 @@ class User(Base):
         nullable=False
     )
 
+    # BONUS CLAIM TRACKER (🔴 አዲስ የተጨመረ)
+    has_claimed_channel_bonus = Column(
+        Boolean,
+        default=False,
+        nullable=False
+    )
+
     # Account status
     is_banned = Column(
         Integer,
@@ -107,7 +115,7 @@ class WalletTransaction(Base):
         index=True
     )
 
-    # deposit / withdrawal / game_stake_bingo / game_win_bingo
+    # deposit / withdrawal / game_stake_bingo / game_win_bingo / bonus / referral_bonus / cashback
     transaction_type = Column(
         String(50),
         nullable=False,
@@ -450,6 +458,7 @@ class PlayerCard(Base):
         nullable=False
     )
 
+
 # =========================================================
 # ROULETTE GAME
 # =========================================================
@@ -470,53 +479,44 @@ class RouletteSpin(Base):
         index=True
     )
 
-    # Amount placed on the spin
     bet_amount = Column(
         Float,
         nullable=False
     )
 
-    # Bet type:
-    # red / black / green / number
     bet_type = Column(
         String(50),
         nullable=False,
         index=True
     )
 
-    # Selected number when bet_type = number
     bet_value = Column(
         Integer,
         nullable=True
     )
 
-    # Winning number: 0 - 36
     winning_number = Column(
         Integer,
         nullable=False
     )
 
-    # red / black / green
     winning_color = Column(
         String(20),
         nullable=False
     )
 
-    # Applied multiplier
     multiplier = Column(
         Float,
         default=0.0,
         nullable=False
     )
 
-    # Amount returned to player
     payout = Column(
         Float,
         default=0.0,
         nullable=False
     )
 
-    # User balance after spin
     balance_after = Column(
         Float,
         nullable=False
@@ -534,6 +534,7 @@ class RouletteSpin(Base):
         nullable=False,
         index=True
     )
+
 
 # =========================================================
 # 🃏 BLACKJACK GAME
@@ -556,7 +557,6 @@ class BlackjackGame(Base):
         nullable=False
     )
 
-    # JSON strings
     player_cards = Column(
         Text,
         nullable=False
@@ -613,6 +613,7 @@ class BlackjackGame(Base):
         nullable=True
     )
 
+
 # =========================================================
 # 💣 MINES GAME
 # =========================================================
@@ -643,13 +644,11 @@ class MinesGame(Base):
         nullable=False
     )
 
-    # JSON string containing mine positions
     mine_positions = Column(
         Text,
         nullable=False
     )
 
-    # JSON string containing revealed safe/mine positions
     revealed_tiles = Column(
         Text,
         nullable=False,
@@ -703,6 +702,7 @@ class MinesGame(Base):
         nullable=True
     )
 
+
 # =========================================================
 # 🔄 DAILY CASHBACK
 # =========================================================
@@ -723,28 +723,24 @@ class DailyCashback(Base):
         index=True
     )
 
-    # Date for which this cashback belongs
     cashback_date = Column(
         String(20),
         nullable=False,
         index=True
     )
 
-    # Total approved deposits used for cashback calculation
     deposit_amount = Column(
         Float,
         default=0.0,
         nullable=False
     )
 
-    # 10% cashback amount
     cashback_amount = Column(
         Float,
         default=0.0,
         nullable=False
     )
 
-    # pending / claimed
     status = Column(
         String(20),
         default="pending",
@@ -752,7 +748,6 @@ class DailyCashback(Base):
         index=True
     )
 
-    # Wallet balance after cashback
     balance_after = Column(
         Float,
         default=0.0,
