@@ -1149,9 +1149,24 @@
                 <div class="dashboard-banner promo-cashback">
                     <div class="cashback-info">
                         <h4>🔄 Daily Cashback</h4>
-                        <div class="countdown">03 : 37 : 54</div>
+
+                        <div class="countdown" id="cashbackCountdown">
+                            24 : 00 : 00
+                        </div>
+
+                        <small id="cashbackInfoText">
+                            Deposit & get 10% cashback
+                        </small>
                     </div>
-                    <div class="cashback-badge">CASHBACK</div>
+
+                    <button
+                        class="cashback-badge"
+                        id="cashbackClaimBtn"
+                        type="button"
+                        disabled
+                    >
+                        CASHBACK
+                    </button>
                 </div>
 
                 <div class="dashboard-menu-grid">
