@@ -1176,6 +1176,40 @@
             </div>
         </div>
 
+        <!-- 🎁 BONUS VIEW (እዚህ ጋር ገብቷል) -->
+        <div id="bonusView" class="page-view" hidden style="padding: 15px;">
+            <h2 style="color: #fff; text-align: center; margin-bottom: 20px;">🎁 ቦነሶች እና ሽልማቶች</h2>
+
+            <!-- Task 1: Join Channel Task (10 BIRR) -->
+            <div style="background: linear-gradient(135deg, #1e1b4b, #311b92); border-radius: 16px; padding: 20px; margin-bottom: 20px; border: 1px solid #4d38bd; display: flex; align-items: center; justify-content: space-between;">
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <div style="font-size: 32px; font-weight: bold; color: #ffd700;">+10 <span style="font-size: 14px; color: #fff;">BIRR</span></div>
+                    <div>
+                        <h4 style="margin: 0; color: #fff; font-size: 16px;">Join Our Channel</h4>
+                        <p style="margin: 5px 0 0; color: #a5b4fc; font-size: 12px;">+10 birr to your balance</p>
+                    </div>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                    <a href="https://t.me/quickbirr_games" target="_blank" style="background: #eab308; color: #000; padding: 8px 16px; border-radius: 20px; font-weight: bold; text-decoration: none; text-align: center; font-size: 13px;">📢 Join Channel</a>
+                    <button onclick="claimChannelBonus()" style="background: transparent; color: #ffd700; border: 1px solid #eab308; padding: 8px 16px; border-radius: 20px; font-weight: bold; cursor: pointer; font-size: 13px;">I've Joined</button>
+                </div>
+            </div>
+
+            <!-- Task 2: Referral Program Task (5 BIRR) -->
+            <div style="background: linear-gradient(135deg, #064e3b, #047857); border-radius: 16px; padding: 20px; border: 1px solid #10b981; display: flex; align-items: center; justify-content: space-between;">
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <div style="font-size: 32px; font-weight: bold; color: #ffd700;">+5 <span style="font-size: 14px; color: #fff;">BIRR</span></div>
+                    <div>
+                        <h4 style="margin: 0; color: #fff; font-size: 16px;">Invite Friends</h4>
+                        <p style="margin: 5px 0 0; color: #a7f3d0; font-size: 12px;">+5 birr for each invited friend</p>
+                    </div>
+                </div>
+                <div>
+                    <button onclick="shareReferralLink()" style="background: #10b981; color: #fff; border: none; padding: 10px 18px; border-radius: 20px; font-weight: bold; cursor: pointer; font-size: 13px;">🔗 Share Link</button>
+                </div>
+            </div>
+        </div>
+
     </main>
 
     <!-- BOTTOM NAV -->
@@ -1190,9 +1224,9 @@
             <small>Games</small>
         </button>
 
-        <button class="nav-item" data-page="promo" type="button">
+        <button class="nav-item" data-page="bonus" type="button">
             <span>🎁</span>
-            <small>Promo</small>
+            <small>Bonus</small>
         </button>
 
         <button class="nav-item" data-page="profile" type="button">
