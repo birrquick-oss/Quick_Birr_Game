@@ -29,7 +29,9 @@ router = APIRouter(
 BOT_TOKEN = os.getenv("BOT_TOKEN", os.getenv("TELEGRAM_BOT_TOKEN", ""))
 ADMIN_TELEGRAM_ID = str(os.getenv("ADMIN_TELEGRAM_ID", "")).strip()
 ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "123456789")
-CHANNEL_ID = os.getenv("TELEGRAM_CHANNEL_ID", "@YOUR_TELEGRAM_CHANNEL") # ምሳሌ፦ @QuickBirrGames
+
+# 📢 ቻናልህ እዚህ ጋር በትክክል ተስተካክሏል (@quickbirr_games)
+CHANNEL_ID = os.getenv("TELEGRAM_CHANNEL_ID", "@quickbirr_games").strip()
 
 # 🛑 ወደ ባክኤንድ እንዳይገቡ የተከለከሉ ተቀባይነት የሌላቸው/የሞከራ Telegram IDዎች
 INVALID_TG_IDS = {"12345678", "null", "undefined", "", "none"}
