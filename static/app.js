@@ -243,17 +243,17 @@ document.querySelectorAll(".game-card").forEach(card => {
             updateBlackjackBalance();
             return;
         }
-
+       
         if (game === "mines") {
             showPage("mines");
             updateMinesBalance();
             return;
         }
 
+
         const names = {
             slots: "Lucky Slots", plinko: "Plinko", roulette: "European Roulette",
-            blackjack: "Blackjack", mines: "Mines", crash: "Crash / Aviator",
-            keno: "Keno", fishing: "Fishing", chicken: "Chicken Road"
+            blackjack: "Blackjack", mines: "Mines"
         };
         showMessage(names[game] || "Game", "ይህ ጨዋታ በቅርብ ቀን ይለቀቃል!", "🎮");
     });
