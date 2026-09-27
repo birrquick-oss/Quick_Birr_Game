@@ -108,6 +108,7 @@ const profilePhoneEl = document.getElementById("profilePhone");
 
 const homeView = document.getElementById("homeView");
 const profileView = document.getElementById("profileView");
+const bonusView = document.getElementById("bonusView");
 const bingoSelectionView = document.getElementById("bingoSelectionView");
 const bingoGameView = document.getElementById("bingoGameView");
 const slotsView = document.getElementById("slotsView");
@@ -1091,6 +1092,7 @@ function setupFormSubmitListeners() {
 function hideAllViews() {
     if (homeView) homeView.hidden = true;
     if (profileView) profileView.hidden = true;
+    if (bonusView) bonusView.hidden = true;
     if (bingoSelectionView) bingoSelectionView.hidden = true;
     if (bingoGameView) bingoGameView.hidden = true;
     if (slotsView) slotsView.hidden = true;
@@ -1114,6 +1116,8 @@ function showPage(pageName) {
     if (pageName === "profile") {
         if (profileView) profileView.hidden = false;
         startDailyCashbackCountdown();
+    } else if (pageName === "bonus" || pageName === "promo") {
+        if (bonusView) bonusView.hidden = false;
     } else if (pageName === "bingoSelection") {
         if (bingoSelectionView) bingoSelectionView.hidden = false;
     } else if (pageName === "bingoLive") {
@@ -4275,4 +4279,59 @@ if (document.readyState === "loading") {
 
     initializeDailyCashback();
 
+}
+
+/* =========================
+   BONUS & REFERRAL FUNCTIONS
+========================= */
+
+// 1️⃣ Telegram Channel Bonus Claim ማድረጊያ
+async function claimChannelBonus() {
+    if (!userData.telegram_id) {
+        showToastMessage("እባክዎን አስቀድመው ይግቡ/Register ያድርጉ!", "error");
+        return;
+    }
+
+    try {
+        const response = await fetch("/api/users/bonus/claim-channel", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ telegram_id: userData.telegram_id })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            showToastMessage(data.message, "success");
+            if (data.balance !== undefined) {
+                userData.balance = data.balance;
+                if (typeof balanceEl !== 'undefined' && balanceEl) balanceEl.textContent = `${parseFloat(data.balance).toFixed(2)} ETB`;
+                if (typeof dashBalanceEl !== 'undefined' && dashBalanceEl) dashBalanceEl.textContent = `${parseFloat(data.balance).toFixed(2)} ETB`;
+            }
+        } else {
+            showToastMessage(data.message || "ቦነስ መውሰድ አልተቻለም!", "error");
+        }
+    } catch (error) {
+        console.error("Bonus Claim Error:", error);
+        showToastMessage("የኔትወርክ ስህተት ተፈጥሯል!", "error");
+    }
+}
+
+// 2️⃣ Referral Link ለጓደኛ Share ማድረጊያ
+function shareReferralLink() {
+    if (!userData.telegram_id) {
+        showToastMessage("የቴሌግራም ማንነትዎ አልተገኘም!", "error");
+        return;
+    }
+
+    const botUsername = "QuickBirr_Games_Bot"; 
+    const refLink = `https://t.me/${botUsername}?start=ref_${userData.telegram_id}`;
+    const shareText = encodeURIComponent("የቢንጎ እና የካሲኖ ጨዋታዎችን ተጫውተህ ገንዘብ እንድታሸንፍ ጋብዤሃለሁ! በሊንኩ ገብተህ ተመዝገብ፦");
+    const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(refLink)}&text=${shareText}`;
+
+    if (window.Telegram?.WebApp?.openTelegramLink) {
+        window.Telegram.WebApp.openTelegramLink(shareUrl);
+    } else {
+        window.open(shareUrl, "_blank");
+    }
 }
