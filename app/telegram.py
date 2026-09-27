@@ -15,7 +15,8 @@ BOT_USERNAME = os.getenv("TELEGRAM_BOT_USERNAME", "QuickBirr_Games_Bot").strip()
 ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "123456789")
 ADMIN_TELEGRAM_ID = str(os.getenv("ADMIN_TELEGRAM_ID", "")).strip()
 
-CHANNEL_USERNAME = "YOUR_TELEGRAM_CHANNEL"  # የቴሌግራም ቻናልዎ Username (@ ሳይጨምሩ)
+# 📢 ቻናልህን እዚህ ጋር በትክክል ተክተነዋል (@ ሳይጨምሩ)
+CHANNEL_USERNAME = os.getenv("TELEGRAM_CHANNEL_ID", "quickbirr_games").strip().replace("@", "")
 
 # 🔗 Backend & Mini App URL
 SERVER_URL = os.getenv("SERVER_URL", "https://web-production-30301.up.railway.app").rstrip('/')
@@ -161,6 +162,8 @@ def handle_contact(message):
     
     share_url = f"https://t.me/share/url?url={my_ref_link}&text=Quick%20Birr%20Games%20ተጫውተው%20ያሸንፉ!%20በሊንኩ%20ሲገቡ%20ቦነስ%20ያገኛሉ።"
     btn_share = types.InlineKeyboardButton(text="🔗 Share Referral (+5 Birr)", url=share_url)
+    
+    # 🎯 አሁን ቀጥታ ወደ https://t.me/quickbirr_games ይወስዳል
     btn_channel = types.InlineKeyboardButton(text="📢 Join Channel (+10 Birr)", url=f"https://t.me/{CHANNEL_USERNAME}")
     
     markup.add(btn_play)
