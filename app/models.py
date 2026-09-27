@@ -702,3 +702,70 @@ class MinesGame(Base):
         DateTime,
         nullable=True
     )
+
+# =========================================================
+# 🔄 DAILY CASHBACK
+# =========================================================
+
+class DailyCashback(Base):
+    __tablename__ = "daily_cashbacks"
+
+    id = Column(
+        Integer,
+        primary_key=True,
+        index=True
+    )
+
+    user_id = Column(
+        Integer,
+        ForeignKey("users.id"),
+        nullable=False,
+        index=True
+    )
+
+    # Date for which this cashback belongs
+    cashback_date = Column(
+        String(20),
+        nullable=False,
+        index=True
+    )
+
+    # Total approved deposits used for cashback calculation
+    deposit_amount = Column(
+        Float,
+        default=0.0,
+        nullable=False
+    )
+
+    # 10% cashback amount
+    cashback_amount = Column(
+        Float,
+        default=0.0,
+        nullable=False
+    )
+
+    # pending / claimed
+    status = Column(
+        String(20),
+        default="pending",
+        nullable=False,
+        index=True
+    )
+
+    # Wallet balance after cashback
+    balance_after = Column(
+        Float,
+        default=0.0,
+        nullable=False
+    )
+
+    created_at = Column(
+        DateTime,
+        default=lambda: datetime.now(timezone.utc),
+        nullable=False
+    )
+
+    claimed_at = Column(
+        DateTime,
+        nullable=True
+    )
