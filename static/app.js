@@ -67,6 +67,9 @@ let selectedMinesBet = 10;
 let selectedMinesCount = 3;
 let minesPlaying = false;
 let currentMinesGameId = null;
+// 🔄 Daily Cashback
+let cashbackCountdownTimer = null;
+let cashbackData = null;
 
 let soundEnabled = true;
 let isAutoMark = true;
@@ -115,6 +118,9 @@ const minesView = document.getElementById("minesView");
 
 const depositModal = document.getElementById("depositModal");
 const withdrawModal = document.getElementById("withdrawModal");
+const cashbackCountdownEl = document.getElementById("cashbackCountdown");
+const cashbackInfoTextEl = document.getElementById("cashbackInfoText");
+const cashbackClaimBtn = document.getElementById("cashbackClaimBtn");
 
 /* =========================
    HELPER FUNCTIONS
@@ -1107,6 +1113,7 @@ function showPage(pageName) {
 
     if (pageName === "profile") {
         if (profileView) profileView.hidden = false;
+        startDailyCashbackCountdown();
     } else if (pageName === "bingoSelection") {
         if (bingoSelectionView) bingoSelectionView.hidden = false;
     } else if (pageName === "bingoLive") {
@@ -3968,4 +3975,304 @@ function showMinesError(message) {
         alert(message);
 
     }
+}
+
+/* =========================================================
+   🔄 DAILY CASHBACK
+========================================================= */
+
+function getTelegramUserId() {
+    return (
+        userData?.telegram_id ||
+        tg?.initDataUnsafe?.user?.id ||
+        null
+    );
+}
+
+
+/* ---------------------------------------------------------
+   ⏱️ Countdown Until Next Ethiopia Day
+--------------------------------------------------------- */
+
+function updateCashbackCountdown() {
+    if (!cashbackCountdownEl) return;
+
+    const now = new Date();
+
+    // Ethiopia = UTC+3
+    const ethiopiaNow = new Date(
+        now.getTime() + (3 * 60 * 60 * 1000)
+    );
+
+    const tomorrow = new Date(ethiopiaNow);
+
+    tomorrow.setUTCHours(24, 0, 0, 0);
+
+    let diff = tomorrow.getTime() - ethiopiaNow.getTime();
+
+    if (diff < 0) {
+        diff = 0;
+    }
+
+    const totalSeconds = Math.floor(diff / 1000);
+
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+
+    cashbackCountdownEl.textContent =
+        `${String(hours).padStart(2, "0")} : ` +
+        `${String(minutes).padStart(2, "0")} : ` +
+        `${String(seconds).padStart(2, "0")}`;
+}
+
+
+/* ---------------------------------------------------------
+   🔄 Start Countdown
+--------------------------------------------------------- */
+
+function startCashbackCountdown() {
+    if (cashbackCountdownTimer) {
+        clearInterval(cashbackCountdownTimer);
+    }
+
+    updateCashbackCountdown();
+
+    cashbackCountdownTimer = setInterval(
+        updateCashbackCountdown,
+        1000
+    );
+}
+
+
+/* ---------------------------------------------------------
+   📡 Load Cashback Status
+--------------------------------------------------------- */
+
+async function loadCashbackStatus() {
+    const telegramId = getTelegramUserId();
+
+    if (!telegramId) {
+        console.warn("⚠️ Cashback: Telegram ID not available.");
+        return;
+    }
+
+    try {
+        const response = await fetch(
+            `/api/users/cashback/status/${encodeURIComponent(telegramId)}`
+        );
+
+        const data = await response.json();
+
+        if (!response.ok || !data.success) {
+            console.error(
+                "❌ Cashback status error:",
+                data
+            );
+            return;
+        }
+
+        cashbackData = data.cashback;
+
+        updateCashbackUI(data);
+
+    } catch (error) {
+        console.error(
+            "❌ Failed to load cashback status:",
+            error
+        );
+    }
+}
+
+
+/* ---------------------------------------------------------
+   🎨 Update Cashback UI
+--------------------------------------------------------- */
+
+function updateCashbackUI(data) {
+    if (!data || !data.cashback) return;
+
+    const cashback = data.cashback;
+
+    const depositAmount =
+        Number(cashback.deposit_amount || 0);
+
+    const cashbackAmount =
+        Number(cashback.cashback_amount || 0);
+
+    const claimed =
+        Boolean(cashback.claimed);
+
+    const canClaim =
+        Boolean(cashback.can_claim);
+
+    if (cashbackInfoTextEl) {
+
+        if (claimed) {
+
+            cashbackInfoTextEl.textContent =
+                `Today's cashback: ${cashbackAmount.toFixed(2)} ETB — Claimed`;
+
+        } else if (depositAmount > 0) {
+
+            cashbackInfoTextEl.textContent =
+                `Deposit ${depositAmount.toFixed(2)} ETB → Get ${cashbackAmount.toFixed(2)} ETB`;
+
+        } else {
+
+            cashbackInfoTextEl.textContent =
+                "Deposit & get 10% cashback";
+        }
+    }
+
+    if (cashbackClaimBtn) {
+
+        if (claimed) {
+
+            cashbackClaimBtn.disabled = true;
+            cashbackClaimBtn.textContent = "CLAIMED";
+
+        } else if (canClaim) {
+
+            cashbackClaimBtn.disabled = false;
+            cashbackClaimBtn.textContent =
+                `CLAIM ${cashbackAmount.toFixed(2)} ETB`;
+
+        } else {
+
+            cashbackClaimBtn.disabled = true;
+            cashbackClaimBtn.textContent = "CASHBACK";
+        }
+    }
+}
+
+
+/* ---------------------------------------------------------
+   🎁 Claim Cashback
+--------------------------------------------------------- */
+
+async function claimDailyCashback() {
+
+    const telegramId = getTelegramUserId();
+
+    if (!telegramId) {
+        showMessage(
+            "Cashback",
+            "የTelegram መለያዎ ማወቅ አልተቻለም።",
+            "⚠️"
+        );
+        return;
+    }
+
+    if (
+        cashbackClaimBtn &&
+        cashbackClaimBtn.disabled
+    ) {
+        return;
+    }
+
+    if (cashbackClaimBtn) {
+        cashbackClaimBtn.disabled = true;
+        cashbackClaimBtn.textContent = "CLAIMING...";
+    }
+
+    try {
+
+        const response = await fetch(
+            `/api/users/cashback/claim/${encodeURIComponent(telegramId)}`,
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                }
+            }
+        );
+
+        const data = await response.json();
+
+        if (!response.ok || !data.success) {
+
+            showMessage(
+                "Daily Cashback",
+                data.message ||
+                data.detail ||
+                "Cashback መውሰድ አልተቻለም።",
+                "⚠️"
+            );
+
+            await loadCashbackStatus();
+            return;
+        }
+
+        // Update shared wallet balance immediately
+        if (data.balance !== undefined) {
+            userData.balance = Number(data.balance).toFixed(2);
+            updateBalanceUI(userData.balance);
+        }
+
+        showMessage(
+            "🎁 Cashback Claimed!",
+            `የ ${Number(
+                data.cashback.cashback_amount
+            ).toFixed(2)} ETB Cashback ወደ walletዎ ገብቷል።`,
+            "🎁"
+        );
+
+        await loadCashbackStatus();
+
+    } catch (error) {
+
+        console.error(
+            "❌ Cashback claim error:",
+            error
+        );
+
+        showMessage(
+            "Cashback",
+            "የCashback ጥያቄውን ማስኬድ አልተቻለም።",
+            "⚠️"
+        );
+
+        await loadCashbackStatus();
+
+    }
+}
+
+
+/* ---------------------------------------------------------
+   🔘 Cashback Button
+--------------------------------------------------------- */
+
+cashbackClaimBtn?.addEventListener(
+    "click",
+    claimDailyCashback
+);
+
+
+/* ---------------------------------------------------------
+   🚀 Start Cashback System
+--------------------------------------------------------- */
+
+function initializeDailyCashback() {
+
+    startCashbackCountdown();
+
+    if (getTelegramUserId()) {
+        loadCashbackStatus();
+    }
+}
+
+
+/* Start when page is ready */
+if (document.readyState === "loading") {
+
+    document.addEventListener(
+        "DOMContentLoaded",
+        initializeDailyCashback
+    );
+
+} else {
+
+    initializeDailyCashback();
+
 }
