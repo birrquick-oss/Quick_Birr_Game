@@ -8,7 +8,13 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.database import SessionLocal
-from app.models import User, Deposit, Withdrawal, WalletTransaction
+from app.models import (
+    User,
+    Deposit,
+    Withdrawal,
+    WalletTransaction,
+    DailyCashback,
+)
 
 router = APIRouter(
     prefix="/api/users",
@@ -390,3 +396,245 @@ def admin_approve_withdraw(data: AdminApproveAction, db: Session = Depends(get_d
         notify_user(user.telegram_id, f"❌ የ {withd.amount} ETB ማውጫ ጥያቄዎ ውድቅ ተደርጓል፣ ገንዘቡ ወደ ባላንስዎ ተመልሷል።")
 
     return {"success": True, "message": f"Withdrawal #{withd.id} marked as {withd.status}"}
+
+# =========================================================
+# 🔄 DAILY CASHBACK
+# =========================================================
+
+CASHBACK_PERCENT = 10.0
+
+
+def get_today_utc_date():
+    return datetime.now(timezone.utc).strftime("%Y-%m-%d")
+
+
+@router.get("/cashback/status/{telegram_id}")
+def get_cashback_status(
+    telegram_id: str,
+    db: Session = Depends(get_db)
+):
+    tg_id = str(telegram_id).strip()
+
+    if not tg_id or tg_id.lower() in INVALID_TG_IDS:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid Telegram ID"
+        )
+
+    user = db.query(User).filter(
+        User.telegram_id == tg_id
+    ).first()
+
+    if not user:
+        raise HTTPException(
+            status_code=404,
+            detail="User not found"
+        )
+
+    today = get_today_utc_date()
+
+    # -----------------------------------------------------
+    # Check if today's cashback was already claimed
+    # -----------------------------------------------------
+    claimed = db.query(DailyCashback).filter(
+        DailyCashback.user_id == user.id,
+        DailyCashback.cashback_date == today,
+        DailyCashback.status == "claimed"
+    ).first()
+
+    # -----------------------------------------------------
+    # Calculate today's approved deposits
+    # -----------------------------------------------------
+    deposits = db.query(Deposit).filter(
+        Deposit.user_id == user.id,
+        Deposit.status == "approved"
+    ).all()
+
+    today_deposit_total = 0.0
+
+    for dep in deposits:
+        if dep.created_at:
+            dep_date = dep.created_at.astimezone(
+                timezone.utc
+            ).strftime("%Y-%m-%d")
+
+            if dep_date == today:
+                today_deposit_total += float(dep.amount or 0)
+
+    cashback_amount = round(
+        today_deposit_total * CASHBACK_PERCENT / 100,
+        2
+    )
+
+    return {
+        "success": True,
+        "cashback": {
+            "date": today,
+            "percentage": CASHBACK_PERCENT,
+            "deposit_amount": round(today_deposit_total, 2),
+            "cashback_amount": cashback_amount,
+            "claimed": claimed is not None,
+            "can_claim": (
+                claimed is None
+                and cashback_amount > 0
+            )
+        },
+        "balance": round(float(user.balance or 0), 2)
+    }
+
+
+# =========================================================
+# 🎁 CLAIM DAILY CASHBACK
+# =========================================================
+
+@router.post("/cashback/claim/{telegram_id}")
+def claim_daily_cashback(
+    telegram_id: str,
+    db: Session = Depends(get_db)
+):
+    tg_id = str(telegram_id).strip()
+
+    if not tg_id or tg_id.lower() in INVALID_TG_IDS:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid Telegram ID"
+        )
+
+    user = db.query(User).filter(
+        User.telegram_id == tg_id
+    ).first()
+
+    if not user:
+        raise HTTPException(
+            status_code=404,
+            detail="User not found"
+        )
+
+    today = get_today_utc_date()
+
+    # -----------------------------------------------------
+    # Prevent duplicate claim
+    # -----------------------------------------------------
+    existing_claim = db.query(DailyCashback).filter(
+        DailyCashback.user_id == user.id,
+        DailyCashback.cashback_date == today
+    ).first()
+
+    if existing_claim:
+        if existing_claim.status == "claimed":
+            return {
+                "success": False,
+                "claimed": True,
+                "message": "የዛሬን Cashback አስቀድመው ወስደዋል።",
+                "balance": round(float(user.balance or 0), 2)
+            }
+
+    # -----------------------------------------------------
+    # Calculate today's approved deposits
+    # -----------------------------------------------------
+    deposits = db.query(Deposit).filter(
+        Deposit.user_id == user.id,
+        Deposit.status == "approved"
+    ).all()
+
+    today_deposit_total = 0.0
+
+    for dep in deposits:
+        if dep.created_at:
+            dep_date = dep.created_at.astimezone(
+                timezone.utc
+            ).strftime("%Y-%m-%d")
+
+            if dep_date == today:
+                today_deposit_total += float(dep.amount or 0)
+
+    cashback_amount = round(
+        today_deposit_total * CASHBACK_PERCENT / 100,
+        2
+    )
+
+    if cashback_amount <= 0:
+        return {
+            "success": False,
+            "claimed": False,
+            "message": "ዛሬ የተፈቀደ Deposit ስለሌለ የCashback መጠን የለዎትም።",
+            "balance": round(float(user.balance or 0), 2)
+        }
+
+    # -----------------------------------------------------
+    # Add cashback to shared wallet
+    # -----------------------------------------------------
+    user.balance = float(user.balance or 0) + cashback_amount
+
+    # -----------------------------------------------------
+    # Create cashback record
+    # -----------------------------------------------------
+    cashback = DailyCashback(
+        user_id=user.id,
+        cashback_date=today,
+        deposit_amount=today_deposit_total,
+        cashback_amount=cashback_amount,
+        status="claimed",
+        balance_after=user.balance,
+        claimed_at=datetime.now(timezone.utc)
+    )
+
+    db.add(cashback)
+
+    # -----------------------------------------------------
+    # Wallet transaction
+    # -----------------------------------------------------
+    tx = WalletTransaction(
+        user_id=user.id,
+        transaction_type="cashback",
+        amount=cashback_amount,
+        balance_after=user.balance,
+        description=(
+            f"Daily {CASHBACK_PERCENT}% cashback "
+            f"for {today} on approved deposits "
+            f"of {today_deposit_total:.2f} ETB"
+        )
+    )
+
+    db.add(tx)
+
+    db.commit()
+    db.refresh(user)
+    db.refresh(cashback)
+
+    print(
+        f"🎁 [DAILY CASHBACK CLAIMED] "
+        f"User={user.telegram_id} "
+        f"Deposit={today_deposit_total:.2f} "
+        f"Cashback={cashback_amount:.2f} "
+        f"Balance={user.balance:.2f}"
+    )
+
+    # -----------------------------------------------------
+    # Telegram notification
+    # -----------------------------------------------------
+    notify_user(
+        user.telegram_id,
+        (
+            f"🎁 <b>Daily Cashback</b>\n\n"
+            f"💰 Today's Deposit: "
+            f"<b>{today_deposit_total:.2f} ETB</b>\n"
+            f"🎁 Cashback: "
+            f"<b>{cashback_amount:.2f} ETB</b>\n\n"
+            f"💳 New Balance: "
+            f"<b>{user.balance:.2f} ETB</b>"
+        )
+    )
+
+    return {
+        "success": True,
+        "claimed": True,
+        "message": "Daily Cashback በተሳካ ሁኔታ ተጨምሯል!",
+        "cashback": {
+            "date": today,
+            "percentage": CASHBACK_PERCENT,
+            "deposit_amount": round(today_deposit_total, 2),
+            "cashback_amount": cashback_amount
+        },
+        "balance": round(float(user.balance or 0), 2)
+    }
