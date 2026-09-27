@@ -15,6 +15,8 @@ BOT_USERNAME = os.getenv("TELEGRAM_BOT_USERNAME", "QuickBirr_Games_Bot").strip()
 ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "123456789")
 ADMIN_TELEGRAM_ID = str(os.getenv("ADMIN_TELEGRAM_ID", "")).strip()
 
+CHANNEL_USERNAME = "YOUR_TELEGRAM_CHANNEL"  # የቴሌግራም ቻናልዎ Username (@ ሳይጨምሩ)
+
 # 🔗 Backend & Mini App URL
 SERVER_URL = os.getenv("SERVER_URL", "https://web-production-30301.up.railway.app").rstrip('/')
 BACKEND_URL = os.getenv("BACKEND_URL", "http://127.0.0.1:8000" if os.getenv("RAILWAY_ENVIRONMENT") else SERVER_URL).rstrip('/')
@@ -96,7 +98,7 @@ def broadcast_worker(text_message, reply_markup=None):
     print(f"🎉 Broadcast finished! Success: {success_count}, Failed: {fail_count}")
 
 
-# 1️⃣ /start Command
+# 1️⃣ /start Command (መጋበዣ ሊንክ ሲነካ የሚሰራ)
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
     telegram_id = message.from_user.id
@@ -113,7 +115,7 @@ def send_welcome(message):
 
     welcome_msg = (
         "🎉 እንኳን ወደ Quick Birr Games በሰላም መጡ!\n\n"
-        "ለመጫወት እና አሸናፊ ለመሆን ከታች '📝 Register Now' የሚለውን ይጫኑ።"
+        "ለመጫወት፣ የ 10 Birr ቻናል ቦነስ እና የ 5 Birr የመጋበዣ ቦነስ ለማግኘት ከታች '📝 Register Now' የሚለውን ይጫኑ።"
     )
     bot.send_message(message.chat.id, welcome_msg, reply_markup=markup)
 
@@ -126,7 +128,7 @@ def ask_contact(message):
     bot.send_message(message.chat.id, "📱 ለመመዝገብ ከታች 'Share Contact' የሚለውን ይጫኑ", reply_markup=markup)
 
 
-# 3️⃣ Contact Received
+# 3️⃣ Contact Received & Show Bonus Links
 @bot.message_handler(content_types=['contact'])
 def handle_contact(message):
     chat_id = message.chat.id
@@ -136,6 +138,7 @@ def handle_contact(message):
     first_name = message.from_user.first_name or user_name
     referred_by = USER_REF_CACHE.pop(telegram_id, None)
 
+    # ጀርባ ላይ ይመዘገባል (ከነ Referred By መረጃው)
     threading.Thread(
         target=register_user_background,
         args=(telegram_id, user_name, first_name, phone_number, referred_by),
@@ -147,15 +150,21 @@ def handle_contact(message):
     my_ref_link = f"https://t.me/{BOT_USERNAME}?start=ref_{telegram_id}"
     welcome_text = (
         f"👋 ሰላም <b>{first_name}</b>፣ ወደ <b>Quick Birr Games</b> እንኳን መጡ! 🎲\n\n"
-        "የተለያዩ አዝናኝ ጨዋታዎችን በመጫወት ያሸንፉ!\n\n"
-        f"🔗 <b>የመጋበዣ ሊንክዎ፦</b>\n<code>{my_ref_link}</code>"
+        "🎁 <b>የቦነስ እድሎች፦</b>\n"
+        "1️⃣ ቻናላችንን ይቀላቀሉ እና <b>10 ETB</b> ቦነስ ያግኙ!\n"
+        "2️⃣ ጓደኞችዎን ይጋብዙ፤ ለእያንዳንዱ ሰው <b>5 ETB</b> ያግኙ!\n\n"
+        f"🔗 <b>የእርስዎ የመጋበዣ ሊንክ፦</b>\n<code>{my_ref_link}</code>"
     )
 
-    markup = types.InlineKeyboardMarkup()
+    markup = types.InlineKeyboardMarkup(row_width=2)
     btn_play = types.InlineKeyboardButton(text="🎮 Play Now (ክፈት)", web_app=types.WebAppInfo(url=MINI_APP_URL))
-    share_url = f"https://t.me/share/url?url={my_ref_link}&text=Quick%20Birr%20Games%20ተጫውተው%20ያሸንፉ!"
-    btn_share = types.InlineKeyboardButton(text="🔗 Share Link", url=share_url)
-    markup.add(btn_play, btn_share)
+    
+    share_url = f"https://t.me/share/url?url={my_ref_link}&text=Quick%20Birr%20Games%20ተጫውተው%20ያሸንፉ!%20በሊንኩ%20ሲገቡ%20ቦነስ%20ያገኛሉ።"
+    btn_share = types.InlineKeyboardButton(text="🔗 Share Referral (+5 Birr)", url=share_url)
+    btn_channel = types.InlineKeyboardButton(text="📢 Join Channel (+10 Birr)", url=f"https://t.me/{CHANNEL_USERNAME}")
+    
+    markup.add(btn_play)
+    markup.add(btn_channel, btn_share)
 
     try:
         bot.send_photo(chat_id, photo=WELCOME_IMAGE_URL, caption=welcome_text, parse_mode="HTML", reply_markup=markup)
@@ -182,42 +191,27 @@ def handle_broadcast_command(message):
 # 🛠️ Backend Admin Action Worker
 def send_admin_action_to_backend(call, url, payload, headers, target_id, action, tx_type):
     try:
-        print(f"📡 [ADMIN ACTION START] Sending Request to: {url}")
-        print(f"📦 [PAYLOAD]: {payload}")
-
         response = requests.post(url, json=payload, headers=headers, timeout=15)
-        print(f"📥 [SERVER RESPONSE STATUS]: {response.status_code}")
-        print(f"📥 [SERVER RESPONSE BODY]: {response.text}")
-        
-        try:
-            res_data = response.json()
-        except Exception:
-            res_data = {"success": response.ok}
+        res_data = response.json() if response.headers.get('content-type') == 'application/json' else {"success": response.ok}
 
         if response.status_code == 200 and res_data.get("success", True):
             status_emoji = "✅" if action == "approve" else "❌"
             status_text = "APPROVED" if action == "approve" else "REJECTED"
             
-            try:
-                bot.answer_callback_query(call.id, text=f"{status_emoji} {tx_type.upper()} #{target_id} {status_text}", show_alert=True)
-            except Exception:
-                pass
+            bot.answer_callback_query(call.id, text=f"{status_emoji} {tx_type.upper()} #{target_id} {status_text}", show_alert=True)
             
             current_time = datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M')
             new_text = f"{call.message.text}\n\n{status_emoji} <b>{status_text} at {current_time} UTC</b>"
             
-            try:
-                bot.edit_message_text(
-                    chat_id=call.message.chat.id, 
-                    message_id=call.message.message_id, 
-                    text=new_text, 
-                    parse_mode="HTML",
-                    reply_markup=None
-                )
-            except Exception as edit_err:
-                print(f"⚠️ Telegram message edit issue: {edit_err}")
+            bot.edit_message_text(
+                chat_id=call.message.chat.id, 
+                message_id=call.message.message_id, 
+                text=new_text, 
+                parse_mode="HTML",
+                reply_markup=None
+            )
         else:
-            err_msg = res_data.get('detail', res_data.get('message', f'Status Code: {response.status_code}'))
+            err_msg = res_data.get('detail', res_data.get('message', 'Error occurred'))
             bot.answer_callback_query(call.id, text=f"❌ ስህተት፦ {err_msg}", show_alert=True)
     except Exception as e:
         print(f"❌ Admin Action Exception Error: {e}")
@@ -228,20 +222,12 @@ def send_admin_action_to_backend(call, url, payload, headers, target_id, action,
 @bot.callback_query_handler(func=lambda call: call.data.startswith(('approve_dep_', 'reject_dep_', 'approve_with_', 'reject_with_')))
 def handle_admin_actions(call):
     user_id_str = str(call.from_user.id).strip()
-    print(f"🔘 Callback Clicked by User ID: {user_id_str} | Data: {call.data}")
 
     if ADMIN_TELEGRAM_ID and str(user_id_str).strip() != str(ADMIN_TELEGRAM_ID).strip():
-        print(f"🚫 Unauthorized attempt by {user_id_str}. Expected: {ADMIN_TELEGRAM_ID}")
-        try:
-            bot.answer_callback_query(call.id, text="⛔ ይህንን ማድረግ የሚችለው አድሚን ብቻ ነው!", show_alert=True)
-        except Exception:
-            pass
+        bot.answer_callback_query(call.id, text="⛔ ይህንን ማድረግ የሚችለው አድሚን ብቻ ነው!", show_alert=True)
         return
 
-    try:
-        bot.answer_callback_query(call.id, text="⏳ ውሳኔዎ በሂደት ላይ ነው...")
-    except Exception:
-        pass
+    bot.answer_callback_query(call.id, text="⏳ ውሳኔዎ በሂደት ላይ ነው...")
     
     parts = call.data.split('_')
     action = parts[0]   # approve or reject
@@ -249,22 +235,14 @@ def handle_admin_actions(call):
     target_id = int(parts[2])
     
     backend_action = "APPROVE" if action == "approve" else "REJECT"
-
     endpoint = "deposit" if tx_type == "dep" else "withdraw"
     url = f"{BACKEND_URL}/api/users/admin/{endpoint}/approve"
     
-    if tx_type == "dep":
-        payload = {
-            "deposit_id": target_id,
-            "action": backend_action,
-            "admin_password": ADMIN_PASSWORD
-        }
-    else:
-        payload = {
-            "withdraw_id": target_id,
-            "action": backend_action,
-            "admin_password": ADMIN_PASSWORD
-        }
+    payload = {
+        "deposit_id" if tx_type == "dep" else "withdraw_id": target_id,
+        "action": backend_action,
+        "admin_password": ADMIN_PASSWORD
+    }
 
     threading.Thread(
         target=send_admin_action_to_backend, 
