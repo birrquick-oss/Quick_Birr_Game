@@ -4387,3 +4387,16 @@ function shareReferralLink() {
         window.open(shareUrl, "_blank");
     }
 }
+
+/* =========================================================
+   🆕 BOTTOM NAVIGATION CLICK HANDLER (Bonus ገጽን ለመክፈት)
+========================================================= */
+document.querySelectorAll(".bottom-nav .nav-item").forEach(button => {
+    button.addEventListener("click", () => {
+        const pageName = button.dataset.page; // "home", "games", "bonus", "profile"
+        
+        if (pageName) {
+            showPage(pageName);
+        }
+    });
+});
