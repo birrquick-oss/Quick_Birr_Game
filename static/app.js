@@ -4285,10 +4285,38 @@ if (document.readyState === "loading") {
    BONUS & REFERRAL FUNCTIONS
 ========================= */
 
-// 1️⃣ Telegram Channel Bonus Claim ማድረጊያ
+// 1️⃣ Telegram IDን ከተለያየ ቦታ በጥንቃቄ ማግኛ Helper Function
+function getTelegramUserId() {
+    if (typeof userData !== 'undefined' && userData && userData.telegram_id) {
+        return String(userData.telegram_id);
+    }
+    if (window.Telegram?.WebApp?.initDataUnsafe?.user?.id) {
+        return String(window.Telegram.WebApp.initDataUnsafe.user.id);
+    }
+    return null;
+}
+
+// 2️⃣ Telegram Channel ቀጥታ በ Telegram App የመክፈቻ Function
+function openTelegramChannel() {
+    const channelUrl = "https://t.me/quickbirr_games";
+    
+    if (window.Telegram?.WebApp?.openTelegramLink) {
+        window.Telegram.WebApp.openTelegramLink(channelUrl);
+    } else {
+        window.open(channelUrl, "_blank");
+    }
+}
+
+// 3️⃣ Telegram Channel Bonus Claim ማድረጊያ
 async function claimChannelBonus() {
-    if (!userData.telegram_id) {
-        showToastMessage("እባክዎን አስቀድመው ይግቡ/Register ያድርጉ!", "error");
+    const tgId = getTelegramUserId();
+
+    if (!tgId) {
+        if (typeof showToastMessage === 'function') {
+            showToastMessage("እባክዎን አፑን በቴሌግራም ቦት በኩል ይክፈቱት!", "error");
+        } else {
+            alert("እባክዎን አፑን በቴሌግራም ቦት በኩል ይክፈቱት!");
+        }
         return;
     }
 
@@ -4296,37 +4324,61 @@ async function claimChannelBonus() {
         const response = await fetch("/api/users/bonus/claim-channel", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ telegram_id: userData.telegram_id })
+            body: JSON.stringify({ telegram_id: tgId })
         });
 
         const data = await response.json();
 
         if (data.success) {
-            showToastMessage(data.message, "success");
+            if (typeof showToastMessage === 'function') {
+                showToastMessage(data.message, "success");
+            } else {
+                alert(data.message);
+            }
+
             if (data.balance !== undefined) {
-                userData.balance = data.balance;
-                if (typeof balanceEl !== 'undefined' && balanceEl) balanceEl.textContent = `${parseFloat(data.balance).toFixed(2)} ETB`;
-                if (typeof dashBalanceEl !== 'undefined' && dashBalanceEl) dashBalanceEl.textContent = `${parseFloat(data.balance).toFixed(2)} ETB`;
+                if (typeof userData !== 'undefined' && userData) userData.balance = data.balance;
+                
+                // የ UI ባላንስ ማስተካከያ
+                const balEl = document.getElementById('dashBalance');
+                if (balEl) balEl.textContent = `${parseFloat(data.balance).toFixed(2)} ETB`;
+                
+                const mainBalEl = document.getElementById('userBalance');
+                if (mainBalEl) mainBalEl.textContent = `${parseFloat(data.balance).toFixed(2)} ETB`;
             }
         } else {
-            showToastMessage(data.message || "ቦነስ መውሰድ አልተቻለም!", "error");
+            if (typeof showToastMessage === 'function') {
+                showToastMessage(data.message || "ቦነስ መውሰድ አልተቻለም!", "error");
+            } else {
+                alert(data.message || "ቦነስ መውሰድ አልተቻለም!");
+            }
         }
     } catch (error) {
         console.error("Bonus Claim Error:", error);
-        showToastMessage("የኔትወርክ ስህተት ተፈጥሯል!", "error");
+        if (typeof showToastMessage === 'function') {
+            showToastMessage("የኔትወርክ ስህተት ተፈጥሯል!", "error");
+        } else {
+            alert("የኔትወርክ ስህተት ተፈጥሯል!");
+        }
     }
 }
 
-// 2️⃣ Referral Link ለጓደኛ Share ማድረጊያ
+// 4️⃣ Referral Link ለጓደኛ Share ማድረጊያ (ሁለቱም ሊንኮች እንዲሰሩ)
 function shareReferralLink() {
-    if (!userData.telegram_id) {
-        showToastMessage("የቴሌግራም ማንነትዎ አልተገኘም!", "error");
+    const tgId = getTelegramUserId();
+
+    if (!tgId) {
+        if (typeof showToastMessage === 'function') {
+            showToastMessage("የቴሌግራም ማንነትዎ አልተገኘም!", "error");
+        } else {
+            alert("የቴሌግራም ማንነትዎ አልተገኘም!");
+        }
         return;
     }
 
     const botUsername = "QuickBirr_Games_Bot"; 
-    const refLink = `https://t.me/${botUsername}?start=ref_${userData.telegram_id}`;
-    const shareText = encodeURIComponent("የቢንጎ እና የካሲኖ ጨዋታዎችን ተጫውተህ ገንዘብ እንድታሸንፍ ጋብዤሃለሁ! በሊንኩ ገብተህ ተመዝገብ፦");
+    const refLink = `https://t.me/${botUsername}?start=ref_${tgId}`;
+    const shareText = encodeURIComponent("🎉 የቢንጎ እና የካሲኖ ጨዋታዎችን ተጫውተህ ገንዘብ እንድታሸንፍ ጋብዤሃለሁ! በሊንኩ ገብተህ ተመዝገብ፦");
     const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(refLink)}&text=${shareText}`;
 
     if (window.Telegram?.WebApp?.openTelegramLink) {
