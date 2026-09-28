@@ -1,6 +1,5 @@
 import os
 import json
-import requests
 import urllib.request
 import urllib.parse
 from datetime import datetime, timezone
@@ -29,9 +28,6 @@ router = APIRouter(
 BOT_TOKEN = os.getenv("BOT_TOKEN", os.getenv("TELEGRAM_BOT_TOKEN", ""))
 ADMIN_TELEGRAM_ID = str(os.getenv("ADMIN_TELEGRAM_ID", "")).strip()
 ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "123456789")
-
-# 📢 ቻናልህ እዚህ ጋር በትክክል ተስተካክሏል (@quickbirr_games)
-CHANNEL_ID = os.getenv("TELEGRAM_CHANNEL_ID", "@quickbirr_games").strip()
 
 # 🛑 ወደ ባክኤንድ እንዳይገቡ የተከለከሉ ተቀባይነት የሌላቸው/የሞከራ Telegram IDዎች
 INVALID_TG_IDS = {"12345678", "null", "undefined", "", "none"}
@@ -124,15 +120,12 @@ class AdminApproveAction(BaseModel):
     admin_telegram_id: Optional[str] = None
     admin_password: Optional[str] = None
 
-class ChannelBonusRequest(BaseModel):
-    telegram_id: str
-
 
 # --------------------------------------------------------------------------
 # 🚀 API Endpoints
 # --------------------------------------------------------------------------
 
-# 1️⃣ User Registration / Sync (ከ Referral logic ጋር)
+# 1️⃣ User Registration / Sync
 @router.post("")
 @router.post("/register")
 def sync_or_register_user(data: UserSync, db: Session = Depends(get_db)):
@@ -147,7 +140,6 @@ def sync_or_register_user(data: UserSync, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.telegram_id == orig_tg_id).first()
     
     if not user:
-        # አዲስ ተጫዋች ሲፈጠር
         user = User(
             telegram_id=orig_tg_id,
             telegram_username=data.telegram_username,
@@ -158,27 +150,6 @@ def sync_or_register_user(data: UserSync, db: Session = Depends(get_db)):
         db.commit()
         db.refresh(user)
         print(f"✅ [USER CREATED]: DB ID #{user.id} ({orig_tg_id})")
-
-        # 🔗 Referral logic: ጋባዥ ካለ 5 ETB በቦነስነት መስጠት
-        if data.referred_by and str(data.referred_by).strip() != orig_tg_id:
-            ref_tg_id = str(data.referred_by).strip()
-            referrer = db.query(User).filter(User.telegram_id == ref_tg_id).first()
-            if referrer:
-                REF_BONUS = 5.0
-                referrer.balance = float(referrer.balance or 0.0) + REF_BONUS
-                
-                # Transaction መመዝገብ
-                tx = WalletTransaction(
-                    user_id=referrer.id,
-                    transaction_type="referral_bonus",
-                    amount=REF_BONUS,
-                    balance_after=referrer.balance,
-                    description=f"Referral bonus for inviting {user.first_name or orig_tg_id}"
-                )
-                db.add(tx)
-                db.commit()
-                print(f"🎁 [REFERRAL BONUS]: Added {REF_BONUS} ETB to Referrer {ref_tg_id}")
-                notify_user(referrer.telegram_id, f"🎉 ጓደኛዎ ስለተመዘገበ የ <b>5 ETB</b> የመጋበዣ ቦነስ አግኝተዋል! አዲሱ ባላንስዎ: <b>{referrer.balance:.2f} ETB</b>")
     else:
         if data.first_name:
             user.first_name = data.first_name
@@ -196,61 +167,7 @@ def sync_or_register_user(data: UserSync, db: Session = Depends(get_db)):
     }
 
 
-# 🎁 2️⃣ Join Channel Bonus Endpoint (+10 Birr)
-@router.post("/bonus/claim-channel")
-def claim_channel_bonus(req: ChannelBonusRequest, db: Session = Depends(get_db)):
-    tg_id = str(req.telegram_id).strip()
-    if not tg_id or tg_id.lower() in INVALID_TG_IDS:
-        raise HTTPException(status_code=400, detail="Invalid Telegram ID")
-
-    user = db.query(User).filter(User.telegram_id == tg_id).first()
-    if not user:
-        return {"success": False, "message": "ተጫዋቹ አልተገኘም!"}
-
-    # አስቀድሞ የወሰደ መሆኑን ማረጋገጥ
-    if getattr(user, "has_claimed_channel_bonus", False):
-        return {"success": False, "message": "ይህንን የቻናል ቦነስ አስቀድመው ወስደዋል!"}
-
-    # Telegram Bot API በመጠቀም ቻናሉን Join ማድረጉን ማረጋገጥ
-    check_url = f"https://api.telegram.org/bot{BOT_TOKEN}/getChatMember?chat_id={CHANNEL_ID}&user_id={tg_id}"
-    try:
-        res = requests.get(check_url, timeout=5).json()
-        if not res.get("ok"):
-            return {"success": False, "message": "የቻናል አባልነትዎን ማረጋገጥ አልተቻለም!"}
-        
-        status = res.get("result", {}).get("status")
-        if status not in ["member", "administrator", "creator"]:
-            return {"success": False, "message": "እባክዎን አስቀድመው ቻናላችንን ይቀላቀሉ!"}
-    except Exception as e:
-        print(f"⚠️ Telegram Channel verification error: {e}")
-        return {"success": False, "message": "የቴሌግራም አባልነትን ማረጋገጥ አልተቻለም!"}
-
-    # 10 ETB ወደ ባላንሱ መጨመር
-    BONUS_AMOUNT = 10.0
-    user.balance = float(user.balance or 0.0) + BONUS_AMOUNT
-    setattr(user, "has_claimed_channel_bonus", True)
-
-    tx = WalletTransaction(
-        user_id=user.id,
-        transaction_type="bonus",
-        amount=BONUS_AMOUNT,
-        balance_after=user.balance,
-        description="Join Channel Bonus (10 ETB)"
-    )
-    db.add(tx)
-    db.commit()
-    db.refresh(user)
-
-    notify_user(user.telegram_id, f"🎉 የ <b>10 ETB</b> የቻናል ቦነስ በስኬት ተጨምሯል! አዲሱ ባላንስዎ: <b>{user.balance:.2f} ETB</b>")
-
-    return {
-        "success": True, 
-        "message": "🎉 የ 10 ETB ቦነስ በስኬት ተጨምሯል!", 
-        "balance": user.balance
-    }
-
-
-# 3️⃣ Get User Profile
+# 2️⃣ Get User Profile
 @router.get("/{telegram_id}")
 def get_user_profile(telegram_id: str, db: Session = Depends(get_db)):
     tg_id = str(telegram_id).strip()
@@ -267,20 +184,19 @@ def get_user_profile(telegram_id: str, db: Session = Depends(get_db)):
             "id": user.id,
             "telegram_id": user.telegram_id,
             "first_name": user.first_name,
-            "balance": user.balance,
-            "has_claimed_channel_bonus": getattr(user, "has_claimed_channel_bonus", False)
+            "balance": user.balance
         }
     }
 
 
-# 4️⃣ Get All User IDs for Broadcast
+# 3️⃣ Get All User IDs for Broadcast
 @router.get("/all_ids")
 def get_all_user_ids(db: Session = Depends(get_db)):
     users = db.query(User.telegram_id).all()
     return [str(u[0]).strip() for u in users if u[0] and str(u[0]).strip().lower() not in INVALID_TG_IDS]
 
 
-# 5️⃣ Request Deposit
+# 4️⃣ Request Deposit
 @router.post("/deposit")
 def request_deposit(req: DepositRequest, db: Session = Depends(get_db)):
     print(f"📥 [DEPOSIT REQUEST RECEIVED]: {req.model_dump()}")
@@ -336,7 +252,7 @@ def request_deposit(req: DepositRequest, db: Session = Depends(get_db)):
     return {"success": True, "message": "የዲፖዚት ጥያቄዎ ለአድሚን ተልኳል!"}
 
 
-# 6️⃣ Request Withdrawal
+# 5️⃣ Request Withdrawal
 @router.post("/withdraw")
 def request_withdraw(req: WithdrawRequest, db: Session = Depends(get_db)):
     print(f"📥 [WITHDRAWAL REQUEST RECEIVED]: {req.model_dump()}")
@@ -395,7 +311,7 @@ def request_withdraw(req: WithdrawRequest, db: Session = Depends(get_db)):
     return {"success": True, "message": "የማውጫ ጥያቄዎ ተመዝግቧል!"}
 
 
-# 7️⃣ Admin Deposit Action
+# 6️⃣ Admin Deposit Action
 @router.post("/admin/deposit/approve")
 def admin_approve_deposit(data: AdminApproveAction, db: Session = Depends(get_db)):
     print(f"📥 [ADMIN DEPOSIT ACTION RECEIVED]: {data.model_dump()}")
@@ -439,7 +355,7 @@ def admin_approve_deposit(data: AdminApproveAction, db: Session = Depends(get_db
     return {"success": True, "message": f"Deposit #{dep.id} marked as {dep.status}"}
 
 
-# 8️⃣ Admin Withdrawal Action
+# 7️⃣ Admin Withdrawal Action
 @router.post("/admin/withdraw/approve")
 def admin_approve_withdraw(data: AdminApproveAction, db: Session = Depends(get_db)):
     print(f"📥 [ADMIN WITHDRAW ACTION RECEIVED]: {data.model_dump()}")
@@ -482,15 +398,16 @@ def admin_approve_withdraw(data: AdminApproveAction, db: Session = Depends(get_d
 
     return {"success": True, "message": f"Withdrawal #{withd.id} marked as {withd.status}"}
 
-
 # =========================================================
 # 🔄 DAILY CASHBACK
 # =========================================================
 
 CASHBACK_PERCENT = 10.0
 
+
 def get_today_utc_date():
     return datetime.now(timezone.utc).strftime("%Y-%m-%d")
+
 
 @router.get("/cashback/status/{telegram_id}")
 def get_cashback_status(
@@ -517,12 +434,18 @@ def get_cashback_status(
 
     today = get_today_utc_date()
 
+    # -----------------------------------------------------
+    # Check if today's cashback was already claimed
+    # -----------------------------------------------------
     claimed = db.query(DailyCashback).filter(
         DailyCashback.user_id == user.id,
         DailyCashback.cashback_date == today,
         DailyCashback.status == "claimed"
     ).first()
 
+    # -----------------------------------------------------
+    # Calculate today's approved deposits
+    # -----------------------------------------------------
     deposits = db.query(Deposit).filter(
         Deposit.user_id == user.id,
         Deposit.status == "approved"
@@ -561,6 +484,10 @@ def get_cashback_status(
     }
 
 
+# =========================================================
+# 🎁 CLAIM DAILY CASHBACK
+# =========================================================
+
 @router.post("/cashback/claim/{telegram_id}")
 def claim_daily_cashback(
     telegram_id: str,
@@ -586,19 +513,26 @@ def claim_daily_cashback(
 
     today = get_today_utc_date()
 
+    # -----------------------------------------------------
+    # Prevent duplicate claim
+    # -----------------------------------------------------
     existing_claim = db.query(DailyCashback).filter(
         DailyCashback.user_id == user.id,
         DailyCashback.cashback_date == today
     ).first()
 
-    if existing_claim and existing_claim.status == "claimed":
-        return {
-            "success": False,
-            "claimed": True,
-            "message": "የዛሬን Cashback አስቀድመው ወስደዋል።",
-            "balance": round(float(user.balance or 0), 2)
-        }
+    if existing_claim:
+        if existing_claim.status == "claimed":
+            return {
+                "success": False,
+                "claimed": True,
+                "message": "የዛሬን Cashback አስቀድመው ወስደዋል።",
+                "balance": round(float(user.balance or 0), 2)
+            }
 
+    # -----------------------------------------------------
+    # Calculate today's approved deposits
+    # -----------------------------------------------------
     deposits = db.query(Deposit).filter(
         Deposit.user_id == user.id,
         Deposit.status == "approved"
@@ -628,8 +562,14 @@ def claim_daily_cashback(
             "balance": round(float(user.balance or 0), 2)
         }
 
+    # -----------------------------------------------------
+    # Add cashback to shared wallet
+    # -----------------------------------------------------
     user.balance = float(user.balance or 0) + cashback_amount
 
+    # -----------------------------------------------------
+    # Create cashback record
+    # -----------------------------------------------------
     cashback = DailyCashback(
         user_id=user.id,
         cashback_date=today,
@@ -642,6 +582,9 @@ def claim_daily_cashback(
 
     db.add(cashback)
 
+    # -----------------------------------------------------
+    # Wallet transaction
+    # -----------------------------------------------------
     tx = WalletTransaction(
         user_id=user.id,
         transaction_type="cashback",
@@ -660,6 +603,17 @@ def claim_daily_cashback(
     db.refresh(user)
     db.refresh(cashback)
 
+    print(
+        f"🎁 [DAILY CASHBACK CLAIMED] "
+        f"User={user.telegram_id} "
+        f"Deposit={today_deposit_total:.2f} "
+        f"Cashback={cashback_amount:.2f} "
+        f"Balance={user.balance:.2f}"
+    )
+
+    # -----------------------------------------------------
+    # Telegram notification
+    # -----------------------------------------------------
     notify_user(
         user.telegram_id,
         (
@@ -684,4 +638,80 @@ def claim_daily_cashback(
             "cashback_amount": cashback_amount
         },
         "balance": round(float(user.balance or 0), 2)
+    }
+
+# =========================================================
+# 🎁 CLAIM CHANNEL BONUS (+10 BIRR)
+# =========================================================
+
+class BonusClaimRequest(BaseModel):
+    telegram_id: str
+
+@router.post("/bonus/claim-channel")
+def claim_channel_bonus(req: BonusClaimRequest, db: Session = Depends(get_db)):
+    tg_id = str(req.telegram_id).strip()
+
+    if not tg_id or tg_id.lower() in INVALID_TG_IDS:
+        return {"success": False, "message": "ተቀባይነት የሌለው የቴሌግራም ID!"}
+
+    user = db.query(User).filter(User.telegram_id == tg_id).first()
+    if not user:
+        return {"success": False, "message": "ተጫዋቹ አልተገኘም!"}
+
+    # 1. ቻናሉን መቀላቀሉን በ Telegram Bot API ማረጋገጥ
+    channel_username = "@quickbirr_games"
+    url = f"https://api.telegram.org/bot{BOT_TOKEN}/getChatMember?chat_id={channel_username}&user_id={tg_id}"
+    
+    try:
+        req_tg = urllib.request.Request(url)
+        with urllib.request.urlopen(req_tg, timeout=5) as response:
+            res_data = json.loads(response.read().decode('utf-8'))
+            
+            if res_data.get("ok"):
+                status = res_data["result"]["status"]
+                # አባል ከሆነ 'creator', 'administrator', ወይም 'member' ይሆናል
+                if status not in ['creator', 'administrator', 'member']:
+                    return {"success": False, "message": "እባክዎን አስቀድመው ቻናላችንን ይቀላቀሉ!"}
+            else:
+                return {"success": False, "message": "ቻናሉን መቀላቀልዎን ማረጋገጥ አልተቻለም!"}
+    except Exception as e:
+        print(f"⚠️ Telegram Member Verification Error: {e}")
+        # Telegram API ካልመለሰ ቀጥታ እንዳያግደው ወይም የራሱን ማረጋገጫ መስጠት ይቻላል
+
+    # 2. ቦነሱን ቀደም ብሎ ወስዶ እንደሆነ ማረጋገጥ (ለምሳሌ በ User model ላይ has_claimed_channel_bonus ካለ)
+    if getattr(user, "has_claimed_channel_bonus", False):
+        return {"success": False, "message": "የቻናል ቦነስን አስቀድመው ወስደዋል!"}
+
+    # 3. +10 BIRR መጨመር
+    bonus_amount = 10.0
+    user.balance = float(user.balance or 0.0) + bonus_amount
+    
+    if hasattr(user, "has_claimed_channel_bonus"):
+        user.has_claimed_channel_bonus = True
+
+    # የትራንዛክሽን መዝገብ ማስገባት
+    tx = WalletTransaction(
+        user_id=user.id,
+        transaction_type="bonus",
+        amount=bonus_amount,
+        balance_after=user.balance,
+        description="Channel Join Bonus (+10 ETB)"
+    )
+    db.add(tx)
+
+    db.commit()
+    db.refresh(user)
+
+    # ለተጠቃሚው በቴሌግራም መልእክት መላክ
+    notify_user(
+        user.telegram_id,
+        f"🎉 <b>Channel Join Bonus!</b>\n\n"
+        f"ወደ ቻናላችን ስለተቀላቀሉ የ <b>10.00 ETB</b> ቦነስ ተጨምሮልዎታል።\n"
+        f"💳 አዲሱ ባላንስዎ: <b>{user.balance:.2f} ETB</b>"
+    )
+
+    return {
+        "success": True,
+        "message": "🎉 +10 BIRR ቦነስ በተሳካ ሁኔታ ወደ ባላንስዎ ተጨምሯል!",
+        "balance": round(float(user.balance), 2)
     }
