@@ -4389,14 +4389,15 @@ function shareReferralLink() {
 }
 
 /* =========================================================
-   🆕 BOTTOM NAVIGATION CLICK HANDLER (Bonus ገጽን ለመክፈት)
+   5️⃣ BONUS BUTTON CLICK HANDLER (ለ ቦነስ አዝራር ብቻ የተለየ)
 ========================================================= */
-document.querySelectorAll(".bottom-nav .nav-item").forEach(button => {
-    button.addEventListener("click", () => {
-        const pageName = button.dataset.page; // "home", "games", "bonus", "profile"
-        
-        if (pageName) {
-            showPage(pageName);
-        }
-    });
+document.addEventListener("DOMContentLoaded", () => {
+    const bonusBtn = document.querySelector('.bottom-nav .nav-item[data-page="bonus"]');
+    if (bonusBtn) {
+        bonusBtn.addEventListener("click", () => {
+            if (typeof showPage === "function") {
+                showPage("bonus");
+            }
+        });
+    }
 });
