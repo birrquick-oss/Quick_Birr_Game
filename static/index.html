@@ -1118,40 +1118,6 @@
         <button id="minesNewBtn" class="mines-new-btn" type="button" hidden>🔄 NEW GAME</button>
     </div>
 </div>
-        
-<!-- =========================================================
-     ⚽ SPORTS BETTING VIEW
-========================================================= -->
-<div id="sportsView" class="page-view" hidden>
-    <!-- Top Header / League Selection -->
-    <div style="padding: 15px; background: #111827; border-bottom: 1px solid #1f2937;">
-        <h2 style="color: #fff; margin: 0 0 10px 0; font-size: 18px;">⚽ Sports Betting</h2>
-        
-        <!-- League Tabs -->
-        <div style="display: flex; gap: 8px; overflow-x: auto; padding-bottom: 5px; scrollbar-width: none;">
-            <button onclick="loadLeagueMatches('soccer_epl')" style="background: #eab308; color: #000; border: none; padding: 6px 12px; border-radius: 20px; font-weight: bold; font-size: 12px; white-space: nowrap; cursor: pointer;">
-                🏴󠁧󠁢󠁥󠁮󠁧󠁿 Premier League
-            </button>
-            <button onclick="loadLeagueMatches('soccer_spain_la_liga')" style="background: #1f2937; color: #fff; border: 1px solid #374151; padding: 6px 12px; border-radius: 20px; font-size: 12px; white-space: nowrap; cursor: pointer;">
-                🇪🇸 La Liga
-            </button>
-            <button onclick="loadLeagueMatches('soccer_germany_bundesliga')" style="background: #1f2937; color: #fff; border: 1px solid #374151; padding: 6px 12px; border-radius: 20px; font-size: 12px; white-space: nowrap; cursor: pointer;">
-                🇩🇪 Bundesliga
-            </button>
-            <button onclick="loadLeagueMatches('soccer_italy_serie_a')" style="background: #1f2937; color: #fff; border: 1px solid #374151; padding: 6px 12px; border-radius: 20px; font-size: 12px; white-space: nowrap; cursor: pointer;">
-                🇮🇹 Serie A
-            </button>
-            <button onclick="loadLeagueMatches('soccer_uefa_champs_league')" style="background: #1f2937; color: #fff; border: 1px solid #374151; padding: 6px 12px; border-radius: 20px; font-size: 12px; white-space: nowrap; cursor: pointer;">
-                🇪🇺 Champions League
-            </button>
-        </div>
-    </div>
-
-    <!-- Matches List Container -->
-    <div id="matchesContainer" style="padding: 15px; margin-bottom: 60px;">
-        <p style="color: #aaa; text-align: center; padding: 20px;">ጨዋታዎች በመጫን ላይ ናቸው...</p>
-    </div>
-</div>
 
         <!-- PROFILE VIEW -->
         <div id="profileView" class="page-view" hidden>
@@ -1396,46 +1362,6 @@
 
             <button class="submit-btn btn-red" type="submit">📬 የማውጫ ጥያቄ ላክ</button>
         </form>
-    </div>
-</div>
-    
-<!-- =========================================================
-     🎫 BET SLIP MODAL
-========================================================= -->
-<div id="betSlipModal" class="modal-overlay" hidden style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); display: flex; justify-content: center; align-items: center; z-index: 10000;">
-    <div style="background: #1a2232; width: 90%; max-width: 360px; border-radius: 16px; padding: 20px; border: 1px solid #2e3b52; color: #fff; box-shadow: 0 10px 25px rgba(0,0,0,0.5);">
-        
-        <!-- Header -->
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid #2e3b52; padding-bottom: 10px;">
-            <h3 style="margin: 0; font-size: 16px; color: #eab308;">🎫 Bet Slip</h3>
-            <button onclick="closeBetSlip()" style="background: none; border: none; color: #aaa; font-size: 20px; cursor: pointer;">✕</button>
-        </div>
-
-        <!-- Selected Match Info -->
-        <div style="background: #111827; padding: 12px; border-radius: 8px; margin-bottom: 15px;">
-            <div id="slipMatchName" style="font-weight: bold; font-size: 13px; color: #fff; margin-bottom: 5px;">-</div>
-            <div style="display: flex; justify-content: space-between; font-size: 12px;">
-                <span style="color: #8a99ad;">ምርጫ፦ <strong id="slipSelection" style="color: #38bdf8;">-</strong></span>
-                <span style="color: #8a99ad;">Odds፦ <strong id="slipOdds" style="color: #2ed573;">1.00</strong></span>
-            </div>
-        </div>
-
-        <!-- Stake Input -->
-        <div style="margin-bottom: 15px;">
-            <label style="display: block; font-size: 12px; color: #8a99ad; margin-bottom: 5px;">የመደቢያ መጠን (ETB)፦</label>
-            <input type="number" id="stakeInput" oninput="calculatePayout()" placeholder="አነስተኛው 10 ETB" style="width: 100%; padding: 10px; background: #0f172a; border: 1px solid #334155; border-radius: 8px; color: #fff; font-size: 15px; box-sizing: border-box; outline: none;">
-        </div>
-
-        <!-- Potential Win -->
-        <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(46, 213, 115, 0.1); padding: 10px; border-radius: 8px; margin-bottom: 15px; border: 1px dashed #2ed573;">
-            <span style="font-size: 13px; color: #aaa;">ሊያሸንፉ የሚችሉት፦</span>
-            <span id="potentialWin" style="font-weight: bold; color: #2ed573; font-size: 16px;">0.00 ETB</span>
-        </div>
-
-        <!-- Submit Button -->
-        <button onclick="submitBet()" style="width: 100%; background: #2ed573; color: #000; border: none; padding: 12px; border-radius: 8px; font-weight: bold; font-size: 15px; cursor: pointer;">
-            ውርርድ ያዙ (Place Bet)
-        </button>
     </div>
 </div>
 
