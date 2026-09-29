@@ -1123,9 +1123,15 @@
      SPORTS BETTING VIEW
 ========================================================= -->
 <div id="sportsView" class="page-view" hidden>
-    <!-- Top Header / League Selection -->
+    <!-- Top Header / League Selection & My Bets -->
     <div style="padding: 15px; background: #111827; border-bottom: 1px solid #1f2937;">
-        <h2 style="color: #fff; margin: 0 0 10px 0; font-size: 18px;">Sports Betting</h2>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+            <h2 style="color: #fff; margin: 0; font-size: 18px;">Sports Betting</h2>
+            <!-- 🎟️ My Bets Button (የተወራረዱባቸውን ትኬቶች ማያ አዝራር) -->
+            <button onclick="toggleMyBets()" style="background: #3b82f6; color: #fff; border: none; padding: 6px 12px; border-radius: 8px; font-weight: bold; font-size: 12px; cursor: pointer;">
+                🎟️ My Bets
+            </button>
+        </div>
         
         <!-- League Tabs -->
         <div style="display: flex; gap: 8px; overflow-x: auto; padding-bottom: 5px; scrollbar-width: none;">
@@ -1150,6 +1156,11 @@
     <!-- Matches List Container -->
     <div id="matchesContainer" style="padding: 15px; margin-bottom: 60px;">
         <p style="color: #aaa; text-align: center; padding: 20px;">Loading matches...</p>
+    </div>
+
+    <!-- My Bets List Container (የተወራረዱባቸው ትኬቶች የሚታዩበት ሳጥን) -->
+    <div id="myBetsContainer" hidden style="padding: 15px; margin-bottom: 60px;">
+        <p style="color: #aaa; text-align: center; padding: 20px;">Loading your bets...</p>
     </div>
 </div>
 
