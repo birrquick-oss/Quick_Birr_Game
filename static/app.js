@@ -116,6 +116,7 @@ const plinkoView = document.getElementById("plinkoView");
 const rouletteView = document.getElementById("rouletteView");
 const blackjackView = document.getElementById("blackjackView");
 const minesView = document.getElementById("minesView");
+const sportsView = document.getElementById("sportsView");
 
 const depositModal = document.getElementById("depositModal");
 const withdrawModal = document.getElementById("withdrawModal");
@@ -1100,6 +1101,7 @@ function hideAllViews() {
     if (rouletteView) rouletteView.hidden = true;
     if (blackjackView) blackjackView.hidden = true;
     if (minesView) minesView.hidden = true;
+    if (sportsView) sportsView.hidden = true;
 }
 
 function showPage(pageName) {
@@ -1137,6 +1139,11 @@ function showPage(pageName) {
     } else if (pageName === "mines") {
         if (minesView) minesView.hidden = false;
         if (typeof updateMinesBalance === "function") updateMinesBalance();
+    } else if (pageName === "sports") {
+        if (sportsView) sportsView.hidden = false;
+        if (typeof loadLeagueMatches === "function") {
+            loadLeagueMatches('soccer_epl'); // በራስ-ሰር የ EPL ጨዋታዎችን ይጭናል
+        }   
     } else {
         if (homeView) homeView.hidden = false;
     }
@@ -4401,3 +4408,136 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 });
+
+/* =========================================================
+   ⚽ SPORTS BETTING INTEGRATION
+========================================================= */
+let currentSelectedMatch = null;
+
+// የሊግ ጨዋታዎችን ከ API መጫኛ
+async function loadLeagueMatches(sportKey) {
+    const container = document.getElementById("matchesContainer");
+    if (!container) return;
+
+    container.innerHTML = `<p style="color: #aaa; text-align: center; padding: 20px;">ጨዋታዎች በመጫን ላይ ናቸው...</p>`;
+
+    try {
+        const response = await fetch(`/api/sports/matches?sport_key=${sportKey}`);
+        const matches = await response.json();
+
+        if (!Array.isArray(matches) || matches.length === 0) {
+            container.innerHTML = `<p style="color: #aaa; text-align: center; padding: 20px;">በአሁኑ ሰዓት የተመዘገቡ ጨዋታዎች የሉም።</p>`;
+            return;
+        }
+
+        let html = "";
+        matches.forEach(match => {
+            const h2hOutcome = match.bookmakers?.[0]?.markets?.find(m => m.key === 'h2h')?.outcomes || [];
+            const homeOdds = h2hOutcome.find(o => o.name === match.home_team)?.price || "1.00";
+            const drawOdds = h2hOutcome.find(o => o.name === "Draw")?.price || "1.00";
+            const awayOdds = h2hOutcome.find(o => o.name === match.away_team)?.price || "1.00";
+
+            const matchDate = new Date(match.commence_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+            html += `
+                <div style="background: #1a2232; border-radius: 12px; padding: 12px; margin-bottom: 12px; border: 1px solid #2e3b52;">
+                    <div style="display: flex; justify-content: space-between; color: #8a99ad; font-size: 12px; margin-bottom: 8px;">
+                        <span>⏰ ${matchDate}</span>
+                        <span>Odds</span>
+                    </div>
+                    <div style="color: #fff; font-weight: bold; font-size: 14px; margin-bottom: 10px;">
+                        ${match.home_team} <span style="color: #eab308;">VS</span> ${match.away_team}
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;">
+                        <button onclick="openBetSlip('${match.id}', '${match.home_team} vs ${match.away_team}', '1 (${match.home_team})', ${homeOdds})" style="background: #232d3f; border: 1px solid #3b4d6b; color: #fff; padding: 8px; border-radius: 6px; cursor: pointer;">
+                            1 <br><strong style="color: #2ed573;">${homeOdds}</strong>
+                        </button>
+                        <button onclick="openBetSlip('${match.id}', '${match.home_team} vs ${match.away_team}', 'X (Draw)', ${drawOdds})" style="background: #232d3f; border: 1px solid #3b4d6b; color: #fff; padding: 8px; border-radius: 6px; cursor: pointer;">
+                            X <br><strong style="color: #2ed573;">${drawOdds}</strong>
+                        </button>
+                        <button onclick="openBetSlip('${match.id}', '${match.home_team} vs ${match.away_team}', '2 (${match.away_team})', ${awayOdds})" style="background: #232d3f; border: 1px solid #3b4d6b; color: #fff; padding: 8px; border-radius: 6px; cursor: pointer;">
+                            2 <br><strong style="color: #2ed573;">${awayOdds}</strong>
+                        </button>
+                    </div>
+                </div>
+            `;
+        });
+
+        container.innerHTML = html;
+    } catch (e) {
+        console.error(e);
+        container.innerHTML = `<p style="color: #ff4757; text-align: center; padding: 20px;">ጨዋታዎችን መጫን አልተቻለም!</p>`;
+    }
+}
+
+// የ Bet Slip Modal መክፈቻ
+function openBetSlip(matchId, matchTitle, selection, odds) {
+    currentSelectedMatch = { matchId, matchTitle, selection, odds };
+
+    const modal = document.getElementById("betSlipModal");
+    if (!modal) return;
+
+    document.getElementById("slipMatchName").innerText = matchTitle;
+    document.getElementById("slipSelection").innerText = selection;
+    document.getElementById("slipOdds").innerText = odds;
+    document.getElementById("stakeInput").value = "";
+    document.getElementById("potentialWin").innerText = "0.00 ETB";
+
+    modal.hidden = false;
+}
+
+// የ Bet Slip Modal መዝጊያ
+function closeBetSlip() {
+    const modal = document.getElementById("betSlipModal");
+    if (modal) modal.hidden = true;
+}
+
+// ሊያሸንፉ የሚችሉትን የገንዘብ መጠን ማስያ
+function calculatePayout() {
+    const stake = parseFloat(document.getElementById("stakeInput").value) || 0;
+    const odds = currentSelectedMatch ? currentSelectedMatch.odds : 1;
+    const win = (stake * odds).toFixed(2);
+    document.getElementById("potentialWin").innerText = `${win} ETB`;
+}
+
+// ውርርድ የመመዝገቢያ ጥያቄ ወደ Backend መላኪያ
+async function submitBet() {
+    const stake = parseFloat(document.getElementById("stakeInput").value);
+    if (!stake || stake < 10) {
+        showToastMessage("⚠️ አነስተኛው የመደቢያ መጠን 10 ETB ነው!", "error");
+        return;
+    }
+
+    if (!currentSelectedMatch) return;
+
+    try {
+        const response = await fetch("/api/sports/place-bet", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                telegram_id: String(userData.telegram_id),
+                match_id: currentSelectedMatch.matchId,
+                match_title: currentSelectedMatch.matchTitle,
+                selection: currentSelectedMatch.selection,
+                odds: currentSelectedMatch.odds,
+                stake: stake
+            })
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            closeBetSlip();
+            showToastMessage("🎉 ውርርድዎ በተሳካ ሁኔታ ተይዟል!", "success");
+            if (result.current_balance !== undefined) {
+                userData.balance = parseFloat(result.current_balance).toFixed(2);
+                updateBalanceUI(userData.balance);
+            }
+        } else {
+            showToastMessage("⚠️ " + (result.message || "ውርርዱ አልተሳካም!"), "error");
+        }
+    } catch (e) {
+        console.error(e);
+        showToastMessage("⚠️ የቴክኒክ ስህተት አጋጥሟል!", "error");
+    }
+}
