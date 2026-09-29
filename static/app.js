@@ -4410,14 +4410,13 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 /* =========================================================
-   ⚽ SPORTS BETTING INTEGRATION (MULTI-BET SUPPORT)
+   ⚽ SPORTS BETTING INTEGRATION (MULTI-BET & MY BETS FIXED)
 ========================================================= */
 
-// የተመረጡ ጨዋታዎችን መያዣ Array
 let selectedBets = [];
 let isMyBetsOpen = false;
 
-// Navigation Listener
+// 1. Navigation Click Listener
 document.addEventListener("DOMContentLoaded", () => {
     const navItems = document.querySelectorAll(".bottom-nav .nav-item");
     
@@ -4438,13 +4437,15 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
             if (page === "sports") {
-                loadLeagueMatches("soccer_epl");
+                // በ Default Premier League መጫን
+                const defaultBtn = document.querySelector("#sportsView button[onclick*='soccer_epl']");
+                loadLeagueMatches("soccer_epl", defaultBtn);
             }
         });
     });
 });
 
-// My Bets እና Matches መቀያየሪያ
+// 2. My Bets እና Matches መቀያየሪያ
 function toggleMyBets() {
     const matchesDiv = document.getElementById("matchesContainer");
     const myBetsDiv = document.getElementById("myBetsContainer");
@@ -4463,12 +4464,19 @@ function toggleMyBets() {
     }
 }
 
-// የተወራረዱባቸውን ትኬቶች ከ Backend ማምጫ
+// 3. የተወራረዱባቸውን ትኬቶች ከ Backend ማምጫ (Fixed Telegram ID Fetch)
 async function loadUserBets() {
     const container = document.getElementById("myBetsContainer");
     if (!container) return;
 
-    const tgId = typeof getTelegramUserId === 'function' ? getTelegramUserId() : null;
+    // Telegram ID ማምጫ ማስተካከያ
+    let tgId = null;
+    if (typeof getTelegramUserId === 'function') {
+        tgId = getTelegramUserId();
+    } else if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe?.user) {
+        tgId = window.Telegram.WebApp.initDataUnsafe.user.id;
+    }
+
     if (!tgId) {
         container.innerHTML = `<p style="color: #ff4757; text-align: center; padding: 20px;">የቴሌግራም መለያዎ አልተገኘም!</p>`;
         return;
@@ -4518,12 +4526,28 @@ async function loadUserBets() {
     }
 }
 
-// የሊግ ጨዋታዎችን መጫኛ
-async function loadLeagueMatches(sportKey) {
+// 4. የሊግ ጨዋታዎችን መጫኛ (Active Button Highlights)
+async function loadLeagueMatches(sportKey, btnElement) {
     const matchesDiv = document.getElementById("matchesContainer");
     const myBetsDiv = document.getElementById("myBetsContainer");
 
     if (!matchesDiv) return;
+
+    // የጠየቀውን Button Active ማድረግ
+    if (btnElement) {
+        const parentDiv = btnElement.parentElement;
+        if (parentDiv) {
+            const buttons = parentDiv.querySelectorAll("button");
+            buttons.forEach(btn => {
+                btn.style.background = "#1f2937";
+                btn.style.color = "#fff";
+                btn.style.border = "1px solid #374151";
+            });
+            btnElement.style.background = "#eab308";
+            btnElement.style.color = "#000";
+            btnElement.style.border = "none";
+        }
+    }
 
     isMyBetsOpen = false;
     matchesDiv.hidden = false;
@@ -4536,7 +4560,7 @@ async function loadLeagueMatches(sportKey) {
         const matches = await response.json();
 
         if (!Array.isArray(matches) || matches.length === 0) {
-            matchesDiv.innerHTML = `<p style="color: #aaa; text-align: center; padding: 20px;">በአሁኑ ሰዓት የተመዘገቡ ጨዋታዎች የሉም።</p>`;
+            matchesDiv.innerHTML = `<p style="color: #aaa; text-align: center; padding: 20px;">በአሁኑ ሰዓት ለዚህ ሊግ የተመዘገቡ ጨዋታዎች የሉም።</p>`;
             return;
         }
 
@@ -4581,11 +4605,10 @@ async function loadLeagueMatches(sportKey) {
     }
 }
 
-// 🆕 ጨዋታዎችን ወደ Bet Slip የመጨመር ስራ (Multi-Bet Support)
+// 5. ጨዋታዎችን ወደ Bet Slip የመጨመር ስራ (Multi-Bet Support)
 function addBetToSlip(matchId, matchTitle, selection, odds) {
     const numericOdds = parseFloat(odds) || 1.0;
 
-    // ከአንድ ጨዋታ አንድ ምርጫ ብቻ መያዙን ማረጋገጥ (የበፊቱን ካለ መተካት)
     const existingIndex = selectedBets.findIndex(b => b.matchId === matchId);
     if (existingIndex > -1) {
         selectedBets[existingIndex] = { matchId, matchTitle, selection, odds: numericOdds };
@@ -4599,7 +4622,7 @@ function addBetToSlip(matchId, matchTitle, selection, odds) {
     if (modal) modal.hidden = false;
 }
 
-// 🆕 የተመረጡ ጨዋታዎችን በ Modal ውስጥ ማሳያ
+// 6. የተመረጡ ጨዋታዎችን በ Modal ውስጥ ማሳያ
 function renderBetSlip() {
     const listDiv = document.getElementById("selectedMatchesList");
     const countSpan = document.getElementById("slipCount");
@@ -4638,7 +4661,7 @@ function renderBetSlip() {
     calculatePayout();
 }
 
-// 🆕 ጨዋታን ከ Bet Slip ውስጥ መነስነስ
+// 7. ጨዋታን ከ Bet Slip ውስጥ መነስነስ
 function removeBetFromSlip(index) {
     selectedBets.splice(index, 1);
     renderBetSlip();
@@ -4647,20 +4670,20 @@ function removeBetFromSlip(index) {
     }
 }
 
-// Bet Slip ሙሉ በሙሉ ማፅጃ
+// 8. Bet Slip ማፅጃ
 function clearBetSlip() {
     selectedBets = [];
     renderBetSlip();
     closeBetSlip();
 }
 
-// Bet Slip መዝጊያ
+// 9. Bet Slip መዝጊያ
 function closeBetSlip() {
     const modal = document.getElementById("betSlipModal");
     if (modal) modal.hidden = true;
 }
 
-// 🆕 አጠቃላይ ሊያሸንፉ የሚችሉትን ገንዘብ ማስያ (Stake * Total Odds)
+// 10. አጠቃላይ ሊያሸንፉ የሚችሉትን ገንዘብ ማስያ
 function calculatePayout() {
     const stake = parseFloat(document.getElementById("stakeInput").value) || 0;
     
@@ -4674,7 +4697,7 @@ function calculatePayout() {
     if (winSpan) winSpan.innerText = `${win} ETB`;
 }
 
-// 🆕 ውርርድ የመመዝገቢያ ጥያቄ ወደ Backend መላኪያ
+// 11. ውርርድ የመመዝገቢያ ጥያቄ ወደ Backend መላኪያ
 async function submitBet() {
     if (selectedBets.length === 0) {
         alert("⚠️ እባክዎ አስቀድመው ቢያንስ አንድ ጨዋታ ይምረጡ!");
@@ -4691,7 +4714,13 @@ async function submitBet() {
         return;
     }
 
-    const tgId = typeof getTelegramUserId === 'function' ? getTelegramUserId() : null;
+    let tgId = null;
+    if (typeof getTelegramUserId === 'function') {
+        tgId = getTelegramUserId();
+    } else if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe?.user) {
+        tgId = window.Telegram.WebApp.initDataUnsafe.user.id;
+    }
+
     if (!tgId) {
         if (typeof showToastMessage === 'function') {
             showToastMessage("የቴሌግራም ማንነትዎ አልተገኘም!", "error");
@@ -4701,7 +4730,6 @@ async function submitBet() {
         return;
     }
 
-    // አጠቃላይ Odds ማስላት
     let totalOdds = 1.0;
     const selectionsSummary = selectedBets.map(b => `${b.matchTitle} (${b.selection})`).join(" + ");
     selectedBets.forEach(b => totalOdds *= b.odds);
@@ -4711,7 +4739,7 @@ async function submitBet() {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-                telegram_id: tgId,
+                telegram_id: String(tgId),
                 match_id: selectedBets.map(b => b.matchId).join(","),
                 match_name: selectedBets.length > 1 ? `Multi-Bet (${selectedBets.length} matches)` : selectedBets[0].matchTitle,
                 selection: selectionsSummary,
