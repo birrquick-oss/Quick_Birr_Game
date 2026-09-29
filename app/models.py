@@ -7,11 +7,9 @@ from sqlalchemy import (
     Integer,
     String,
     Text,
-    Boolean,
+    Boolean
 )
-
-from app.database import Base
-
+from sqlalchemy.orm import relationship
 
 # =========================================================
 # USER
