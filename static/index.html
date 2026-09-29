@@ -1133,21 +1133,21 @@
             </button>
         </div>
         
-        <!-- League Tabs -->
+        <!-- League Tabs (አዝራሮቹ this የሚለውን ይዘው ተስተካክለዋል) -->
         <div style="display: flex; gap: 8px; overflow-x: auto; padding-bottom: 5px; scrollbar-width: none;">
-            <button onclick="loadLeagueMatches('soccer_epl')" style="background: #eab308; color: #000; border: none; padding: 6px 12px; border-radius: 20px; font-weight: bold; font-size: 12px; white-space: nowrap; cursor: pointer;">
+            <button onclick="loadLeagueMatches('soccer_epl', this)" style="background: #eab308; color: #000; border: none; padding: 6px 12px; border-radius: 20px; font-weight: bold; font-size: 12px; white-space: nowrap; cursor: pointer;">
                 Premier League
             </button>
-            <button onclick="loadLeagueMatches('soccer_spain_la_liga')" style="background: #1f2937; color: #fff; border: 1px solid #374151; padding: 6px 12px; border-radius: 20px; font-size: 12px; white-space: nowrap; cursor: pointer;">
+            <button onclick="loadLeagueMatches('soccer_spain_la_liga', this)" style="background: #1f2937; color: #fff; border: 1px solid #374151; padding: 6px 12px; border-radius: 20px; font-size: 12px; white-space: nowrap; cursor: pointer;">
                 La Liga
             </button>
-            <button onclick="loadLeagueMatches('soccer_germany_bundesliga')" style="background: #1f2937; color: #fff; border: 1px solid #374151; padding: 6px 12px; border-radius: 20px; font-size: 12px; white-space: nowrap; cursor: pointer;">
+            <button onclick="loadLeagueMatches('soccer_germany_bundesliga', this)" style="background: #1f2937; color: #fff; border: 1px solid #374151; padding: 6px 12px; border-radius: 20px; font-size: 12px; white-space: nowrap; cursor: pointer;">
                 Bundesliga
             </button>
-            <button onclick="loadLeagueMatches('soccer_italy_serie_a')" style="background: #1f2937; color: #fff; border: 1px solid #374151; padding: 6px 12px; border-radius: 20px; font-size: 12px; white-space: nowrap; cursor: pointer;">
+            <button onclick="loadLeagueMatches('soccer_italy_serie_a', this)" style="background: #1f2937; color: #fff; border: 1px solid #374151; padding: 6px 12px; border-radius: 20px; font-size: 12px; white-space: nowrap; cursor: pointer;">
                 Serie A
             </button>
-            <button onclick="loadLeagueMatches('soccer_uefa_champs_league')" style="background: #1f2937; color: #fff; border: 1px solid #374151; padding: 6px 12px; border-radius: 20px; font-size: 12px; white-space: nowrap; cursor: pointer;">
+            <button onclick="loadLeagueMatches('soccer_uefa_champs_league', this)" style="background: #1f2937; color: #fff; border: 1px solid #374151; padding: 6px 12px; border-radius: 20px; font-size: 12px; white-space: nowrap; cursor: pointer;">
                 Champions League
             </button>
         </div>
@@ -1163,6 +1163,7 @@
         <p style="color: #aaa; text-align: center; padding: 20px;">Loading your bets...</p>
     </div>
 </div>
+
 
         <!-- PROFILE VIEW -->
         <div id="profileView" class="page-view" hidden>
