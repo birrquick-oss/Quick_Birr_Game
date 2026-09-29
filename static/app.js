@@ -71,6 +71,8 @@ let currentMinesGameId = null;
 let cashbackCountdownTimer = null;
 let cashbackData = null;
 
+let currentSelectedMatch = null;
+
 let soundEnabled = true;
 let isAutoMark = true;
 let markedCellsMap = {}; 
@@ -4412,7 +4414,6 @@ document.addEventListener("DOMContentLoaded", () => {
 /* =========================================================
    ⚽ SPORTS BETTING INTEGRATION
 ========================================================= */
-let currentSelectedMatch = null;
 
 // የሊግ ጨዋታዎችን ከ API መጫኛ
 async function loadLeagueMatches(sportKey) {
@@ -4422,7 +4423,7 @@ async function loadLeagueMatches(sportKey) {
     container.innerHTML = `<p style="color: #aaa; text-align: center; padding: 20px;">ጨዋታዎች በመጫን ላይ ናቸው...</p>`;
 
     try {
-        const response = await fetch(`/api/sports/matches?sport_key=${sportKey}`);
+        const response = await fetch(`/api/sports/matches/${sportKey}`);
         const matches = await response.json();
 
         if (!Array.isArray(matches) || matches.length === 0) {
@@ -4432,12 +4433,13 @@ async function loadLeagueMatches(sportKey) {
 
         let html = "";
         matches.forEach(match => {
-            const h2hOutcome = match.bookmakers?.[0]?.markets?.find(m => m.key === 'h2h')?.outcomes || [];
-            const homeOdds = h2hOutcome.find(o => o.name === match.home_team)?.price || "1.00";
-            const drawOdds = h2hOutcome.find(o => o.name === "Draw")?.price || "1.00";
-            const awayOdds = h2hOutcome.find(o => o.name === match.away_team)?.price || "1.00";
+            const homeOdds = match.odds?.home_win || "1.00";
+            const drawOdds = match.odds?.draw || "1.00";
+            const awayOdds = match.odds?.away_win || "1.00";
 
-            const matchDate = new Date(match.commence_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            const matchDate = match.commence_time 
+                ? new Date(match.commence_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                : "Soon";
 
             html += `
                 <div style="background: #1a2232; border-radius: 12px; padding: 12px; margin-bottom: 12px; border: 1px solid #2e3b52;">
@@ -4465,7 +4467,7 @@ async function loadLeagueMatches(sportKey) {
 
         container.innerHTML = html;
     } catch (e) {
-        console.error(e);
+        console.error("Matches Load Error:", e);
         container.innerHTML = `<p style="color: #ff4757; text-align: center; padding: 20px;">ጨዋታዎችን መጫን አልተቻለም!</p>`;
     }
 }
@@ -4504,23 +4506,37 @@ function calculatePayout() {
 async function submitBet() {
     const stake = parseFloat(document.getElementById("stakeInput").value);
     if (!stake || stake < 10) {
-        showToastMessage("⚠️ አነስተኛው የመደቢያ መጠን 10 ETB ነው!", "error");
+        if (typeof showToastMessage === 'function') {
+            showToastMessage("⚠️ አነስተኛው የመደቢያ መጠን 10 ETB ነው!", "error");
+        } else {
+            alert("⚠️ አነስተኛው የመደቢያ መጠን 10 ETB ነው!");
+        }
         return;
     }
 
     if (!currentSelectedMatch) return;
+
+    const tgId = getTelegramUserId();
+    if (!tgId) {
+        if (typeof showToastMessage === 'function') {
+            showToastMessage("የቴሌግራም ማንነትዎ አልተገኘም!", "error");
+        } else {
+            alert("የቴሌግራም ማንነትዎ አልተገኘም!");
+        }
+        return;
+    }
 
     try {
         const response = await fetch("/api/sports/place-bet", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-                telegram_id: String(userData.telegram_id),
-                match_id: currentSelectedMatch.matchId,
-                match_title: currentSelectedMatch.matchTitle,
+                telegram_id: tgId,
+                match_id: String(currentSelectedMatch.matchId),
+                match_name: currentSelectedMatch.matchTitle,
                 selection: currentSelectedMatch.selection,
-                odds: currentSelectedMatch.odds,
-                stake: stake
+                odds: parseFloat(currentSelectedMatch.odds),
+                stake_amount: stake
             })
         });
 
@@ -4528,16 +4544,35 @@ async function submitBet() {
 
         if (result.success) {
             closeBetSlip();
-            showToastMessage("🎉 ውርርድዎ በተሳካ ሁኔታ ተይዟል!", "success");
-            if (result.current_balance !== undefined) {
-                userData.balance = parseFloat(result.current_balance).toFixed(2);
-                updateBalanceUI(userData.balance);
+            if (typeof showToastMessage === 'function') {
+                showToastMessage("🎉 ውርርድዎ በተሳካ ሁኔታ ተይዟል!", "success");
+            } else {
+                alert("🎉 ውርርድዎ በተሳካ ሁኔታ ተይዟል!");
+            }
+
+            if (result.balance !== undefined) {
+                if (typeof userData !== 'undefined' && userData) userData.balance = result.balance;
+
+                const balEl = document.getElementById('dashBalance');
+                if (balEl) balEl.textContent = `${parseFloat(result.balance).toFixed(2)} ETB`;
+
+                const mainBalEl = document.getElementById('userBalance');
+                if (mainBalEl) mainBalEl.textContent = `${parseFloat(result.balance).toFixed(2)} ETB`;
             }
         } else {
-            showToastMessage("⚠️ " + (result.message || "ውርርዱ አልተሳካም!"), "error");
+            const err = result.detail || result.message || "ውርርዱ አልተሳካም!";
+            if (typeof showToastMessage === 'function') {
+                showToastMessage("⚠️ " + err, "error");
+            } else {
+                alert("⚠️ " + err);
+            }
         }
     } catch (e) {
-        console.error(e);
-        showToastMessage("⚠️ የቴክኒክ ስህተት አጋጥሟል!", "error");
+        console.error("Submit Bet Error:", e);
+        if (typeof showToastMessage === 'function') {
+            showToastMessage("⚠️ የቴክኒክ ስህተት ተፈጥሯል!", "error");
+        } else {
+            alert("⚠️ የቴክኒክ ስህተት ተፈጥሯል!");
+        }
     }
 }
