@@ -1,10 +1,12 @@
 import uuid
 import httpx
+from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
+from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey, func
 from sqlalchemy.orm import Session
 
-from app.database import SessionLocal
+from app.database import SessionLocal, Base
 from app.models import User, WalletTransaction
 
 
@@ -15,8 +17,25 @@ router = APIRouter(
 
 
 # =========================================================
-# DATABASE
+# DATABASE MODEL FOR SPORTS BETS
 # =========================================================
+
+class SportsBet(Base):
+    __tablename__ = "sports_bets"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    telegram_id = Column(String(64), index=True, nullable=False)
+    match_id = Column(String(255), nullable=False)
+    match_name = Column(String(255), nullable=False)
+    selection = Column(String(550), nullable=False)
+    odds = Column(Float, nullable=False)
+    stake = Column(Float, nullable=False)
+    potential_payout = Column(Float, nullable=False)
+    status = Column(String(32), default="pending")  # pending, won, lost, cancelled
+    reference = Column(String(64), unique=True, index=True)
+    created_at = Column(DateTime, server_default=func.now())
+
 
 def get_db():
     db = SessionLocal()
@@ -44,8 +63,6 @@ class PlaceBetRequest(BaseModel):
 # =========================================================
 
 MIN_STAKE = 10.0  # አነስተኛ የመደቢያ መጠን
-
-# The Odds API (ወይም የሚጠቀሙበት API)
 ODDS_API_KEY = "YOUR_ODDS_API_KEY"  # የ API ቁልፍህን እዚህ አስገባ
 ODDS_API_URL = "https://api.the-odds-api.com/v4/sports"
 
@@ -56,16 +73,8 @@ ODDS_API_URL = "https://api.the-odds-api.com/v4/sports"
 
 @router.get("/matches/{sport_key}")
 async def get_matches(sport_key: str):
-    """
-    sport_key ለምሳሌ:
-    - soccer_epl (Premier League)
-    - soccer_spain_la_liga
-    - soccer_germany_bundesliga
-    - soccer_italy_serie_a
-    - soccer_uefa_champs_league
-    """
     if not ODDS_API_KEY or ODDS_API_KEY == "YOUR_ODDS_API_KEY":
-        # API Key ከሌለ ወይም ዝግጁ ካልሆነ ለሙከራ የሚሆኑ Dummy Data-ዎችን ይመልሳል
+        # API Key ከሌለ ለሙከራ የሚሆኑ Dummy Data-ዎች
         return [
             {
                 "id": "match_001",
@@ -97,7 +106,7 @@ async def get_matches(sport_key: str):
             data = response.json()
             matches = []
 
-            for match in data[:15]:  # የመጀመሪያዎቹን 15 ጨዋታዎች ብቻ መውሰድ
+            for match in data[:15]:
                 h2h_market = next(
                     (m for b in match.get("bookmakers", []) for m in b.get("markets", []) if m.get("key") == "h2h"),
                     None
@@ -147,10 +156,6 @@ def place_bet(
     stake = round(float(request.stake_amount), 2)
     odds = round(float(request.odds), 2)
 
-    # -----------------------------------------------------
-    # Validate stake & data
-    # -----------------------------------------------------
-
     if stake < MIN_STAKE:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -163,10 +168,7 @@ def place_bet(
             detail="Telegram ID is required."
         )
 
-    # -----------------------------------------------------
-    # Lock user row
-    # -----------------------------------------------------
-
+    # 1. Lock User Record
     user = (
         db.query(User)
         .filter(User.telegram_id == telegram_id)
@@ -180,19 +182,11 @@ def place_bet(
             detail="User not found."
         )
 
-    # -----------------------------------------------------
-    # Check banned user
-    # -----------------------------------------------------
-
     if getattr(user, "is_banned", 0):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Your account is currently restricted."
         )
-
-    # -----------------------------------------------------
-    # Check balance
-    # -----------------------------------------------------
 
     current_balance = round(float(user.balance or 0), 2)
 
@@ -202,20 +196,13 @@ def place_bet(
             detail=f"Insufficient balance! Your balance is {current_balance:.2f} ETB."
         )
 
-    # -----------------------------------------------------
-    # Calculate potential win & deduct stake
-    # -----------------------------------------------------
-
     potential_win = round(stake * odds, 2)
     balance_after_stake = round(current_balance - stake, 2)
 
     user.balance = balance_after_stake
     reference = f"SPORTS-{uuid.uuid4().hex[:16]}"
 
-    # -----------------------------------------------------
-    # Stake transaction
-    # -----------------------------------------------------
-
+    # 2. Add Wallet Transaction
     stake_transaction = WalletTransaction(
         user_id=user.id,
         transaction_type="game_stake_sports",
@@ -226,19 +213,28 @@ def place_bet(
         description=f"Sports Bet ({request.match_name} - {request.selection} @ {odds})"
     )
 
-    db.add(stake_transaction)
+    # 3. Add Sports Bet Record (የተወራረደበትን ትኬት ሰንጠረዥ ውስጥ መመዝገብ)
+    bet_record = SportsBet(
+        user_id=user.id,
+        telegram_id=telegram_id,
+        match_id=request.match_id,
+        match_name=request.match_name,
+        selection=request.selection,
+        odds=odds,
+        stake=stake,
+        potential_payout=potential_win,
+        status="pending",
+        reference=reference
+    )
 
-    # -----------------------------------------------------
-    # ONE COMMIT
-    # -----------------------------------------------------
+    db.add(stake_transaction)
+    db.add(bet_record)
 
     try:
         db.commit()
         db.refresh(user)
-
-    except Exception:
+    except Exception as e:
         db.rollback()
-
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Bet could not be placed. Please try again."
@@ -252,3 +248,36 @@ def place_bet(
         "balance": round(float(user.balance), 2),
         "message": f"Bet placed successfully for {request.match_name}!"
     }
+
+
+# =========================================================
+# 🆕 MY BETS ENDPOINT (የተወራረዱባቸውን ትኬቶች ማምጫ)
+# =========================================================
+
+@router.get("/my-bets/{telegram_id}")
+def get_user_bets(telegram_id: str, db: Session = Depends(get_db)):
+    """
+    ለተጠቃሚው በቅድሚያ የተመዘገቡ የውርርድ ትኬቶችን ዝርዝር ያመጣል
+    """
+    bets = (
+        db.query(SportsBet)
+        .filter(SportsBet.telegram_id == str(telegram_id).strip())
+        .order_by(SportsBet.id.desc())
+        .limit(20)
+        .all()
+    )
+
+    result = []
+    for bet in bets:
+        result.append({
+            "id": bet.id,
+            "match_name": bet.match_name,
+            "selection": bet.selection,
+            "odds": bet.odds,
+            "stake": bet.stake,
+            "potential_payout": bet.potential_payout,
+            "status": bet.status,
+            "created_at": bet.created_at.strftime("%Y-%m-%d %H:%M") if bet.created_at else ""
+        })
+
+    return result
