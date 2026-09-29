@@ -71,8 +71,6 @@ let currentMinesGameId = null;
 let cashbackCountdownTimer = null;
 let cashbackData = null;
 
-let currentSelectedMatch = null;
-
 let soundEnabled = true;
 let isAutoMark = true;
 let markedCellsMap = {}; 
@@ -111,6 +109,7 @@ const profilePhoneEl = document.getElementById("profilePhone");
 const homeView = document.getElementById("homeView");
 const profileView = document.getElementById("profileView");
 const bonusView = document.getElementById("bonusView");
+const sportsView = document.getElementById("sportsView");
 const bingoSelectionView = document.getElementById("bingoSelectionView");
 const bingoGameView = document.getElementById("bingoGameView");
 const slotsView = document.getElementById("slotsView");
@@ -118,7 +117,6 @@ const plinkoView = document.getElementById("plinkoView");
 const rouletteView = document.getElementById("rouletteView");
 const blackjackView = document.getElementById("blackjackView");
 const minesView = document.getElementById("minesView");
-const sportsView = document.getElementById("sportsView");
 
 const depositModal = document.getElementById("depositModal");
 const withdrawModal = document.getElementById("withdrawModal");
@@ -4415,6 +4413,40 @@ document.addEventListener("DOMContentLoaded", () => {
    ⚽ SPORTS BETTING INTEGRATION
 ========================================================= */
 
+// 🆕 1. Variable መክፈቻ (ስህተት እንዳይፈጥር)
+let currentSelectedMatch = null;
+
+// 🆕 2. Navigation Click Listener (Sports አዝራር ሲጫን ገጽ ቀይሮ ጨዋታ የሚጭን)
+document.addEventListener("DOMContentLoaded", () => {
+    const navItems = document.querySelectorAll(".bottom-nav .nav-item");
+    
+    navItems.forEach(item => {
+        item.addEventListener("click", () => {
+            const page = item.getAttribute("data-page");
+
+            // ሁሉንም active ማወረድ
+            navItems.forEach(i => i.classList.remove("active"));
+            item.classList.add("active");
+
+            // ሁሉንም ገጾች መደበቅ
+            document.querySelectorAll(".page-view").forEach(view => {
+                view.hidden = true;
+            });
+
+            // የተመረጠውን ገጽ ማሳየት
+            const targetView = document.getElementById(page + "View");
+            if (targetView) {
+                targetView.hidden = false;
+            }
+
+            // Sports ከተመረጠ በ Default የ Premier League ጨዋታዎችን መጫን
+            if (page === "sports") {
+                loadLeagueMatches("soccer_epl");
+            }
+        });
+    });
+});
+
 // የሊግ ጨዋታዎችን ከ API መጫኛ
 async function loadLeagueMatches(sportKey) {
     const container = document.getElementById("matchesContainer");
@@ -4516,7 +4548,7 @@ async function submitBet() {
 
     if (!currentSelectedMatch) return;
 
-    const tgId = getTelegramUserId();
+    const tgId = typeof getTelegramUserId === 'function' ? getTelegramUserId() : null;
     if (!tgId) {
         if (typeof showToastMessage === 'function') {
             showToastMessage("የቴሌግራም ማንነትዎ አልተገኘም!", "error");
