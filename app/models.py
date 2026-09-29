@@ -776,3 +776,141 @@ class DailyCashback(Base):
         DateTime,
         nullable=True
     )
+
+# =========================================================
+# ⚽ SPORTS BETTING MODELS
+# =========================================================
+
+class Match(Base):
+    __tablename__ = "matches"
+
+    id = Column(
+        String(255),
+        primary_key=True,
+        index=True
+    )
+
+    sport_key = Column(
+        String(100),
+        nullable=False,
+        index=True
+    )
+
+    league_name = Column(
+        String(255),
+        nullable=False
+    )
+
+    home_team = Column(
+        String(255),
+        nullable=False
+    )
+
+    away_team = Column(
+        String(255),
+        nullable=False
+    )
+
+    commence_time = Column(
+        DateTime,
+        nullable=True
+    )
+
+    home_odds = Column(
+        Float,
+        default=1.0,
+        nullable=False
+    )
+
+    draw_odds = Column(
+        Float,
+        default=1.0,
+        nullable=False
+    )
+
+    away_odds = Column(
+        Float,
+        default=1.0,
+        nullable=False
+    )
+
+    # status: 'upcoming', 'live', 'finished', 'cancelled'
+    status = Column(
+        String(50),
+        default="upcoming",
+        nullable=False,
+        index=True
+    )
+
+    created_at = Column(
+        DateTime,
+        default=lambda: datetime.now(timezone.utc),
+        nullable=False
+    )
+
+    # Relationship with Bets
+    bets = relationship("Bet", back_populates="match")
+
+
+class Bet(Base):
+    __tablename__ = "bets"
+
+    id = Column(
+        Integer,
+        primary_key=True,
+        index=True
+    )
+
+    user_id = Column(
+        Integer,
+        ForeignKey("users.id"),
+        nullable=False,
+        index=True
+    )
+
+    match_id = Column(
+        String(255),
+        ForeignKey("matches.id"),
+        nullable=False,
+        index=True
+    )
+
+    # Selected outcome: '1', 'X', '2' or 'home_win', 'draw', 'away_win'
+    selection = Column(
+        String(20),
+        nullable=False
+    )
+
+    odds = Column(
+        Float,
+        nullable=False
+    )
+
+    stake = Column(
+        Float,
+        nullable=False
+    )
+
+    potential_payout = Column(
+        Float,
+        nullable=False
+    )
+
+    # status: 'pending', 'won', 'lost', 'refunded'
+    status = Column(
+        String(20),
+        default="pending",
+        nullable=False,
+        index=True
+    )
+
+    created_at = Column(
+        DateTime,
+        default=lambda: datetime.now(timezone.utc),
+        nullable=False,
+        index=True
+    )
+
+    # Relationships
+    user = relationship("User", back_populates="bets")
+    match = relationship("Match", back_populates="bets")
