@@ -36,7 +36,7 @@ class SportsBet(Base):
     reference = Column(String(64), unique=True, index=True)
     created_at = Column(DateTime, server_default=func.now())
 
-# ቴብሉ ዳታቤዝ ውስጥ ከሌለ አውቶማቲክ እንዲፈጥረው
+# ቴብሉ ዳታቤዝ ውስጥ ካልተፈጠረ አውቶማቲክ ይፈጠራል
 Base.metadata.create_all(bind=engine)
 
 
@@ -58,7 +58,6 @@ class PlaceBetRequest(BaseModel):
 
 
 MIN_STAKE = 10.0
-# ከ environment variable ያነባል፣ ከሌለ default ያስቀምጣል
 ODDS_API_KEY = os.getenv("ODDS_API_KEY", "e34df3461ec51a24ac019b49a3dbc6df")
 ODDS_API_URL = "https://api.the-odds-api.com/v4/sports"
 
@@ -112,7 +111,7 @@ async def fetch_single_league_matches(client: httpx.AsyncClient, key: str) -> Li
         
         data = response.json()
         matches = []
-        for match in data[:15]: # ለእያንዳንዱ ሊግ 15 ጨዋታዎች
+        for match in data[:15]:
             h2h_m, spreads_m, totals_m, dc_m = None, None, None, None
 
             for b in match.get("bookmakers", []):
@@ -130,7 +129,6 @@ async def fetch_single_league_matches(client: httpx.AsyncClient, key: str) -> Li
                     elif outcome["name"] == match["away_team"]: away_win = outcome["price"]
                     elif outcome["name"].lower() == "draw": draw = outcome["price"]
 
-            # Double Chance ስሌት (ከ API ከሌለ በራሱ ይሰላል)
             dc_1x = round(1 / ((1/home_win) + (1/draw)), 2) if home_win > 1 and draw > 1 else 1.20
             dc_12 = round(1 / ((1/home_win) + (1/away_win)), 2) if home_win > 1 and away_win > 1 else 1.25
             dc_x2 = round(1 / ((1/draw) + (1/away_win)), 2) if draw > 1 and away_win > 1 else 1.30
@@ -185,7 +183,6 @@ async def get_matches(sport_key: str):
 
     try:
         async with httpx.AsyncClient() as client:
-            # ሁሉንም ሊጎች በአንድ ላይ በ parallel ተይዘው በፍጥነት እንዲመጡ ያደርጋል
             tasks = [fetch_single_league_matches(client, key) for key in target_keys]
             results = await asyncio.gather(*tasks)
 
