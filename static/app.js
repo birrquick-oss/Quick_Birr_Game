@@ -4410,13 +4410,13 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 /* =========================================================
-   ⚽ SPORTS BETTING INTEGRATION (MULTI-BET & MY BETS FIXED)
+   ⚽ SPORTS BETTING INTEGRATION (ALL MARKETS & LEAGUES FIXED)
 ========================================================= */
 
 let selectedBets = [];
 let isMyBetsOpen = false;
 
-// 1. Navigation Click Listener
+// 1. Navigation Click Listener & League Initializer
 document.addEventListener("DOMContentLoaded", () => {
     const navItems = document.querySelectorAll(".bottom-nav .nav-item");
     
@@ -4437,15 +4437,48 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
             if (page === "sports") {
-                // በ Default Premier League መጫን
-                const defaultBtn = document.querySelector("#sportsView button[onclick*='soccer_epl']");
-                loadLeagueMatches("soccer_epl", defaultBtn);
+                // አፑ ሲከፈት ሁሉንም ሊጎች መጫን
+                loadActiveLeagues();
             }
         });
     });
 });
 
-// 2. My Bets እና Matches መቀያየሪያ
+// 2. ሁሉንም ሊጎች አውቶማቲክ ከ Backend ማምጫ እና Tab መስሪያ
+async function loadActiveLeagues() {
+    const leaguesContainer = document.getElementById("leaguesTabs") || document.querySelector("#sportsView .leagues-container");
+    
+    if (leaguesContainer) {
+        try {
+            const res = await fetch("/api/sports/leagues");
+            const leagues = await res.json();
+
+            let html = `
+                <button class="league-btn active" onclick="loadLeagueMatches('all', this)" style="background: #eab308; color: #000; font-weight: bold; border: none; padding: 8px 14px; border-radius: 20px; margin-right: 6px; cursor: pointer; white-space: nowrap;">
+                    🌐 ሁሉም ጨዋታዎች
+                </button>
+            `;
+
+            if (Array.isArray(leagues)) {
+                leagues.forEach(l => {
+                    html += `
+                        <button class="league-btn" onclick="loadLeagueMatches('${l.key}', this)" style="background: #1f2937; color: #fff; border: 1px solid #374151; padding: 8px 14px; border-radius: 20px; margin-right: 6px; cursor: pointer; white-space: nowrap;">
+                            ${l.title}
+                        </button>
+                    `;
+                });
+            }
+            leaguesContainer.innerHTML = html;
+        } catch (e) {
+            console.error("Leagues Load Error:", e);
+        }
+    }
+
+    // በ Default ሁሉንም ጨዋታዎች መጫን
+    loadLeagueMatches("all", null);
+}
+
+// 3. My Bets እና Matches መቀያየሪያ
 function toggleMyBets() {
     const matchesDiv = document.getElementById("matchesContainer");
     const myBetsDiv = document.getElementById("myBetsContainer");
@@ -4464,12 +4497,11 @@ function toggleMyBets() {
     }
 }
 
-// 3. የተወራረዱባቸውን ትኬቶች ከ Backend ማምጫ (Fixed Telegram ID Fetch)
+// 4. የተወራረዱባቸውን ትኬቶች ከ Backend ማምጫ
 async function loadUserBets() {
     const container = document.getElementById("myBetsContainer");
     if (!container) return;
 
-    // Telegram ID ማምጫ ማስተካከያ
     let tgId = null;
     if (typeof getTelegramUserId === 'function') {
         tgId = getTelegramUserId();
@@ -4526,14 +4558,13 @@ async function loadUserBets() {
     }
 }
 
-// 4. የሊግ ጨዋታዎችን መጫኛ (Active Button Highlights)
+// 5. የሊግ ጨዋታዎችን መጫኛ (1X2, Double Chance, Totals, Handicap በሙሉ ማሳያ)
 async function loadLeagueMatches(sportKey, btnElement) {
     const matchesDiv = document.getElementById("matchesContainer");
     const myBetsDiv = document.getElementById("myBetsContainer");
 
     if (!matchesDiv) return;
 
-    // የጠየቀውን Button Active ማድረግ
     if (btnElement) {
         const parentDiv = btnElement.parentElement;
         if (parentDiv) {
@@ -4560,40 +4591,103 @@ async function loadLeagueMatches(sportKey, btnElement) {
         const matches = await response.json();
 
         if (!Array.isArray(matches) || matches.length === 0) {
-            matchesDiv.innerHTML = `<p style="color: #aaa; text-align: center; padding: 20px;">በአሁኑ ሰዓት ለዚህ ሊግ የተመዘገቡ ጨዋታዎች የሉም።</p>`;
+            matchesDiv.innerHTML = `<p style="color: #aaa; text-align: center; padding: 20px;">በአሁኑ ሰዓት የተመዘገቡ ጨዋታዎች የሉም።</p>`;
             return;
         }
 
         let html = "";
         matches.forEach(match => {
-            const homeOdds = match.odds?.home_win || "1.00";
-            const drawOdds = match.odds?.draw || "1.00";
-            const awayOdds = match.odds?.away_win || "1.00";
+            const matchTitle = `${match.home_team} vs ${match.away_team}`;
+            const odds = match.odds || {};
+
+            const h2h = odds.h2h || { "1": 1.0, "X": 1.0, "2": 1.0 };
+            const dc = odds.double_chance || { "1X": 1.0, "12": 1.0, "X2": 1.0 };
 
             const matchDate = match.commence_time 
                 ? new Date(match.commence_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
                 : "Soon";
 
+            // Over/Under (Totals)
+            let totalsHtml = "";
+            if (odds.totals && odds.totals.length > 0) {
+                totalsHtml = `
+                    <div style="font-size: 11px; color: #8a99ad; margin: 8px 0 4px 0;">Goals (Over / Under)</div>
+                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px;">
+                        ${odds.totals.map(t => `
+                            <button onclick="addBetToSlip('${match.id}', '${matchTitle}', '${t.name} ${t.point}',${t.price})" style="background: #232d3f; border: 1px solid #3b4d6b; color: #fff; padding: 6px; border-radius: 6px; cursor: pointer;">
+                                <div style="font-size:10px; color:#aaa;">${t.name}${t.point}</div>
+                                <strong style="color: #60a5fa;">${t.price}</strong>
+                            </button>
+                        `).join('')}
+                    </div>
+                `;
+            }
+
+            // Handicap (Spreads)
+            let spreadsHtml = "";
+            if (odds.spreads && odds.spreads.length > 0) {
+                spreadsHtml = `
+                    <div style="font-size: 11px; color: #8a99ad; margin: 8px 0 4px 0;">Handicap</div>
+                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px;">
+                        ${odds.spreads.map(s => `
+                            <button onclick="addBetToSlip('${match.id}', '${matchTitle}', '${s.team} (${s.point})',${s.price})" style="background: #232d3f; border: 1px solid #3b4d6b; color: #fff; padding: 6px; border-radius: 6px; cursor: pointer;">
+                                <div style="font-size:10px; color:#aaa;">${s.team.substring(0, 10)} (${s.point})</div>
+                                <strong style="color: #f43f5e;">${s.price}</strong>
+                            </button>
+                        `).join('')}
+                    </div>
+                `;
+            }
+
             html += `
                 <div style="background: #1a2232; border-radius: 12px; padding: 12px; margin-bottom: 12px; border: 1px solid #2e3b52;">
                     <div style="display: flex; justify-content: space-between; color: #8a99ad; font-size: 12px; margin-bottom: 8px;">
                         <span>⏰ ${matchDate}</span>
-                        <span>Odds</span>
+                        <span>Markets</span>
                     </div>
                     <div style="color: #fff; font-weight: bold; font-size: 14px; margin-bottom: 10px;">
                         ${match.home_team} <span style="color: #eab308;">VS</span> ${match.away_team}
                     </div>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;">
-                        <button onclick="addBetToSlip('${match.id}', '${match.home_team} vs ${match.away_team}', '1 (${match.home_team})', ${homeOdds})" style="background: #232d3f; border: 1px solid #3b4d6b; color: #fff; padding: 8px; border-radius: 6px; cursor: pointer;">
-                            1 <br><strong style="color: #2ed573;">${homeOdds}</strong>
+
+                    <!-- 1X2 Market -->
+                    <div style="font-size: 11px; color: #8a99ad; margin-bottom: 4px;">Full Time (1X2)</div>
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;">
+                        <button onclick="addBetToSlip('${match.id}', '${matchTitle}', '1 (${match.home_team})', ${h2h['1']})" style="background: #232d3f; border: 1px solid #3b4d6b; color: #fff; padding: 6px; border-radius: 6px; cursor: pointer;">
+                            <div style="font-size:10px; color:#aaa;">1</div>
+                            <strong style="color: #2ed573;">${h2h['1']}</strong>
                         </button>
-                        <button onclick="addBetToSlip('${match.id}', '${match.home_team} vs ${match.away_team}', 'X (Draw)', ${drawOdds})" style="background: #232d3f; border: 1px solid #3b4d6b; color: #fff; padding: 8px; border-radius: 6px; cursor: pointer;">
-                            X <br><strong style="color: #2ed573;">${drawOdds}</strong>
+                        <button onclick="addBetToSlip('${match.id}', '${matchTitle}', 'X (Draw)', ${h2h['X']})" style="background: #232d3f; border: 1px solid #3b4d6b; color: #fff; padding: 6px; border-radius: 6px; cursor: pointer;">
+                            <div style="font-size:10px; color:#aaa;">X</div>
+                            <strong style="color: #2ed573;">${h2h['X']}</strong>
                         </button>
-                        <button onclick="addBetToSlip('${match.id}', '${match.home_team} vs ${match.away_team}', '2 (${match.away_team})', ${awayOdds})" style="background: #232d3f; border: 1px solid #3b4d6b; color: #fff; padding: 8px; border-radius: 6px; cursor: pointer;">
-                            2 <br><strong style="color: #2ed573;">${awayOdds}</strong>
+                        <button onclick="addBetToSlip('${match.id}', '${matchTitle}', '2 (${match.away_team})', ${h2h['2']})" style="background: #232d3f; border: 1px solid #3b4d6b; color: #fff; padding: 6px; border-radius: 6px; cursor: pointer;">
+                            <div style="font-size:10px; color:#aaa;">2</div>
+                            <strong style="color: #2ed573;">${h2h['2']}</strong>
                         </button>
                     </div>
+
+                    <!-- Double Chance Market -->
+                    <div style="font-size: 11px; color: #8a99ad; margin: 8px 0 4px 0;">Double Chance</div>
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;">
+                        <button onclick="addBetToSlip('${match.id}', '${matchTitle}', '1X', ${dc['1X']})" style="background: #232d3f; border: 1px solid #3b4d6b; color: #fff; padding: 6px; border-radius: 6px; cursor: pointer;">
+                            <div style="font-size:10px; color:#aaa;">1X</div>
+                            <strong style="color: #eab308;">${dc['1X']}</strong>
+                        </button>
+                        <button onclick="addBetToSlip('${match.id}', '${matchTitle}', '12', ${dc['12']})" style="background: #232d3f; border: 1px solid #3b4d6b; color: #fff; padding: 6px; border-radius: 6px; cursor: pointer;">
+                            <div style="font-size:10px; color:#aaa;">12</div>
+                            <strong style="color: #eab308;">${dc['12']}</strong>
+                        </button>
+                        <button onclick="addBetToSlip('${match.id}', '${matchTitle}', 'X2', ${dc['X2']})" style="background: #232d3f; border: 1px solid #3b4d6b; color: #fff; padding: 6px; border-radius: 6px; cursor: pointer;">
+                            <div style="font-size:10px; color:#aaa;">X2</div>
+                            <strong style="color: #eab308;">${dc['X2']}</strong>
+                        </button>
+                    </div>
+
+                    <!-- Over/Under -->
+                    ${totalsHtml}
+
+                    <!-- Handicap -->
+                    ${spreadsHtml}
                 </div>
             `;
         });
@@ -4605,7 +4699,7 @@ async function loadLeagueMatches(sportKey, btnElement) {
     }
 }
 
-// 5. ጨዋታዎችን ወደ Bet Slip የመጨመር ስራ (Multi-Bet Support)
+// 6. ጨዋታዎችን ወደ Bet Slip የመጨመር ስራ
 function addBetToSlip(matchId, matchTitle, selection, odds) {
     const numericOdds = parseFloat(odds) || 1.0;
 
@@ -4622,7 +4716,7 @@ function addBetToSlip(matchId, matchTitle, selection, odds) {
     if (modal) modal.hidden = false;
 }
 
-// 6. የተመረጡ ጨዋታዎችን በ Modal ውስጥ ማሳያ
+// 7. የተመረጡ ጨዋታዎችን በ Modal ውስጥ ማሳያ
 function renderBetSlip() {
     const listDiv = document.getElementById("selectedMatchesList");
     const countSpan = document.getElementById("slipCount");
@@ -4661,7 +4755,7 @@ function renderBetSlip() {
     calculatePayout();
 }
 
-// 7. ጨዋታን ከ Bet Slip ውስጥ መነስነስ
+// 8. ጨዋታን ከ Bet Slip ውስጥ መነስነስ
 function removeBetFromSlip(index) {
     selectedBets.splice(index, 1);
     renderBetSlip();
@@ -4670,22 +4764,23 @@ function removeBetFromSlip(index) {
     }
 }
 
-// 8. Bet Slip ማፅጃ
+// 9. Bet Slip ማፅጃ
 function clearBetSlip() {
     selectedBets = [];
     renderBetSlip();
     closeBetSlip();
 }
 
-// 9. Bet Slip መዝጊያ
+// 10. Bet Slip መዝጊያ
 function closeBetSlip() {
     const modal = document.getElementById("betSlipModal");
     if (modal) modal.hidden = true;
 }
 
-// 10. አጠቃላይ ሊያሸንፉ የሚችሉትን ገንዘብ ማስያ
+// 11. አጠቃላይ ሊያሸንፉ የሚችሉትን ገንዘብ ማስያ
 function calculatePayout() {
-    const stake = parseFloat(document.getElementById("stakeInput").value) || 0;
+    const stakeInput = document.getElementById("stakeInput");
+    const stake = parseFloat(stakeInput ? stakeInput.value : 0) || 0;
     
     let totalOdds = 1.0;
     selectedBets.forEach(bet => {
@@ -4697,14 +4792,15 @@ function calculatePayout() {
     if (winSpan) winSpan.innerText = `${win} ETB`;
 }
 
-// 11. ውርርድ የመመዝገቢያ ጥያቄ ወደ Backend መላኪያ
+// 12. ውርርድ የመመዝገቢያ ጥያቄ ወደ Backend መላኪያ
 async function submitBet() {
     if (selectedBets.length === 0) {
         alert("⚠️ እባክዎ አስቀድመው ቢያንስ አንድ ጨዋታ ይምረጡ!");
         return;
     }
 
-    const stake = parseFloat(document.getElementById("stakeInput").value);
+    const stakeInput = document.getElementById("stakeInput");
+    const stake = parseFloat(stakeInput ? stakeInput.value : 0);
     if (!stake || stake < 10) {
         if (typeof showToastMessage === 'function') {
             showToastMessage("⚠️ አነስተኛው የመደቢያ መጠን 10 ETB ነው!", "error");
