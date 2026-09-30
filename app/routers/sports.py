@@ -1,23 +1,23 @@
+import os
 import uuid
+import asyncio
 import httpx
-from typing import Optional
+from typing import Optional, List
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
 from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey, func
 from sqlalchemy.orm import Session
 
-from app.database import SessionLocal, Base
+from app.database import SessionLocal, Base, engine
 from app.models import User, WalletTransaction
-
 
 router = APIRouter(
     prefix="/api/sports",
     tags=["Sports Betting"]
 )
 
-
 # =========================================================
-# DATABASE MODEL FOR SPORTS BETS
+# DATABASE MODEL
 # =========================================================
 
 class SportsBet(Base):
@@ -32,9 +32,12 @@ class SportsBet(Base):
     odds = Column(Float, nullable=False)
     stake = Column(Float, nullable=False)
     potential_payout = Column(Float, nullable=False)
-    status = Column(String(32), default="pending")  # pending, won, lost, cancelled
+    status = Column(String(32), default="pending")
     reference = Column(String(64), unique=True, index=True)
     created_at = Column(DateTime, server_default=func.now())
+
+# ቴብሉ ዳታቤዝ ውስጥ ከሌለ አውቶማቲክ እንዲፈጥረው
+Base.metadata.create_all(bind=engine)
 
 
 def get_db():
@@ -45,10 +48,6 @@ def get_db():
         db.close()
 
 
-# =========================================================
-# REQUEST MODEL
-# =========================================================
-
 class PlaceBetRequest(BaseModel):
     telegram_id: str
     match_id: str
@@ -58,170 +57,184 @@ class PlaceBetRequest(BaseModel):
     stake_amount: float = Field(gt=0)
 
 
-# =========================================================
-# CONFIG & CONSTANTS
-# =========================================================
-
-MIN_STAKE = 10.0  # አነስተኛ የመደቢያ መጠን
-
-# 🔑 የገባው ትክክለኛው API Key
-ODDS_API_KEY = "e34df3461ec51a24ac019b49a3dbc6df"  
+MIN_STAKE = 10.0
+# ከ environment variable ያነባል፣ ከሌለ default ያስቀምጣል
+ODDS_API_KEY = os.getenv("ODDS_API_KEY", "e34df3461ec51a24ac019b49a3dbc6df")
 ODDS_API_URL = "https://api.the-odds-api.com/v4/sports"
 
 
 # =========================================================
-# GET MATCHES (ጨዋታዎችን ከ API ማምጫ)
+# GET ALL ACTIVE SOCCER LEAGUES
 # =========================================================
 
-@router.get("/matches/{sport_key}")
-async def get_matches(sport_key: str):
-    """
-    sport_key ለምሳሌ:
-    - soccer_epl (Premier League)
-    - soccer_spain_la_liga
-    - soccer_germany_bundesliga
-    - soccer_italy_serie_a
-    - soccer_uefa_champs_league
-    """
+@router.get("/leagues")
+async def get_active_leagues():
+    """በ The Odds API ላይ ያሉትን ሁሉንም ንቁ የእግር ኳስ ሊጎች ያመጣል"""
     if not ODDS_API_KEY or ODDS_API_KEY == "YOUR_ODDS_API_KEY":
-        return [
-            {
-                "id": "match_001",
-                "home_team": "Arsenal",
-                "away_team": "Chelsea",
-                "commence_time": "2026-10-01T19:00:00Z",
-                "odds": {"home_win": 1.95, "draw": 3.40, "away_win": 3.80}
-            },
-            {
-                "id": "match_002",
-                "home_team": "Real Madrid",
-                "away_team": "Barcelona",
-                "commence_time": "2026-10-02T20:00:00Z",
-                "odds": {"home_win": 2.10, "draw": 3.30, "away_win": 3.20}
-            }
-        ]
+        return []
 
     try:
         async with httpx.AsyncClient() as client:
-            url = f"{ODDS_API_URL}/{sport_key}/odds/?apiKey={ODDS_API_KEY}&regions=eu&markets=h2h"
+            url = f"{ODDS_API_URL}/?apiKey={ODDS_API_KEY}"
             response = await client.get(url, timeout=10.0)
 
             if response.status_code != 200:
-                raise HTTPException(
-                    status_code=status.HTTP_502_BAD_GATEWAY,
-                    detail="Failed to fetch matches from sports provider."
-                )
+                return []
 
-            data = response.json()
-            matches = []
-
-            for match in data[:20]:  # እስከ 20 ጨዋታዎችን በዝርዝር ያመጣል
-                h2h_market = next(
-                    (m for b in match.get("bookmakers", []) for m in b.get("markets", []) if m.get("key") == "h2h"),
-                    None
-                )
-
-                home_win, draw, away_win = 1.0, 1.0, 1.0
-                if h2h_market:
-                    for outcome in h2h_market.get("outcomes", []):
-                        if outcome["name"] == match["home_team"]:
-                            home_win = outcome["price"]
-                        elif outcome["name"] == match["away_team"]:
-                            away_win = outcome["price"]
-                        elif outcome["name"].lower() == "draw":
-                            draw = outcome["price"]
-
-                matches.append({
-                    "id": match.get("id"),
-                    "home_team": match.get("home_team"),
-                    "away_team": match.get("away_team"),
-                    "commence_time": match.get("commence_time"),
-                    "odds": {
-                        "home_win": home_win,
-                        "draw": draw,
-                        "away_win": away_win
-                    }
-                })
-
-            return matches
+            all_sports = response.json()
+            soccer_leagues = [
+                {
+                    "key": item["key"],
+                    "title": item["title"],
+                    "description": item.get("description", "")
+                }
+                for item in all_sports
+                if item.get("group") == "Soccer" and item.get("active", False)
+            ]
+            return soccer_leagues
 
     except Exception as e:
-        print("API Fetch Error:", e)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Error retrieving live matches."
-        )
+        print("League Fetch Error:", e)
+        return []
 
 
 # =========================================================
-# PLACE BET (ውርርድ መመዝገቢያ)
+# GET MATCHES (ከ Async Parallel Request ጋር የተስተካከለ)
+# =========================================================
+
+async def fetch_single_league_matches(client: httpx.AsyncClient, key: str) -> List[dict]:
+    """ለአንድ ሊግ ብቻ ከ API ጨዋታዎችን ያመጣል"""
+    url = f"{ODDS_API_URL}/{key}/odds/?apiKey={ODDS_API_KEY}&regions=eu&markets=h2h,doublechance,totals,spreads"
+    try:
+        response = await client.get(url, timeout=8.0)
+        if response.status_code != 200:
+            return []
+        
+        data = response.json()
+        matches = []
+        for match in data[:15]: # ለእያንዳንዱ ሊግ 15 ጨዋታዎች
+            h2h_m, spreads_m, totals_m, dc_m = None, None, None, None
+
+            for b in match.get("bookmakers", []):
+                for m in b.get("markets", []):
+                    k = m.get("key")
+                    if k == "h2h" and not h2h_m: h2h_m = m
+                    elif k == "spreads" and not spreads_m: spreads_m = m
+                    elif k == "totals" and not totals_m: totals_m = m
+                    elif k == "doublechance" and not dc_m: dc_m = m
+
+            home_win, draw, away_win = 1.0, 1.0, 1.0
+            if h2h_m:
+                for outcome in h2h_m.get("outcomes", []):
+                    if outcome["name"] == match["home_team"]: home_win = outcome["price"]
+                    elif outcome["name"] == match["away_team"]: away_win = outcome["price"]
+                    elif outcome["name"].lower() == "draw": draw = outcome["price"]
+
+            # Double Chance ስሌት (ከ API ከሌለ በራሱ ይሰላል)
+            dc_1x = round(1 / ((1/home_win) + (1/draw)), 2) if home_win > 1 and draw > 1 else 1.20
+            dc_12 = round(1 / ((1/home_win) + (1/away_win)), 2) if home_win > 1 and away_win > 1 else 1.25
+            dc_x2 = round(1 / ((1/draw) + (1/away_win)), 2) if draw > 1 and away_win > 1 else 1.30
+
+            if dc_m:
+                for outcome in dc_m.get("outcomes", []):
+                    n = outcome.get("name", "").lower()
+                    if "home" in n and "draw" in n: dc_1x = outcome.get("price", dc_1x)
+                    elif "home" in n and "away" in n: dc_12 = outcome.get("price", dc_12)
+                    elif "draw" in n and "away" in n: dc_x2 = outcome.get("price", dc_x2)
+
+            totals_list = [{"name": o.get("name"), "point": o.get("point"), "price": o.get("price")} for o in totals_m.get("outcomes", [])] if totals_m else []
+            spreads_list = [{"team": o.get("name"), "point": o.get("point"), "price": o.get("price")} for o in spreads_m.get("outcomes", [])] if spreads_m else []
+
+            matches.append({
+                "id": match.get("id"),
+                "league": key,
+                "home_team": match.get("home_team"),
+                "away_team": match.get("away_team"),
+                "commence_time": match.get("commence_time"),
+                "odds": {
+                    "h2h": {"1": home_win, "X": draw, "2": away_win},
+                    "double_chance": {"1X": dc_1x, "12": dc_12, "X2": dc_x2},
+                    "totals": totals_list,
+                    "spreads": spreads_list
+                }
+            })
+        return matches
+    except Exception as e:
+        print(f"Error fetching {key}:", e)
+        return []
+
+
+@router.get("/matches/{sport_key}")
+async def get_matches(sport_key: str):
+    if not ODDS_API_KEY or ODDS_API_KEY == "YOUR_ODDS_API_KEY":
+        return []
+
+    target_keys = [sport_key]
+    if sport_key == "all":
+        target_keys = [
+            "soccer_epl", 
+            "soccer_spain_la_liga", 
+            "soccer_germany_bundesliga", 
+            "soccer_italy_serie_a", 
+            "soccer_uefa_champs_league",
+            "soccer_france_ligue_one",
+            "soccer_europa_league"
+        ]
+
+    all_matches = []
+
+    try:
+        async with httpx.AsyncClient() as client:
+            # ሁሉንም ሊጎች በአንድ ላይ በ parallel ተይዘው በፍጥነት እንዲመጡ ያደርጋል
+            tasks = [fetch_single_league_matches(client, key) for key in target_keys]
+            results = await asyncio.gather(*tasks)
+
+            for match_group in results:
+                all_matches.extend(match_group)
+
+        return all_matches
+
+    except Exception as e:
+        print("API Matches Error:", e)
+        raise HTTPException(status_code=500, detail="Error fetching games.")
+
+
+# =========================================================
+# PLACE BET & MY BETS
 # =========================================================
 
 @router.post("/place-bet")
-def place_bet(
-    request: PlaceBetRequest,
-    db: Session = Depends(get_db)
-):
+def place_bet(request: PlaceBetRequest, db: Session = Depends(get_db)):
     telegram_id = str(request.telegram_id).strip()
     stake = round(float(request.stake_amount), 2)
     odds = round(float(request.odds), 2)
 
     if stake < MIN_STAKE:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Minimum stake is {MIN_STAKE} ETB."
-        )
+        raise HTTPException(status_code=400, detail=f"Minimum stake is {MIN_STAKE} ETB.")
 
-    if not telegram_id:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Telegram ID is required."
-        )
-
-    user = (
-        db.query(User)
-        .filter(User.telegram_id == telegram_id)
-        .with_for_update()
-        .first()
-    )
-
+    user = db.query(User).filter(User.telegram_id == telegram_id).with_for_update().first()
     if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found."
-        )
+        raise HTTPException(status_code=404, detail="User not found.")
 
-    if getattr(user, "is_banned", 0):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Your account is currently restricted."
-        )
-
-    current_balance = round(float(user.balance or 0), 2)
-
-    if current_balance < stake:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Insufficient balance! Your balance is {current_balance:.2f} ETB."
-        )
+    if round(float(user.balance or 0), 2) < stake:
+        raise HTTPException(status_code=400, detail="Insufficient balance!")
 
     potential_win = round(stake * odds, 2)
-    balance_after_stake = round(current_balance - stake, 2)
-
-    user.balance = balance_after_stake
+    balance_after = round(float(user.balance) - stake, 2)
+    user.balance = balance_after
     reference = f"SPORTS-{uuid.uuid4().hex[:16]}"
 
-    stake_transaction = WalletTransaction(
+    stake_tx = WalletTransaction(
         user_id=user.id,
         transaction_type="game_stake_sports",
         amount=-stake,
-        balance_after=balance_after_stake,
+        balance_after=balance_after,
         game="sports",
         reference=reference,
         description=f"Sports Bet ({request.match_name} - {request.selection} @ {odds})"
     )
 
-    bet_record = SportsBet(
+    bet_rec = SportsBet(
         user_id=user.id,
         telegram_id=telegram_id,
         match_id=request.match_id,
@@ -234,18 +247,16 @@ def place_bet(
         reference=reference
     )
 
-    db.add(stake_transaction)
-    db.add(bet_record)
+    db.add(stake_tx)
+    db.add(bet_rec)
 
     try:
         db.commit()
         db.refresh(user)
-    except Exception:
+    except Exception as e:
         db.rollback()
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Bet could not be placed. Please try again."
-        )
+        print("Place Bet DB Error:", e)
+        raise HTTPException(status_code=500, detail="Bet error.")
 
     return {
         "success": True,
@@ -253,35 +264,22 @@ def place_bet(
         "stake_amount": stake,
         "potential_win": potential_win,
         "balance": round(float(user.balance), 2),
-        "message": f"Bet placed successfully for {request.match_name}!"
+        "message": "Bet placed successfully!"
     }
 
 
-# =========================================================
-# MY BETS ENDPOINT (የተወራረዱባቸውን ትኬቶች ማምጫ)
-# =========================================================
-
 @router.get("/my-bets/{telegram_id}")
 def get_user_bets(telegram_id: str, db: Session = Depends(get_db)):
-    bets = (
-        db.query(SportsBet)
-        .filter(SportsBet.telegram_id == str(telegram_id).strip())
-        .order_by(SportsBet.id.desc())
-        .limit(20)
-        .all()
-    )
-
-    result = []
-    for bet in bets:
-        result.append({
-            "id": bet.id,
-            "match_name": bet.match_name,
-            "selection": bet.selection,
-            "odds": bet.odds,
-            "stake": bet.stake,
-            "potential_payout": bet.potential_payout,
-            "status": bet.status,
-            "created_at": bet.created_at.strftime("%Y-%m-%d %H:%M") if bet.created_at else ""
-        })
-
-    return result
+    bets = db.query(SportsBet).filter(SportsBet.telegram_id == str(telegram_id).strip()).order_by(SportsBet.id.desc()).limit(20).all()
+    return [
+        {
+            "id": b.id,
+            "match_name": b.match_name,
+            "selection": b.selection,
+            "odds": b.odds,
+            "stake": b.stake,
+            "potential_payout": b.potential_payout,
+            "status": b.status,
+            "created_at": b.created_at.strftime("%Y-%m-%d %H:%M") if b.created_at else ""
+        } for b in bets
+    ]
