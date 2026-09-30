@@ -63,7 +63,9 @@ class PlaceBetRequest(BaseModel):
 # =========================================================
 
 MIN_STAKE = 10.0  # አነስተኛ የመደቢያ መጠን
-ODDS_API_KEY = "YOUR_ODDS_API_KEY"  # የ API ቁልፍህን እዚህ አስገባ
+
+# 🔑 የገባው ትክክለኛው API Key
+ODDS_API_KEY = "e34df3461ec51a24ac019b49a3dbc6df"  
 ODDS_API_URL = "https://api.the-odds-api.com/v4/sports"
 
 
@@ -73,8 +75,15 @@ ODDS_API_URL = "https://api.the-odds-api.com/v4/sports"
 
 @router.get("/matches/{sport_key}")
 async def get_matches(sport_key: str):
+    """
+    sport_key ለምሳሌ:
+    - soccer_epl (Premier League)
+    - soccer_spain_la_liga
+    - soccer_germany_bundesliga
+    - soccer_italy_serie_a
+    - soccer_uefa_champs_league
+    """
     if not ODDS_API_KEY or ODDS_API_KEY == "YOUR_ODDS_API_KEY":
-        # API Key ከሌለ ለሙከራ የሚሆኑ Dummy Data-ዎች
         return [
             {
                 "id": "match_001",
@@ -106,7 +115,7 @@ async def get_matches(sport_key: str):
             data = response.json()
             matches = []
 
-            for match in data[:15]:
+            for match in data[:20]:  # እስከ 20 ጨዋታዎችን በዝርዝር ያመጣል
                 h2h_market = next(
                     (m for b in match.get("bookmakers", []) for m in b.get("markets", []) if m.get("key") == "h2h"),
                     None
@@ -136,7 +145,8 @@ async def get_matches(sport_key: str):
 
             return matches
 
-    except Exception:
+    except Exception as e:
+        print("API Fetch Error:", e)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Error retrieving live matches."
@@ -168,7 +178,6 @@ def place_bet(
             detail="Telegram ID is required."
         )
 
-    # 1. Lock User Record
     user = (
         db.query(User)
         .filter(User.telegram_id == telegram_id)
@@ -202,7 +211,6 @@ def place_bet(
     user.balance = balance_after_stake
     reference = f"SPORTS-{uuid.uuid4().hex[:16]}"
 
-    # 2. Add Wallet Transaction
     stake_transaction = WalletTransaction(
         user_id=user.id,
         transaction_type="game_stake_sports",
@@ -213,7 +221,6 @@ def place_bet(
         description=f"Sports Bet ({request.match_name} - {request.selection} @ {odds})"
     )
 
-    # 3. Add Sports Bet Record (የተወራረደበትን ትኬት ሰንጠረዥ ውስጥ መመዝገብ)
     bet_record = SportsBet(
         user_id=user.id,
         telegram_id=telegram_id,
@@ -233,7 +240,7 @@ def place_bet(
     try:
         db.commit()
         db.refresh(user)
-    except Exception as e:
+    except Exception:
         db.rollback()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -251,14 +258,11 @@ def place_bet(
 
 
 # =========================================================
-# 🆕 MY BETS ENDPOINT (የተወራረዱባቸውን ትኬቶች ማምጫ)
+# MY BETS ENDPOINT (የተወራረዱባቸውን ትኬቶች ማምጫ)
 # =========================================================
 
 @router.get("/my-bets/{telegram_id}")
 def get_user_bets(telegram_id: str, db: Session = Depends(get_db)):
-    """
-    ለተጠቃሚው በቅድሚያ የተመዘገቡ የውርርድ ትኬቶችን ዝርዝር ያመጣል
-    """
     bets = (
         db.query(SportsBet)
         .filter(SportsBet.telegram_id == str(telegram_id).strip())
