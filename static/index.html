@@ -1123,32 +1123,20 @@
      SPORTS BETTING VIEW
 ========================================================= -->
 <div id="sportsView" class="page-view" hidden>
-    <!-- Top Header / League Selection & My Bets -->
+    <!-- Top Header / Dynamic Leagues Selection & My Bets -->
     <div style="padding: 15px; background: #111827; border-bottom: 1px solid #1f2937;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
             <h2 style="color: #fff; margin: 0; font-size: 18px;">Sports Betting</h2>
-            <!-- 🎟️ My Bets Button (የተወራረዱባቸውን ትኬቶች ማያ አዝራር) -->
+            <!-- 🎟️ My Bets Button -->
             <button onclick="toggleMyBets()" style="background: #3b82f6; color: #fff; border: none; padding: 6px 12px; border-radius: 8px; font-weight: bold; font-size: 12px; cursor: pointer;">
                 🎟️ My Bets
             </button>
         </div>
         
-        <!-- League Tabs (አዝራሮቹ this የሚለውን ይዘው ተስተካክለዋል) -->
-        <div style="display: flex; gap: 8px; overflow-x: auto; padding-bottom: 5px; scrollbar-width: none;">
-            <button onclick="loadLeagueMatches('soccer_epl', this)" style="background: #eab308; color: #000; border: none; padding: 6px 12px; border-radius: 20px; font-weight: bold; font-size: 12px; white-space: nowrap; cursor: pointer;">
-                Premier League
-            </button>
-            <button onclick="loadLeagueMatches('soccer_spain_la_liga', this)" style="background: #1f2937; color: #fff; border: 1px solid #374151; padding: 6px 12px; border-radius: 20px; font-size: 12px; white-space: nowrap; cursor: pointer;">
-                La Liga
-            </button>
-            <button onclick="loadLeagueMatches('soccer_germany_bundesliga', this)" style="background: #1f2937; color: #fff; border: 1px solid #374151; padding: 6px 12px; border-radius: 20px; font-size: 12px; white-space: nowrap; cursor: pointer;">
-                Bundesliga
-            </button>
-            <button onclick="loadLeagueMatches('soccer_italy_serie_a', this)" style="background: #1f2937; color: #fff; border: 1px solid #374151; padding: 6px 12px; border-radius: 20px; font-size: 12px; white-space: nowrap; cursor: pointer;">
-                Serie A
-            </button>
-            <button onclick="loadLeagueMatches('soccer_uefa_champs_league', this)" style="background: #1f2937; color: #fff; border: 1px solid #374151; padding: 6px 12px; border-radius: 20px; font-size: 12px; white-space: nowrap; cursor: pointer;">
-                Champions League
+        <!-- Dynamic Dynamic League Tabs Container (በ JavaScript አውቶማቲክ ይሞላል) -->
+        <div id="leaguesTabs" style="display: flex; gap: 8px; overflow-x: auto; padding-bottom: 5px; scrollbar-width: none; -webkit-overflow-scrolling: touch;">
+            <button class="league-btn active" onclick="loadLeagueMatches('all', this)" style="background: #eab308; color: #000; border: none; padding: 6px 14px; border-radius: 20px; font-weight: bold; font-size: 12px; white-space: nowrap; cursor: pointer;">
+                🌐 ሁሉም ጨዋታዎች
             </button>
         </div>
     </div>
@@ -1158,12 +1146,11 @@
         <p style="color: #aaa; text-align: center; padding: 20px;">Loading matches...</p>
     </div>
 
-    <!-- My Bets List Container (የተወራረዱባቸው ትኬቶች የሚታዩበት ሳጥን) -->
+    <!-- My Bets List Container -->
     <div id="myBetsContainer" hidden style="padding: 15px; margin-bottom: 60px;">
         <p style="color: #aaa; text-align: center; padding: 20px;">Loading your bets...</p>
     </div>
 </div>
-
 
         <!-- PROFILE VIEW -->
         <div id="profileView" class="page-view" hidden>
@@ -1457,7 +1444,6 @@
         </div>
     </div>
 </div>
-
 
 <!-- Main JavaScript File -->
 <script src="/static/app.js?v=3.3.0"></script>
