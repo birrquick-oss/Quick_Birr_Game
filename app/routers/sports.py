@@ -58,7 +58,8 @@ class PlaceBetRequest(BaseModel):
 
 
 MIN_STAKE = 10.0
-ODDS_API_KEY = os.getenv("ODDS_API_KEY", "e34df3461ec51a24ac019b49a3dbc6df")
+# የቀረበውን API Key ቀጥታ እዚህ አስገብቼዋለሁ
+ODDS_API_KEY = "e34df3461ec51a24ac019b49a3dbc6df"
 ODDS_API_URL = "https://api.the-odds-api.com/v4/sports"
 
 
@@ -69,15 +70,13 @@ ODDS_API_URL = "https://api.the-odds-api.com/v4/sports"
 @router.get("/leagues")
 async def get_active_leagues():
     """በ The Odds API ላይ ያሉትን ሁሉንም ንቁ የእግር ኳስ ሊጎች ያመጣል"""
-    if not ODDS_API_KEY or ODDS_API_KEY == "YOUR_ODDS_API_KEY":
-        return []
-
     try:
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(timeout=15.0) as client:
             url = f"{ODDS_API_URL}/?apiKey={ODDS_API_KEY}"
-            response = await client.get(url, timeout=10.0)
+            response = await client.get(url)
 
             if response.status_code != 200:
+                print(f"League Fetch Failed: Status {response.status_code}")
                 return []
 
             all_sports = response.json()
@@ -105,8 +104,9 @@ async def fetch_single_league_matches(client: httpx.AsyncClient, key: str) -> Li
     """ለአንድ ሊግ ብቻ ከ API ጨዋታዎችን ያመጣል"""
     url = f"{ODDS_API_URL}/{key}/odds/?apiKey={ODDS_API_KEY}&regions=eu&markets=h2h,doublechance,totals,spreads"
     try:
-        response = await client.get(url, timeout=8.0)
+        response = await client.get(url, timeout=12.0)
         if response.status_code != 200:
+            print(f"Failed to fetch {key}, status: {response.status_code}")
             return []
         
         data = response.json()
@@ -164,19 +164,16 @@ async def fetch_single_league_matches(client: httpx.AsyncClient, key: str) -> Li
 
 @router.get("/matches/{sport_key}")
 async def get_matches(sport_key: str):
-    if not ODDS_API_KEY or ODDS_API_KEY == "YOUR_ODDS_API_KEY":
-        return []
-
     target_keys = [sport_key]
     if sport_key == "all":
+        # ሁልጊዜ ጨዋታዎች ያላቸው ዋና ዋና ሊጎች
         target_keys = [
             "soccer_epl", 
             "soccer_spain_la_liga", 
             "soccer_germany_bundesliga", 
             "soccer_italy_serie_a", 
             "soccer_uefa_champs_league",
-            "soccer_france_ligue_one",
-            "soccer_europa_league"
+            "soccer_france_ligue_one"
         ]
 
     all_matches = []
@@ -184,16 +181,17 @@ async def get_matches(sport_key: str):
     try:
         async with httpx.AsyncClient() as client:
             tasks = [fetch_single_league_matches(client, key) for key in target_keys]
-            results = await asyncio.gather(*tasks)
+            results = await asyncio.gather(*tasks, return_exceptions=True)
 
             for match_group in results:
-                all_matches.extend(match_group)
+                if isinstance(match_group, list):
+                    all_matches.extend(match_group)
 
         return all_matches
 
     except Exception as e:
         print("API Matches Error:", e)
-        raise HTTPException(status_code=500, detail="Error fetching games.")
+        return []
 
 
 # =========================================================
