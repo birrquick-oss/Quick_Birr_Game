@@ -58,7 +58,6 @@ class PlaceBetRequest(BaseModel):
 
 
 MIN_STAKE = 10.0
-# የቀረበውን API Key ቀጥታ እዚህ አስገብቼዋለሁ
 ODDS_API_KEY = "e34df3461ec51a24ac019b49a3dbc6df"
 ODDS_API_URL = "https://api.the-odds-api.com/v4/sports"
 
@@ -97,12 +96,13 @@ async def get_active_leagues():
 
 
 # =========================================================
-# GET MATCHES (ከ Async Parallel Request ጋር የተስተካከለ)
+# GET MATCHES (422 Error እንዳይመጣ ከታመኑ Markets ጋር የተስተካከለ)
 # =========================================================
 
 async def fetch_single_league_matches(client: httpx.AsyncClient, key: str) -> List[dict]:
     """ለአንድ ሊግ ብቻ ከ API ጨዋታዎችን ያመጣል"""
-    url = f"{ODDS_API_URL}/{key}/odds/?apiKey={ODDS_API_KEY}&regions=eu&markets=h2h,doublechance,totals,spreads"
+    # 422 Error እንዳይመጣ ሁልጊዜ የሚደገፉትን h2h እና totals ብቻ እንጠይቃለን
+    url = f"{ODDS_API_URL}/{key}/odds/?apiKey={ODDS_API_KEY}&regions=eu&markets=h2h,totals"
     try:
         response = await client.get(url, timeout=12.0)
         if response.status_code != 200:
@@ -112,36 +112,32 @@ async def fetch_single_league_matches(client: httpx.AsyncClient, key: str) -> Li
         data = response.json()
         matches = []
         for match in data[:15]:
-            h2h_m, spreads_m, totals_m, dc_m = None, None, None, None
+            h2h_m, totals_m = None, None
 
             for b in match.get("bookmakers", []):
                 for m in b.get("markets", []):
                     k = m.get("key")
-                    if k == "h2h" and not h2h_m: h2h_m = m
-                    elif k == "spreads" and not spreads_m: spreads_m = m
-                    elif k == "totals" and not totals_m: totals_m = m
-                    elif k == "doublechance" and not dc_m: dc_m = m
+                    if k == "h2h" and not h2h_m: 
+                        h2h_m = m
+                    elif k == "totals" and not totals_m: 
+                        totals_m = m
 
             home_win, draw, away_win = 1.0, 1.0, 1.0
             if h2h_m:
                 for outcome in h2h_m.get("outcomes", []):
-                    if outcome["name"] == match["home_team"]: home_win = outcome["price"]
-                    elif outcome["name"] == match["away_team"]: away_win = outcome["price"]
-                    elif outcome["name"].lower() == "draw": draw = outcome["price"]
+                    if outcome["name"] == match["home_team"]: 
+                        home_win = outcome["price"]
+                    elif outcome["name"] == match["away_team"]: 
+                        away_win = outcome["price"]
+                    elif outcome["name"].lower() == "draw": 
+                        draw = outcome["price"]
 
+            # Double Chance Odds በራሱ ቀመር ይሰላል (422 ኤረር እንዳይፈጥር)
             dc_1x = round(1 / ((1/home_win) + (1/draw)), 2) if home_win > 1 and draw > 1 else 1.20
             dc_12 = round(1 / ((1/home_win) + (1/away_win)), 2) if home_win > 1 and away_win > 1 else 1.25
             dc_x2 = round(1 / ((1/draw) + (1/away_win)), 2) if draw > 1 and away_win > 1 else 1.30
 
-            if dc_m:
-                for outcome in dc_m.get("outcomes", []):
-                    n = outcome.get("name", "").lower()
-                    if "home" in n and "draw" in n: dc_1x = outcome.get("price", dc_1x)
-                    elif "home" in n and "away" in n: dc_12 = outcome.get("price", dc_12)
-                    elif "draw" in n and "away" in n: dc_x2 = outcome.get("price", dc_x2)
-
             totals_list = [{"name": o.get("name"), "point": o.get("point"), "price": o.get("price")} for o in totals_m.get("outcomes", [])] if totals_m else []
-            spreads_list = [{"team": o.get("name"), "point": o.get("point"), "price": o.get("price")} for o in spreads_m.get("outcomes", [])] if spreads_m else []
 
             matches.append({
                 "id": match.get("id"),
@@ -153,7 +149,7 @@ async def fetch_single_league_matches(client: httpx.AsyncClient, key: str) -> Li
                     "h2h": {"1": home_win, "X": draw, "2": away_win},
                     "double_chance": {"1X": dc_1x, "12": dc_12, "X2": dc_x2},
                     "totals": totals_list,
-                    "spreads": spreads_list
+                    "spreads": []
                 }
             })
         return matches
@@ -166,7 +162,7 @@ async def fetch_single_league_matches(client: httpx.AsyncClient, key: str) -> Li
 async def get_matches(sport_key: str):
     target_keys = [sport_key]
     if sport_key == "all":
-        # ሁልጊዜ ጨዋታዎች ያላቸው ዋና ዋና ሊጎች
+        # ሁልጊዜ ንቁና አስተማማኝ የሆኑ ዋና ዋና ሊጎች
         target_keys = [
             "soccer_epl", 
             "soccer_spain_la_liga", 
