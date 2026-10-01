@@ -26,9 +26,10 @@ class SportsBet(Base):
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     telegram_id = Column(String(64), index=True, nullable=False)
-    match_id = Column(String(255), nullable=False)
-    match_name = Column(String(255), nullable=False)
-    selection = Column(String(550), nullable=False)
+    # match_id እና selection ረጅም Multi-Bet ማስተናገድ እንዲችሉ Text ተደርገዋል
+    match_id = Column(Text, nullable=False)
+    match_name = Column(String(550), nullable=False)
+    selection = Column(Text, nullable=False)
     odds = Column(Float, nullable=False)
     stake = Column(Float, nullable=False)
     potential_payout = Column(Float, nullable=False)
