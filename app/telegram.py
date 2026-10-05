@@ -101,7 +101,7 @@ def broadcast_worker(text_message, reply_markup=None):
 
 def send_bonus_campaign_broadcast(campaign):
     """
-    Sends the scheduled bonus announcement to all users.
+    Sends the bonus announcement immediately to all users.
     """
     campaign_id = campaign["id"]
     amount = campaign["amount"]
@@ -139,42 +139,9 @@ def send_bonus_campaign_broadcast(campaign):
 
 
 # =========================================================
-# 🎁 BONUS CAMPAIGN SCHEDULER
-# =========================================================
-
-def bonus_campaign_scheduler():
-    print("🎁 Bonus Campaign Scheduler Started.")
-
-    while True:
-        try:
-            url = f"{BACKEND_URL}/api/users/bonus/due-broadcasts"
-            payload = {
-                "admin_telegram_id": ADMIN_TELEGRAM_ID if ADMIN_TELEGRAM_ID else None,
-                "admin_password": ADMIN_PASSWORD,
-            }
-
-            response = requests.post(url, json=payload, timeout=15)
-
-            if response.status_code == 200:
-                data = response.json()
-                campaigns = data.get("campaigns", [])
-
-                for campaign in campaigns:
-                    print(f"🚀 Bonus Campaign #{campaign['id']} is now LIVE!")
-                    send_bonus_campaign_broadcast(campaign)
-            else:
-                print(f"⚠️ Bonus scheduler backend status: {response.status_code} - {response.text}")
-
-        except Exception as e:
-            print(f"⚠️️ Bonus scheduler error: {e}")
-
-        # Check every 10 seconds
-        time.sleep(10)
-
-# =========================================================
-# 🎁 ADMIN: CREATE BONUS CAMPAIGN
-# /bonus AMOUNT PLAYERS DATE TIME DURATION
-# Example: /bonus 50 100 2026-10-05 10:00 30
+# 🎁 ADMIN: INSTANT BONUS CAMPAIGN
+# /bonus AMOUNT PLAYERS MINUTES
+# Example: /bonus 50 100 30
 # =========================================================
 
 @bot.message_handler(commands=['bonus'])
@@ -185,19 +152,17 @@ def handle_bonus_command(message):
 
     parts = message.text.split()
 
-    if len(parts) != 6:
+    if len(parts) != 4:
         bot.reply_to(
             message,
             (
                 "⚠️ <b>Bonus Command Format</b>\n\n"
-                "<code>/bonus AMOUNT PLAYERS DATE TIME MINUTES</code>\n\n"
+                "<code>/bonus AMOUNT PLAYERS MINUTES</code>\n\n"
                 "ምሳሌ፦\n"
-                "<code>/bonus 50 100 2026-10-05 10:00 30</code>\n\n"
+                "<code>/bonus 50 100 30</code>\n\n"
                 "💰 50 ETB\n"
                 "👥 First 100 players\n"
-                "📅 2026-10-05\n"
-                "⏰ 10:00 Ethiopia Time\n"
-                "⏱️ 30 minutes"
+                "⏱️ 30 minutes duration"
             ),
             parse_mode="HTML"
         )
@@ -206,14 +171,11 @@ def handle_bonus_command(message):
     try:
         amount = float(parts[1])
         max_players = int(parts[2])
-        date_part = parts[3]
-        time_part = parts[4]
-        start_at = f"{date_part} {time_part}"
-        duration_minutes = int(parts[5])
+        duration_minutes = int(parts[3])
     except Exception:
         bot.reply_to(
             message,
-            "❌ የገባው format ትክክል አይደለም።\n\nምሳሌ፦\n<code>/bonus 50 100 2026-10-05 10:00 30</code>",
+            "❌ የገባው format ትክክል አይደለም።\n\nምሳሌ፦\n<code>/bonus 50 100 30</code>",
             parse_mode="HTML"
         )
         return
@@ -226,7 +188,6 @@ def handle_bonus_command(message):
     payload = {
         "amount": amount,
         "max_claims": max_players,
-        "start_at": start_at,
         "duration_minutes": duration_minutes,
         "title": f"🎁 {amount:g} ETB BONUS",
         "description": f"First {max_players} players can claim {amount:g} ETB bonus!",
@@ -243,17 +204,26 @@ def handle_bonus_command(message):
 
         if response.status_code == 200 and data.get("success"):
             campaign_id = data["campaign_id"]
+
+            # ወዲያውኑ ማስታወቂያውን (Broadcast) ይልካል
+            campaign_obj = {
+                "id": campaign_id,
+                "amount": amount,
+                "max_claims": max_players,
+                "title": f"🎁 {amount:g} ETB BONUS",
+                "description": f"First {max_players} players can claim {amount:g} ETB bonus!"
+            }
+            send_bonus_campaign_broadcast(campaign_obj)
+
             bot.reply_to(
                 message,
                 (
-                    "✅ <b>BONUS CAMPAIGN CREATED!</b>\n\n"
+                    "✅ <b>BONUS CAMPAIGN CREATED & SENDING!</b>\n\n"
                     f"🆔 Campaign: <b>#{campaign_id}</b>\n"
                     f"💰 Bonus: <b>{amount:g} ETB</b>\n"
                     f"👥 Players: <b>{max_players}</b>\n"
-                    f"📅 Date: <b>{date_part}</b>\n"
-                    f"⏰ Time: <b>{time_part}</b> 🇪🇹\n"
                     f"⏱️ Duration: <b>{duration_minutes} minutes</b>\n\n"
-                    "📢 Announcement will be sent automatically when the campaign starts."
+                    "🚀 መልእክቱ ወዲያውኑ ለተጠቃሚዎች በሙሉ እየተላከ ነው!"
                 ),
                 parse_mode="HTML"
             )
@@ -263,7 +233,7 @@ def handle_bonus_command(message):
 
     except Exception as e:
         print(f"❌ Bonus creation error: {e}")
-        bot.reply_to(message, "⚠️️ Backend connection error.")
+        bot.reply_to(message, "⚠️ Backend connection error.")
 
 
 # 1️⃣ /start Command
@@ -379,7 +349,7 @@ def send_admin_action_to_backend(call, url, payload, headers, target_id, action,
                     reply_markup=None
                 )
             except Exception as edit_err:
-                print(f"⚠️️ Telegram message edit issue: {edit_err}")
+                print(f"⚠ Telegram message edit issue: {edit_err}")
         else:
             err_msg = res_data.get('detail', res_data.get('message', f'Status Code: {response.status_code}'))
             bot.answer_callback_query(call.id, text=f"❌ ስህተት፦ {err_msg}", show_alert=True)
@@ -588,15 +558,6 @@ def handle_admin_actions(call):
         args=(call, url, payload, {"Content-Type": "application/json"}, target_id, action, tx_type),
         daemon=True
     ).start()
-
-# =========================================================
-# 🎁 START BONUS CAMPAIGN SCHEDULER
-# =========================================================
-
-threading.Thread(
-    target=bonus_campaign_scheduler,
-    daemon=True
-).start()
 
 
 # 🚀 Bot Start Polling Loop
