@@ -8,6 +8,7 @@ from sqlalchemy import (
     String,
     Text,
     Boolean
+    UniqueConstraint
 )
 from sqlalchemy.orm import relationship
 
@@ -158,6 +159,105 @@ class WalletTransaction(Base):
         index=True
     )
 
+# =========================================================
+# 🎁 BONUS CAMPAIGN
+# =========================================================
+
+class BonusCampaign(Base):
+    __tablename__ = "bonus_campaigns"
+
+    id = Column(Integer, primary_key=True, index=True)
+
+    # Bonus amount per player
+    amount = Column(Float, nullable=False)
+
+    # Maximum number of players
+    max_claims = Column(Integer, nullable=False)
+
+    # Current number of successful claims
+    claimed_count = Column(Integer, default=0, nullable=False)
+
+    # Campaign time is stored in UTC
+    start_at = Column(DateTime, nullable=False, index=True)
+    end_at = Column(DateTime, nullable=False, index=True)
+
+    # scheduled / active / sold_out / ended / cancelled
+    status = Column(
+        String(30),
+        default="scheduled",
+        nullable=False,
+        index=True
+    )
+
+    title = Column(String(255), nullable=True)
+    description = Column(Text, nullable=True)
+
+    created_by = Column(String(64), nullable=True)
+
+    # Prevent duplicate broadcast
+    broadcast_sent = Column(Boolean, default=False, nullable=False)
+
+    created_at = Column(
+        DateTime,
+        default=lambda: datetime.now(timezone.utc),
+        nullable=False
+    )
+
+    updated_at = Column(
+        DateTime,
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+        nullable=False
+    )
+
+
+# =========================================================
+# 🎁 BONUS CLAIM
+# =========================================================
+
+class BonusClaim(Base):
+    __tablename__ = "bonus_claims"
+
+    __table_args__ = (
+        UniqueConstraint(
+            "campaign_id",
+            "user_id",
+            name="uq_bonus_campaign_user"
+        ),
+    )
+
+    id = Column(Integer, primary_key=True, index=True)
+
+    campaign_id = Column(
+        Integer,
+        ForeignKey("bonus_campaigns.id"),
+        nullable=False,
+        index=True
+    )
+
+    user_id = Column(
+        Integer,
+        ForeignKey("users.id"),
+        nullable=False,
+        index=True
+    )
+
+    telegram_id = Column(
+        String(64),
+        nullable=False,
+        index=True
+    )
+
+    amount = Column(Float, nullable=False)
+
+    balance_after = Column(Float, nullable=False)
+
+    created_at = Column(
+        DateTime,
+        default=lambda: datetime.now(timezone.utc),
+        nullable=False,
+        index=True
+    )
 
 # =========================================================
 # DEPOSIT REQUESTS
