@@ -134,6 +134,10 @@ class BonusCampaignCreate(BaseModel):
 
     admin_telegram_id: Optional[str] = None
     admin_password: Optional[str] = None
+
+class BonusAdminRequest(BaseModel):
+    admin_telegram_id: Optional[str] = None
+    admin_password: Optional[str] = None
     
 # --------------------------------------------------------------------------
 # 🚀 API Endpoints
@@ -1325,14 +1329,13 @@ def cancel_bonus_campaign(
 
 @router.post("/bonus/due-broadcasts")
 def get_due_bonus_broadcasts(
-    admin_telegram_id: Optional[str] = None,
-    admin_password: Optional[str] = None,
+    data: BonusAdminRequest,
     db: Session = Depends(get_db),
 ):
 
     if ADMIN_TELEGRAM_ID:
 
-        if str(admin_telegram_id or "").strip() != str(
+        if str(data.admin_telegram_id or "").strip() != str(
             ADMIN_TELEGRAM_ID
         ).strip():
 
@@ -1341,7 +1344,7 @@ def get_due_bonus_broadcasts(
                 detail="Admin Telegram ID is not authorized."
             )
 
-    if str(admin_password or "") != str(ADMIN_PASSWORD):
+    if str(data.admin_password or "") != str(ADMIN_PASSWORD):
 
         raise HTTPException(
             status_code=403,
@@ -1365,7 +1368,6 @@ def get_due_bonus_broadcasts(
 
     for campaign in campaigns:
 
-        # Mark as active and broadcasted atomically
         campaign.status = "active"
         campaign.broadcast_sent = True
 
