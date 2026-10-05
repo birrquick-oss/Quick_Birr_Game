@@ -95,6 +95,319 @@ def broadcast_worker(text_message, reply_markup=None):
 
     print(f"🎉 Broadcast finished! Success: {success_count}, Failed: {fail_count}")
 
+# =========================================================
+# 🎁 BONUS CAMPAIGN BROADCAST
+# =========================================================
+
+def send_bonus_campaign_broadcast(campaign):
+    """
+    Sends the scheduled bonus announcement to all users.
+    """
+
+    campaign_id = campaign["id"]
+    amount = campaign["amount"]
+    max_claims = campaign["max_claims"]
+
+    title = campaign.get("title") or f"🎁 {amount:g} ETB BONUS"
+
+    description = campaign.get("description") or (
+        f"First {max_claims} players can claim "
+        f"{amount:g} ETB bonus."
+    )
+
+    message_text = (
+        f"🎁 <b>{title}</b>\n\n"
+        f"{description}\n\n"
+        f"💰 Bonus: <b>{amount:g} ETB</b>\n"
+        f"👥 First: <b>{max_claims} Players</b>\n"
+        f"⏰ Limited Time Only!\n\n"
+        f"🔥 <b>CLAIM NOW!</b>"
+    )
+
+    markup = types.InlineKeyboardMarkup()
+
+    claim_button = types.InlineKeyboardButton(
+        text="🎁 CLAIM BONUS",
+        callback_data=f"claim_bonus_{campaign_id}"
+    )
+
+    markup.add(claim_button)
+
+    print(
+        f"🎁 Sending Bonus Campaign #{campaign_id} "
+        f"broadcast..."
+    )
+
+    threading.Thread(
+        target=broadcast_worker,
+        args=(message_text, markup),
+        daemon=True
+    ).start()
+
+
+# =========================================================
+# 🎁 BONUS CAMPAIGN SCHEDULER
+# =========================================================
+
+def bonus_campaign_scheduler():
+
+    print("🎁 Bonus Campaign Scheduler Started.")
+
+    while True:
+
+        try:
+
+            url = (
+                f"{BACKEND_URL}/api/users/"
+                f"bonus/due-broadcasts"
+            )
+
+            payload = {
+                "admin_telegram_id": ADMIN_TELEGRAM_ID,
+                "admin_password": ADMIN_PASSWORD,
+            }
+
+            response = requests.post(
+                url,
+                json=payload,
+                timeout=15
+            )
+
+            if response.status_code == 200:
+
+                data = response.json()
+
+                campaigns = data.get(
+                    "campaigns",
+                    []
+                )
+
+                for campaign in campaigns:
+
+                    print(
+                        f"🚀 Bonus Campaign #{campaign['id']} "
+                        f"is now LIVE!"
+                    )
+
+                    send_bonus_campaign_broadcast(
+                        campaign
+                    )
+
+            else:
+
+                print(
+                    f"⚠️ Bonus scheduler backend status: "
+                    f"{response.status_code}"
+                )
+
+        except Exception as e:
+
+            print(
+                f"⚠️ Bonus scheduler error: {e}"
+            )
+
+        # Check every 10 seconds
+        time.sleep(10)
+
+# =========================================================
+# 🎁 ADMIN: CREATE BONUS CAMPAIGN
+#
+# Format:
+# /bonus AMOUNT PLAYERS DATE TIME DURATION
+#
+# Example:
+# /bonus 50 100 2026-10-05 10:00 30
+#
+# Means:
+# 50 ETB
+# First 100 players
+# October 5, 2026 at 10:00 AM Ethiopia time
+# Claim window = 30 minutes
+# =========================================================
+
+@bot.message_handler(commands=['bonus'])
+def handle_bonus_command(message):
+
+    # -----------------------------
+    # Admin check
+    # -----------------------------
+
+    if (
+        ADMIN_TELEGRAM_ID
+        and str(message.from_user.id)
+        != str(ADMIN_TELEGRAM_ID)
+    ):
+
+        bot.reply_to(
+            message,
+            "⛔ ይህንን ትእዛዝ መጠቀም የሚችለው Admin ብቻ ነው!"
+        )
+
+        return
+
+    # -----------------------------
+    # Parse command
+    # -----------------------------
+
+    parts = message.text.split()
+
+    if len(parts) != 6:
+
+        bot.reply_to(
+            message,
+            (
+                "⚠️ <b>Bonus Command Format</b>\n\n"
+                "<code>/bonus AMOUNT PLAYERS DATE TIME MINUTES</code>\n\n"
+                "ምሳሌ፦\n"
+                "<code>/bonus 50 100 2026-10-05 10:00 30</code>\n\n"
+                "💰 50 ETB\n"
+                "👥 First 100 players\n"
+                "📅 2026-10-05\n"
+                "⏰ 10:00 Ethiopia Time\n"
+                "⏱️ 30 minutes"
+            ),
+            parse_mode="HTML"
+        )
+
+        return
+
+    try:
+
+        amount = float(parts[1])
+        max_players = int(parts[2])
+
+        date_part = parts[3]
+        time_part = parts[4]
+
+        start_at = (
+            f"{date_part} {time_part}"
+        )
+
+        duration_minutes = int(parts[5])
+
+    except Exception:
+
+        bot.reply_to(
+            message,
+            (
+                "❌ የገባው format ትክክል አይደለም።\n\n"
+                "ምሳሌ፦\n"
+                "<code>/bonus 50 100 2026-10-05 10:00 30</code>"
+            ),
+            parse_mode="HTML"
+        )
+
+        return
+
+    if amount <= 0:
+
+        bot.reply_to(
+            message,
+            "❌ Bonus amount ከ0 በላይ መሆን አለበት።"
+        )
+
+        return
+
+    if max_players <= 0:
+
+        bot.reply_to(
+            message,
+            "❌ Player count ከ0 በላይ መሆን አለበት።"
+        )
+
+        return
+
+    if duration_minutes <= 0:
+
+        bot.reply_to(
+            message,
+            "❌ Duration ከ0 በላይ መሆን አለበት።"
+        )
+
+        return
+
+    # -----------------------------
+    # Create backend campaign
+    # -----------------------------
+
+    url = (
+        f"{BACKEND_URL}/api/users/bonus/create"
+    )
+
+    payload = {
+        "amount": amount,
+        "max_claims": max_players,
+        "start_at": start_at,
+        "duration_minutes": duration_minutes,
+        "title": f"🎁 {amount:g} ETB BONUS",
+        "description": (
+            f"First {max_players} players can claim "
+            f"{amount:g} ETB bonus!"
+        ),
+        "admin_telegram_id": str(
+            message.from_user.id
+        ),
+        "admin_password": ADMIN_PASSWORD,
+    }
+
+    try:
+
+        response = requests.post(
+            url,
+            json=payload,
+            timeout=15
+        )
+
+        try:
+            data = response.json()
+        except Exception:
+            data = {}
+
+        if response.status_code == 200 and data.get("success"):
+
+            campaign_id = data["campaign_id"]
+
+            bot.reply_to(
+                message,
+                (
+                    "✅ <b>BONUS CAMPAIGN CREATED!</b>\n\n"
+                    f"🆔 Campaign: <b>#{campaign_id}</b>\n"
+                    f"💰 Bonus: <b>{amount:g} ETB</b>\n"
+                    f"👥 Players: <b>{max_players}</b>\n"
+                    f"📅 Date: <b>{date_part}</b>\n"
+                    f"⏰ Time: <b>{time_part}</b> 🇪🇹\n"
+                    f"⏱️ Duration: <b>{duration_minutes} minutes</b>\n\n"
+                    "📢 Announcement will be sent automatically "
+                    "when the campaign starts."
+                ),
+                parse_mode="HTML"
+            )
+
+        else:
+
+            error_message = data.get(
+                "detail",
+                data.get(
+                    "message",
+                    "Unable to create bonus campaign."
+                )
+            )
+
+            bot.reply_to(
+                message,
+                f"❌ {error_message}"
+            )
+
+    except Exception as e:
+
+        print(
+            f"❌ Bonus creation error: {e}"
+        )
+
+        bot.reply_to(
+            message,
+            "⚠️ Backend connection error."
+        )
 
 # 1️⃣ /start Command
 @bot.message_handler(commands=['start'])
@@ -223,7 +536,349 @@ def send_admin_action_to_backend(call, url, payload, headers, target_id, action,
         print(f"❌ Admin Action Exception Error: {e}")
         bot.answer_callback_query(call.id, text="⚠️ ከሰርቨር ጋር መገናኘት አልተቻለም", show_alert=True)
 
+# =========================================================
+# 🎁 CLAIM BONUS BUTTON
+# =========================================================
 
+@bot.callback_query_handler(
+    func=lambda call: call.data.startswith("claim_bonus_")
+)
+def handle_bonus_claim(call):
+
+    try:
+
+        campaign_id = int(
+            call.data.replace(
+                "claim_bonus_",
+                ""
+            )
+        )
+
+    except Exception:
+
+        bot.answer_callback_query(
+            call.id,
+            text="❌ Invalid bonus.",
+            show_alert=True
+        )
+
+        return
+
+    telegram_id = str(
+        call.from_user.id
+    ).strip()
+
+    try:
+
+        bot.answer_callback_query(
+            call.id,
+            text="⏳ Checking bonus...",
+            show_alert=False
+        )
+
+    except Exception:
+        pass
+
+    url = (
+        f"{BACKEND_URL}/api/users/"
+        f"bonus/claim/"
+        f"{campaign_id}/"
+        f"{telegram_id}"
+    )
+
+    try:
+
+        response = requests.post(
+            url,
+            timeout=15
+        )
+
+        try:
+            data = response.json()
+        except Exception:
+            data = {}
+
+        if response.status_code == 200 and data.get("success"):
+
+            amount = float(
+                data.get("amount", 0)
+            )
+
+            balance = float(
+                data.get("balance", 0)
+            )
+
+            claimed_count = int(
+                data.get("claimed_count", 0)
+            )
+
+            message = (
+                f"🎉 <b>CONGRATULATIONS!</b>\n\n"
+                f"🎁 Bonus: <b>{amount:g} ETB</b>\n"
+                f"💰 New Balance: <b>{balance:g} ETB</b>\n\n"
+                f"👥 Claimed: <b>{claimed_count}</b>\n\n"
+                f"🔥 Enjoy Quick Birr Games!"
+            )
+
+            try:
+
+                bot.answer_callback_query(
+                    call.id,
+                    text=f"🎉 {amount:g} ETB BONUS CLAIMED!",
+                    show_alert=True
+                )
+
+            except Exception:
+                pass
+
+            try:
+
+                bot.send_message(
+                    call.message.chat.id,
+                    message,
+                    parse_mode="HTML"
+                )
+
+            except Exception as e:
+
+                print(
+                    f"⚠️ Failed sending claim success "
+                    f"message: {e}"
+                )
+
+        else:
+
+            error_message = data.get(
+                "detail",
+                data.get(
+                    "message",
+                    "Bonus cannot be claimed."
+                )
+            )
+
+            try:
+
+                bot.answer_callback_query(
+                    call.id,
+                    text=f"❌ {error_message}",
+                    show_alert=True
+                )
+
+            except Exception:
+                pass
+
+    except Exception as e:
+
+        print(
+            f"❌ Bonus claim request failed: {e}"
+        )
+
+        try:
+
+            bot.answer_callback_query(
+                call.id,
+                text="⚠️ Server connection error. Please try again.",
+                show_alert=True
+            )
+
+        except Exception:
+            pass
+
+# =========================================================
+# 🎁 ADMIN: BONUS STATUS
+#
+# /bonus_status 12
+# =========================================================
+
+@bot.message_handler(commands=['bonus_status'])
+def handle_bonus_status_command(message):
+
+    if (
+        ADMIN_TELEGRAM_ID
+        and str(message.from_user.id)
+        != str(ADMIN_TELEGRAM_ID)
+    ):
+
+        bot.reply_to(
+            message,
+            "⛔ Admin only."
+        )
+
+        return
+
+    parts = message.text.split()
+
+    if len(parts) != 2:
+
+        bot.reply_to(
+            message,
+            "ምሳሌ፦ `/bonus_status 12`",
+            parse_mode="Markdown"
+        )
+
+        return
+
+    try:
+
+        campaign_id = int(parts[1])
+
+    except Exception:
+
+        bot.reply_to(
+            message,
+            "❌ Invalid campaign ID."
+        )
+
+        return
+
+    url = (
+        f"{BACKEND_URL}/api/users/"
+        f"bonus/status/{campaign_id}"
+    )
+
+    try:
+
+        response = requests.get(
+            url,
+            timeout=15
+        )
+
+        data = response.json()
+
+        if response.status_code != 200:
+
+            bot.reply_to(
+                message,
+                f"❌ {data.get('detail', 'Campaign not found.')}"
+            )
+
+            return
+
+        campaign = data["campaign"]
+
+        bot.reply_to(
+            message,
+            (
+                f"🎁 <b>BONUS #{campaign['id']}</b>\n\n"
+                f"💰 Amount: <b>{campaign['amount']:g} ETB</b>\n"
+                f"👥 Maximum: <b>{campaign['max_claims']}</b>\n"
+                f"✅ Claimed: <b>{campaign['claimed_count']}</b>\n"
+                f"🔥 Remaining: <b>{campaign['remaining']}</b>\n"
+                f"📌 Status: <b>{campaign['status'].upper()}</b>\n"
+                f"📢 Broadcast: <b>{'SENT' if campaign['broadcast_sent'] else 'NOT SENT'}</b>"
+            ),
+            parse_mode="HTML"
+        )
+
+    except Exception as e:
+
+        print(
+            f"❌ Bonus status error: {e}"
+        )
+
+        bot.reply_to(
+            message,
+            "⚠️ Backend connection error."
+        )
+        
+# =========================================================
+# 🎁 ADMIN: CANCEL BONUS
+#
+# /bonus_cancel 12
+# =========================================================
+
+@bot.message_handler(commands=['bonus_cancel'])
+def handle_bonus_cancel_command(message):
+
+    if (
+        ADMIN_TELEGRAM_ID
+        and str(message.from_user.id)
+        != str(ADMIN_TELEGRAM_ID)
+    ):
+
+        bot.reply_to(
+            message,
+            "⛔ Admin only."
+        )
+
+        return
+
+    parts = message.text.split()
+
+    if len(parts) != 2:
+
+        bot.reply_to(
+            message,
+            "ምሳሌ፦ `/bonus_cancel 12`",
+            parse_mode="Markdown"
+        )
+
+        return
+
+    try:
+
+        campaign_id = int(parts[1])
+
+    except Exception:
+
+        bot.reply_to(
+            message,
+            "❌ Invalid campaign ID."
+        )
+
+        return
+
+    url = (
+        f"{BACKEND_URL}/api/users/"
+        f"bonus/cancel/{campaign_id}"
+    )
+
+    payload = {
+        "admin_telegram_id": str(
+            message.from_user.id
+        ),
+        "admin_password": ADMIN_PASSWORD,
+    }
+
+    try:
+
+        response = requests.post(
+            url,
+            params=payload,
+            timeout=15
+        )
+
+        data = response.json()
+
+        if response.status_code == 200:
+
+            bot.reply_to(
+                message,
+                (
+                    f"✅ Bonus Campaign "
+                    f"<b>#{campaign_id}</b> cancelled."
+                ),
+                parse_mode="HTML"
+            )
+
+        else:
+
+            bot.reply_to(
+                message,
+                f"❌ {data.get('detail', 'Unable to cancel.')}"
+            )
+
+    except Exception as e:
+
+        print(
+            f"❌ Bonus cancel error: {e}"
+        )
+
+        bot.reply_to(
+            message,
+            "⚠️ Backend connection error."
+        )
+        
 # 🛠️ Admin Deposit/Withdraw Approval Callback Handler
 @bot.callback_query_handler(func=lambda call: call.data.startswith(('approve_dep_', 'reject_dep_', 'approve_with_', 'reject_with_')))
 def handle_admin_actions(call):
@@ -271,6 +926,16 @@ def handle_admin_actions(call):
         args=(call, url, payload, {"Content-Type": "application/json"}, target_id, action, tx_type),
         daemon=True
     ).start()
+    
+# =========================================================
+# 🎁 START BONUS CAMPAIGN SCHEDULER
+# =========================================================
+
+threading.Thread(
+    target=bonus_campaign_scheduler,
+    daemon=True
+).start()
+
 
 # 🚀 Bot Start Polling Loop
 if __name__ == "__main__":
