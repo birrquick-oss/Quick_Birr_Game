@@ -1322,29 +1322,24 @@ def cancel_bonus_campaign(
         "status": campaign.status,
     }
 
-
-# =========================================================
-# DUE BONUS BROADCASTS (UPDATED)
-# =========================================================
-
 @router.post("/bonus/due-broadcasts")
 def get_due_bonus_broadcasts(
-    data: Optional[BonusAdminRequest] = None,
+    data: BonusAdminRequest,
     db: Session = Depends(get_db),
 ):
-    # Admin verification - fallback handling
-    if data:
-        if ADMIN_TELEGRAM_ID and str(data.admin_telegram_id or "").strip() != str(ADMIN_TELEGRAM_ID).strip():
-            raise HTTPException(status_code=403, detail="Admin Telegram ID is not authorized.")
-        if data.admin_password and str(data.admin_password or "") != str(ADMIN_PASSWORD):
-            raise HTTPException(status_code=403, detail="Invalid admin password.")
+    if ADMIN_TELEGRAM_ID and str(data.admin_telegram_id or "").strip() != str(ADMIN_TELEGRAM_ID).strip():
+        raise HTTPException(status_code=403, detail="Admin Telegram ID is not authorized.")
+
+    if str(data.admin_password or "") != str(ADMIN_PASSWORD):
+        raise HTTPException(status_code=403, detail="Invalid admin password.")
 
     now = datetime.now(timezone.utc)
 
+    # 1. ጊዜያቸው የደረሰ ነገር ግን ያልተላኩ የቦነስ ካምፔኖች
     campaigns = (
         db.query(BonusCampaign)
         .filter(
-            BonusCampaign.status == "scheduled",
+            BonusCampaign.status.in_(["scheduled", "active"]),
             BonusCampaign.start_at <= now,
             BonusCampaign.broadcast_sent == False,
         )
@@ -1355,8 +1350,7 @@ def get_due_bonus_broadcasts(
     result = []
     for campaign in campaigns:
         campaign.status = "active"
-        campaign.broadcast_sent = True
-        
+        campaign.broadcast_sent = True  # እንዳይደገም እዚሁ True ይደረጋል
         result.append({
             "id": campaign.id,
             "amount": campaign.amount,
@@ -1375,3 +1369,4 @@ def get_due_bonus_broadcasts(
         "success": True,
         "campaigns": result,
     }
+
