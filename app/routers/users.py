@@ -2,7 +2,8 @@ import os
 import json
 import urllib.request
 import urllib.parse
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
+from zoneinfo import ZoneInfo
 from typing import Optional
 from pydantic import BaseModel
 from fastapi import APIRouter, Depends, HTTPException
@@ -15,6 +16,8 @@ from app.models import (
     Withdrawal,
     WalletTransaction,
     DailyCashback,
+    BonusCampaign,
+    BonusClaim,
 )
 
 router = APIRouter(
@@ -120,7 +123,18 @@ class AdminApproveAction(BaseModel):
     admin_telegram_id: Optional[str] = None
     admin_password: Optional[str] = None
 
+class BonusCampaignCreate(BaseModel):
+    amount: float
+    max_claims: int
+    start_at: str
+    duration_minutes: int
 
+    title: Optional[str] = None
+    description: Optional[str] = None
+
+    admin_telegram_id: Optional[str] = None
+    admin_password: Optional[str] = None
+    
 # --------------------------------------------------------------------------
 # 🚀 API Endpoints
 # --------------------------------------------------------------------------
@@ -714,4 +728,662 @@ def claim_channel_bonus(req: BonusClaimRequest, db: Session = Depends(get_db)):
         "success": True,
         "message": "🎉 +10 BIRR ቦነስ በተሳካ ሁኔታ ወደ ባላንስዎ ተጨምሯል!",
         "balance": round(float(user.balance), 2)
+    }
+
+# =========================================================
+# 🎁 BONUS CAMPAIGN SYSTEM
+# =========================================================
+
+ADDIS_ABABA_TZ = ZoneInfo("Africa/Addis_Ababa")
+
+
+def _parse_bonus_start_time(start_at: str):
+    """
+    Admin enters Ethiopia time:
+    YYYY-MM-DD HH:MM
+
+    Example:
+    2026-10-05 10:00
+    """
+
+    try:
+        local_dt = datetime.strptime(
+            start_at.strip(),
+            "%Y-%m-%d %H:%M"
+        )
+
+        local_dt = local_dt.replace(
+            tzinfo=ADDIS_ABABA_TZ
+        )
+
+        return local_dt.astimezone(timezone.utc)
+
+    except ValueError:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid date/time. Use YYYY-MM-DD HH:MM"
+        )
+
+
+def _check_bonus_admin(data):
+    """
+    Admin security for bonus management.
+    """
+
+    if ADMIN_TELEGRAM_ID:
+
+        if str(data.admin_telegram_id or "").strip() != str(
+            ADMIN_TELEGRAM_ID
+        ).strip():
+            raise HTTPException(
+                status_code=403,
+                detail="Admin Telegram ID is not authorized."
+            )
+
+    if str(data.admin_password or "") != str(ADMIN_PASSWORD):
+
+        raise HTTPException(
+            status_code=403,
+            detail="Invalid admin password."
+        )
+
+
+# =========================================================
+# CREATE BONUS CAMPAIGN
+# =========================================================
+
+@router.post("/bonus/create")
+def create_bonus_campaign(
+    data: BonusCampaignCreate,
+    db: Session = Depends(get_db)
+):
+
+    _check_bonus_admin(data)
+
+    # -----------------------------
+    # Validate amount
+    # -----------------------------
+
+    if data.amount <= 0:
+        raise HTTPException(
+            status_code=400,
+            detail="Bonus amount must be greater than 0."
+        )
+
+    # -----------------------------
+    # Validate player count
+    # -----------------------------
+
+    if data.max_claims <= 0:
+        raise HTTPException(
+            status_code=400,
+            detail="Maximum players must be greater than 0."
+        )
+
+    # -----------------------------
+    # Validate duration
+    # -----------------------------
+
+    if data.duration_minutes <= 0:
+        raise HTTPException(
+            status_code=400,
+            detail="Duration must be greater than 0 minutes."
+        )
+
+    start_utc = _parse_bonus_start_time(data.start_at)
+
+    end_utc = start_utc + timedelta(
+        minutes=data.duration_minutes
+    )
+
+    now_utc = datetime.now(timezone.utc)
+
+    if start_utc <= now_utc:
+        raise HTTPException(
+            status_code=400,
+            detail="Bonus start time must be in the future."
+        )
+
+    title = (
+        data.title.strip()
+        if data.title
+        else f"🎁 {data.amount:g} ETB BONUS"
+    )
+
+    description = (
+        data.description.strip()
+        if data.description
+        else (
+            f"First {data.max_claims} players can claim "
+            f"{data.amount:g} ETB bonus."
+        )
+    )
+
+    campaign = BonusCampaign(
+        amount=float(data.amount),
+        max_claims=int(data.max_claims),
+        claimed_count=0,
+        start_at=start_utc,
+        end_at=end_utc,
+        status="scheduled",
+        title=title,
+        description=description,
+        created_by=str(
+            data.admin_telegram_id or ADMIN_TELEGRAM_ID
+        ),
+        broadcast_sent=False,
+    )
+
+    db.add(campaign)
+    db.commit()
+    db.refresh(campaign)
+
+    print(
+        f"🎁 BONUS CAMPAIGN CREATED | "
+        f"ID={campaign.id} | "
+        f"Amount={campaign.amount} | "
+        f"Max={campaign.max_claims} | "
+        f"Start={campaign.start_at} | "
+        f"End={campaign.end_at}"
+    )
+
+    return {
+        "success": True,
+        "campaign_id": campaign.id,
+        "amount": campaign.amount,
+        "max_claims": campaign.max_claims,
+        "claimed_count": campaign.claimed_count,
+        "start_at_utc": campaign.start_at.isoformat(),
+        "end_at_utc": campaign.end_at.isoformat(),
+        "status": campaign.status,
+    }
+
+
+# =========================================================
+# GET ACTIVE / UPCOMING BONUS
+# =========================================================
+
+@router.get("/bonus/active")
+def get_active_bonus(
+    db: Session = Depends(get_db)
+):
+
+    now = datetime.now(timezone.utc)
+
+    campaign = (
+        db.query(BonusCampaign)
+        .filter(
+            BonusCampaign.status.in_(["scheduled", "active"]),
+            BonusCampaign.start_at <= now,
+            BonusCampaign.end_at > now,
+            BonusCampaign.claimed_count < BonusCampaign.max_claims,
+        )
+        .order_by(BonusCampaign.start_at.asc())
+        .first()
+    )
+
+    if not campaign:
+        return {
+            "success": True,
+            "active": False,
+            "campaign": None,
+        }
+
+    if campaign.status == "scheduled":
+        campaign.status = "active"
+        db.commit()
+
+    return {
+        "success": True,
+        "active": True,
+        "campaign": {
+            "id": campaign.id,
+            "amount": campaign.amount,
+            "max_claims": campaign.max_claims,
+            "claimed_count": campaign.claimed_count,
+            "remaining": max(
+                0,
+                campaign.max_claims - campaign.claimed_count
+            ),
+            "start_at": campaign.start_at.isoformat(),
+            "end_at": campaign.end_at.isoformat(),
+            "status": campaign.status,
+            "title": campaign.title,
+            "description": campaign.description,
+        },
+    }
+
+
+# =========================================================
+# CLAIM BONUS
+# =========================================================
+
+@router.post("/bonus/claim/{campaign_id}/{telegram_id}")
+def claim_bonus_campaign(
+    campaign_id: int,
+    telegram_id: str,
+    db: Session = Depends(get_db)
+):
+
+    telegram_id = str(telegram_id).strip()
+
+    if not telegram_id or telegram_id in INVALID_TG_IDS:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid Telegram ID."
+        )
+
+    # -----------------------------
+    # Find user
+    # -----------------------------
+
+    user = (
+        db.query(User)
+        .filter(
+            User.telegram_id == telegram_id
+        )
+        .with_for_update()
+        .first()
+    )
+
+    if not user:
+        raise HTTPException(
+            status_code=404,
+            detail="User is not registered."
+        )
+
+    # -----------------------------
+    # Find campaign
+    # -----------------------------
+
+    campaign = (
+        db.query(BonusCampaign)
+        .filter(
+            BonusCampaign.id == campaign_id
+        )
+        .with_for_update()
+        .first()
+    )
+
+    if not campaign:
+        raise HTTPException(
+            status_code=404,
+            detail="Bonus campaign not found."
+        )
+
+    now = datetime.now(timezone.utc)
+
+    # -----------------------------
+    # Campaign not started
+    # -----------------------------
+
+    if now < campaign.start_at:
+
+        raise HTTPException(
+            status_code=400,
+            detail="This bonus is not available yet."
+        )
+
+    # -----------------------------
+    # Campaign expired
+    # -----------------------------
+
+    if now >= campaign.end_at:
+
+        campaign.status = "ended"
+        db.commit()
+
+        raise HTTPException(
+            status_code=400,
+            detail="This bonus campaign has ended."
+        )
+
+    # -----------------------------
+    # Sold out
+    # -----------------------------
+
+    if campaign.claimed_count >= campaign.max_claims:
+
+        campaign.status = "sold_out"
+        db.commit()
+
+        raise HTTPException(
+            status_code=400,
+            detail="This bonus is SOLD OUT."
+        )
+
+    # -----------------------------
+    # Check duplicate claim
+    # -----------------------------
+
+    existing_claim = (
+        db.query(BonusClaim)
+        .filter(
+            BonusClaim.campaign_id == campaign_id,
+            BonusClaim.user_id == user.id,
+        )
+        .first()
+    )
+
+    if existing_claim:
+
+        raise HTTPException(
+            status_code=400,
+            detail="You already claimed this bonus."
+        )
+
+    # -----------------------------
+    # Atomic claim counter update
+    # -----------------------------
+
+    updated_rows = (
+        db.query(BonusCampaign)
+        .filter(
+            BonusCampaign.id == campaign_id,
+            BonusCampaign.claimed_count < BonusCampaign.max_claims,
+            BonusCampaign.start_at <= now,
+            BonusCampaign.end_at > now,
+        )
+        .update(
+            {
+                BonusCampaign.claimed_count:
+                    BonusCampaign.claimed_count + 1,
+                BonusCampaign.status: "active",
+            },
+            synchronize_session=False,
+        )
+    )
+
+    if updated_rows != 1:
+
+        db.rollback()
+
+        raise HTTPException(
+            status_code=400,
+            detail="This bonus is SOLD OUT."
+        )
+
+    # -----------------------------
+    # Credit wallet
+    # -----------------------------
+
+    bonus_amount = float(campaign.amount)
+
+    current_balance = float(user.balance or 0.0)
+
+    user.balance = current_balance + bonus_amount
+
+    # -----------------------------
+    # Create wallet transaction
+    # -----------------------------
+
+    wallet_transaction = WalletTransaction(
+        user_id=user.id,
+        transaction_type="bonus_campaign",
+        amount=bonus_amount,
+        balance_after=user.balance,
+        game="bonus",
+        reference=f"BONUS_CAMPAIGN_{campaign.id}",
+        description=(
+            f"Bonus Campaign #{campaign.id} "
+            f"claim - {bonus_amount:g} ETB"
+        ),
+        created_at=datetime.now(timezone.utc),
+    )
+
+    db.add(wallet_transaction)
+
+    # -----------------------------
+    # Create claim record
+    # -----------------------------
+
+    claim = BonusClaim(
+        campaign_id=campaign.id,
+        user_id=user.id,
+        telegram_id=telegram_id,
+        amount=bonus_amount,
+        balance_after=user.balance,
+        created_at=datetime.now(timezone.utc),
+    )
+
+    db.add(claim)
+
+    # -----------------------------
+    # Sold out after this claim
+    # -----------------------------
+
+    if campaign.claimed_count + 1 >= campaign.max_claims:
+        campaign.status = "sold_out"
+
+    try:
+
+        db.commit()
+
+    except Exception as e:
+
+        db.rollback()
+
+        print(
+            f"❌ Bonus claim failed for "
+            f"{telegram_id}: {e}"
+        )
+
+        raise HTTPException(
+            status_code=400,
+            detail="Bonus could not be claimed. Please try again."
+        )
+
+    db.refresh(user)
+
+    print(
+        f"🎁 BONUS CLAIMED | "
+        f"Campaign={campaign.id} | "
+        f"User={telegram_id} | "
+        f"Amount={bonus_amount} | "
+        f"Balance={user.balance}"
+    )
+
+    return {
+        "success": True,
+        "message": f"{bonus_amount:g} ETB bonus added successfully!",
+        "campaign_id": campaign.id,
+        "amount": bonus_amount,
+        "balance": user.balance,
+        "claimed_count": campaign.claimed_count,
+        "remaining": max(
+            0,
+            campaign.max_claims - campaign.claimed_count
+        ),
+    }
+
+
+# =========================================================
+# BONUS CAMPAIGN STATUS
+# =========================================================
+
+@router.get("/bonus/status/{campaign_id}")
+def bonus_campaign_status(
+    campaign_id: int,
+    db: Session = Depends(get_db)
+):
+
+    campaign = (
+        db.query(BonusCampaign)
+        .filter(
+            BonusCampaign.id == campaign_id
+        )
+        .first()
+    )
+
+    if not campaign:
+
+        raise HTTPException(
+            status_code=404,
+            detail="Bonus campaign not found."
+        )
+
+    now = datetime.now(timezone.utc)
+
+    current_status = campaign.status
+
+    if (
+        campaign.status not in ["cancelled", "sold_out"]
+        and now >= campaign.end_at
+    ):
+        campaign.status = "ended"
+        db.commit()
+
+    return {
+        "success": True,
+        "campaign": {
+            "id": campaign.id,
+            "amount": campaign.amount,
+            "max_claims": campaign.max_claims,
+            "claimed_count": campaign.claimed_count,
+            "remaining": max(
+                0,
+                campaign.max_claims - campaign.claimed_count
+            ),
+            "start_at": campaign.start_at.isoformat(),
+            "end_at": campaign.end_at.isoformat(),
+            "status": campaign.status,
+            "previous_status": current_status,
+            "broadcast_sent": campaign.broadcast_sent,
+            "title": campaign.title,
+            "description": campaign.description,
+        },
+    }
+
+
+# =========================================================
+# CANCEL BONUS CAMPAIGN
+# =========================================================
+
+@router.post("/bonus/cancel/{campaign_id}")
+def cancel_bonus_campaign(
+    campaign_id: int,
+    admin_telegram_id: Optional[str] = None,
+    admin_password: Optional[str] = None,
+    db: Session = Depends(get_db),
+):
+
+    if ADMIN_TELEGRAM_ID:
+
+        if str(admin_telegram_id or "").strip() != str(
+            ADMIN_TELEGRAM_ID
+        ).strip():
+
+            raise HTTPException(
+                status_code=403,
+                detail="Admin Telegram ID is not authorized."
+            )
+
+    if str(admin_password or "") != str(ADMIN_PASSWORD):
+
+        raise HTTPException(
+            status_code=403,
+            detail="Invalid admin password."
+        )
+
+    campaign = (
+        db.query(BonusCampaign)
+        .filter(
+            BonusCampaign.id == campaign_id
+        )
+        .first()
+    )
+
+    if not campaign:
+
+        raise HTTPException(
+            status_code=404,
+            detail="Bonus campaign not found."
+        )
+
+    if campaign.status in ["sold_out", "ended"]:
+
+        raise HTTPException(
+            status_code=400,
+            detail=f"Campaign is already {campaign.status}."
+        )
+
+    campaign.status = "cancelled"
+
+    db.commit()
+
+    return {
+        "success": True,
+        "message": f"Bonus campaign #{campaign_id} cancelled.",
+        "campaign_id": campaign_id,
+        "status": campaign.status,
+    }
+
+
+# =========================================================
+# DUE BONUS BROADCASTS
+# =========================================================
+
+@router.post("/bonus/due-broadcasts")
+def get_due_bonus_broadcasts(
+    admin_telegram_id: Optional[str] = None,
+    admin_password: Optional[str] = None,
+    db: Session = Depends(get_db),
+):
+
+    if ADMIN_TELEGRAM_ID:
+
+        if str(admin_telegram_id or "").strip() != str(
+            ADMIN_TELEGRAM_ID
+        ).strip():
+
+            raise HTTPException(
+                status_code=403,
+                detail="Admin Telegram ID is not authorized."
+            )
+
+    if str(admin_password or "") != str(ADMIN_PASSWORD):
+
+        raise HTTPException(
+            status_code=403,
+            detail="Invalid admin password."
+        )
+
+    now = datetime.now(timezone.utc)
+
+    campaigns = (
+        db.query(BonusCampaign)
+        .filter(
+            BonusCampaign.status == "scheduled",
+            BonusCampaign.start_at <= now,
+            BonusCampaign.broadcast_sent == False,
+        )
+        .order_by(BonusCampaign.start_at.asc())
+        .all()
+    )
+
+    result = []
+
+    for campaign in campaigns:
+
+        # Mark as active and broadcasted atomically
+        campaign.status = "active"
+        campaign.broadcast_sent = True
+
+        result.append({
+            "id": campaign.id,
+            "amount": campaign.amount,
+            "max_claims": campaign.max_claims,
+            "claimed_count": campaign.claimed_count,
+            "start_at": campaign.start_at.isoformat(),
+            "end_at": campaign.end_at.isoformat(),
+            "title": campaign.title,
+            "description": campaign.description,
+        })
+
+    if campaigns:
+        db.commit()
+
+    return {
+        "success": True,
+        "campaigns": result,
     }
