@@ -1314,7 +1314,7 @@ button {
     position: relative;
     width: 100%;
     max-width: 430px;
-    height: 360px;
+    height: 410px;
     margin: 0 auto;
     overflow: hidden;
     border-radius: 18px 18px 10px 10px;
@@ -1396,31 +1396,31 @@ button {
 }
 
 .plinko-row.row-2 {
-    top: 80px;
+    top: 85px;
 }
 
 .plinko-row.row-3 {
-    top: 115px;
+    top: 125px;
 }
 
 .plinko-row.row-4 {
-    top: 150px;
+    top: 165px;
 }
 
 .plinko-row.row-5 {
-    top: 185px;
+    top: 205px;
 }
 
 .plinko-row.row-6 {
-    top: 220px;
+    top: 245px;
 }
 
 .plinko-row.row-7 {
-    top: 255px;
+    top: 285px;
 }
 
 .plinko-row.row-8 {
-    top: 290px;
+    top: 325px;
 }
 
 /* Alternate rows */
@@ -1438,7 +1438,7 @@ button {
     position: absolute;
 
     left: 50%;
-    top: 18px;
+    top: 14px;
 
     width: 22px;
     height: 22px;
@@ -1494,56 +1494,56 @@ button {
     12% {
         transform:
             translateX(-50%)
-            translateY(35px)
+            translateY(38px)
             translateX(-12px);
     }
 
     25% {
         transform:
             translateX(-50%)
-            translateY(70px)
+            translateY(78px)
             translateX(10px);
     }
 
     38% {
         transform:
             translateX(-50%)
-            translateY(105px)
+            translateY(118px)
             translateX(-8px);
     }
 
     51% {
         transform:
             translateX(-50%)
-            translateY(140px)
+            translateY(158px)
             translateX(13px);
     }
 
     64% {
         transform:
             translateX(-50%)
-            translateY(175px)
+            translateY(198px)
             translateX(-10px);
     }
 
     77% {
         transform:
             translateX(-50%)
-            translateY(210px)
+            translateY(238px)
             translateX(8px);
     }
 
     88% {
         transform:
             translateX(-50%)
-            translateY(245px)
+            translateY(278px)
             translateX(-6px);
     }
 
     100% {
         transform:
             translateX(-50%)
-            translateY(315px)
+            translateY(355px)
             translateX(0);
     }
 }
@@ -1871,7 +1871,7 @@ button {
     }
 
     .plinko-board {
-        height: 340px;
+        height: 370px;
     }
 
     .plinko-row {
@@ -1884,27 +1884,35 @@ button {
     }
 
     .plinko-row.row-1 {
-        top: 58px;
+        top: 40px;
     }
 
     .plinko-row.row-2 {
-        top: 99px;
+        top: 76px;
     }
 
     .plinko-row.row-3 {
-        top: 140px;
+        top: 112px;
     }
 
     .plinko-row.row-4 {
-        top: 181px;
+        top: 148px;
     }
 
     .plinko-row.row-5 {
-        top: 222px;
+        top: 184px;
     }
 
     .plinko-row.row-6 {
-        top: 263px;
+        top: 220px;
+    }
+
+    .plinko-row.row-7 {
+        top: 256px;
+    }
+
+    .plinko-row.row-8 {
+        top: 292px;
     }
 
     .plinko-multiplier {
@@ -1928,7 +1936,7 @@ button {
 @media (max-width: 360px) {
 
     .plinko-board {
-        height: 315px;
+        height: 340px;
     }
 
     .plinko-row {
@@ -1936,27 +1944,35 @@ button {
     }
 
     .plinko-row.row-1 {
-        top: 53px;
+        top: 35px;
     }
 
     .plinko-row.row-2 {
-        top: 91px;
+        top: 68px;
     }
 
     .plinko-row.row-3 {
-        top: 129px;
+        top: 101px;
     }
 
     .plinko-row.row-4 {
-        top: 167px;
+        top: 134px;
     }
 
     .plinko-row.row-5 {
-        top: 205px;
+        top: 167px;
     }
 
     .plinko-row.row-6 {
-        top: 243px;
+        top: 200px;
+    }
+
+    .plinko-row.row-7 {
+        top: 233px;
+    }
+
+    .plinko-row.row-8 {
+        top: 266px;
     }
 
     .plinko-multiplier {
