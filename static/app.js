@@ -198,22 +198,41 @@ function closeMessage() {
 }
 
 function openDepositModal() {
-    if (depositModal) depositModal.hidden = false;
+    if (depositModal) {
+        depositModal.hidden = false;
+        depositModal.style.display = 'flex';
+    }
 }
 
 function openWithdrawModal() {
-    if (withdrawModal) withdrawModal.hidden = false;
+    if (withdrawModal) {
+        withdrawModal.hidden = false;
+        withdrawModal.style.display = 'flex';
+    }
 }
 
 function closeModals() {
-    if (depositModal) depositModal.hidden = true;
-    if (withdrawModal) withdrawModal.hidden = true;
-    if (modal) modal.hidden = true;
+    if (depositModal) {
+        depositModal.hidden = true;
+        depositModal.style.display = 'none';
+    }
+    if (withdrawModal) {
+        withdrawModal.hidden = true;
+        withdrawModal.style.display = 'none';
+    }
+    if (modal) {
+        modal.hidden = true;
+        modal.style.display = 'none';
+    }
 }
 
+// ❌ የሞዳል መዝጊያ ቁልፎች (Close Buttons) Event Listeners
 document.getElementById("modalClose")?.addEventListener("click", closeMessage);
 document.getElementById("modalButton")?.addEventListener("click", closeMessage);
+document.getElementById("closeDepositModalBtn")?.addEventListener("click", closeModals);
+document.getElementById("closeWithdrawModalBtn")?.addEventListener("click", closeModals);
 
+// 🔍 ከሞዳሉ ውጭ (Overlay) ሲነካ እንዲዘጋ ማድረግ
 document.querySelectorAll(".modal-overlay").forEach(overlay => {
     overlay.addEventListener("click", () => {
         closeMessage();
@@ -221,10 +240,39 @@ document.querySelectorAll(".modal-overlay").forEach(overlay => {
     });
 });
 
+// 🔘 የDeposit እና Withdraw መክፈቻ ቁልፎች
 document.getElementById("depositButton")?.addEventListener("click", openDepositModal);
 document.getElementById("dashDepositBtn")?.addEventListener("click", openDepositModal);
 document.getElementById("withdrawButton")?.addEventListener("click", openWithdrawModal);
 document.getElementById("dashWithdrawBtn")?.addEventListener("click", openWithdrawModal);
+
+// 📋 የአካውንት ቁጥር Copy ማድረጊያ Logic
+document.querySelectorAll('.account-item').forEach(item => {
+    item.addEventListener('click', async () => {
+        const textToCopy = item.getAttribute('data-copy');
+        if (!textToCopy) return;
+
+        try {
+            if (navigator.clipboard && window.isSecureContext) {
+                await navigator.clipboard.writeText(textToCopy);
+            } else {
+                const textArea = document.createElement("textarea");
+                textArea.value = textToCopy;
+                textArea.style.position = "fixed";
+                textArea.style.left = "-999999px";
+                document.body.appendChild(textArea);
+                textArea.focus();
+                textArea.select();
+                document.execCommand('copy');
+                textArea.remove();
+            }
+            alert(`✅ አካውንት ቁጥር (${textToCopy}) ኮፒ ተደርጓል!`);
+        } catch (err) {
+            console.error('Copy ማድረግ አልተቻለም፦', err);
+        }
+    });
+});
+
 
 /* =========================
    GAME CARDS CLICK HANDLERS
