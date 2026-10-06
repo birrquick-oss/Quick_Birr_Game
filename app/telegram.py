@@ -66,8 +66,13 @@ def broadcast_worker(text_message, reply_markup=None):
         res = requests.get(f"{BACKEND_URL}/api/users/all_ids", timeout=10)
         if res.status_code == 200:
             data = res.json()
-            user_ids = data if isinstance(data, list) else data.get("user_ids", [])
+            if isinstance(data, list):
+                user_ids = data
+            elif isinstance(data, dict):
+                user_ids = data.get("user_ids", [])
             print(f"📊 Total Users Found: {len(user_ids)}")
+        else:
+            print(f"⚠️ Failed to get user IDs. Status Code: {res.status_code}")
     except Exception as e:
         print(f"❌ Backend connection failed: {e}")
 
@@ -90,7 +95,7 @@ def broadcast_worker(text_message, reply_markup=None):
             )
             success_count += 1
             time.sleep(0.04)  # Rate limiting protection
-        except Exception as e:
+        except Exception:
             fail_count += 1
 
     print(f"🎉 Broadcast finished! Success: {success_count}, Failed: {fail_count}")
@@ -162,7 +167,7 @@ def handle_bonus_command(message):
                 "<code>/bonus 50 100 30</code>\n\n"
                 "💰 50 ETB\n"
                 "👥 First 100 players\n"
-                "⏱️ 30 minutes duration"
+                "⏱️️ 30 minutes duration"
             ),
             parse_mode="HTML"
         )
@@ -205,7 +210,6 @@ def handle_bonus_command(message):
         if response.status_code == 200 and data.get("success"):
             campaign_id = data["campaign_id"]
 
-            # ወዲያውኑ ማስታወቂያውን (Broadcast) ይልካል
             campaign_obj = {
                 "id": campaign_id,
                 "amount": amount,
@@ -448,23 +452,26 @@ def handle_bonus_status_command(message):
 
     try:
         response = requests.get(url, timeout=15)
-        data = response.json()
+        try:
+            data = response.json()
+        except Exception:
+            data = {}
 
         if response.status_code != 200:
             bot.reply_to(message, f"❌ {data.get('detail', 'Campaign not found.')}")
             return
 
-        campaign = data["campaign"]
+        campaign = data.get("campaign", {})
         bot.reply_to(
             message,
             (
-                f"🎁 <b>BONUS #{campaign['id']}</b>\n\n"
-                f"💰 Amount: <b>{campaign['amount']:g} ETB</b>\n"
-                f"👥 Maximum: <b>{campaign['max_claims']}</b>\n"
-                f"✅ Claimed: <b>{campaign['claimed_count']}</b>\n"
-                f"🔥 Remaining: <b>{campaign['remaining']}</b>\n"
-                f"📌 Status: <b>{campaign['status'].upper()}</b>\n"
-                f"📢 Broadcast: <b>{'SENT' if campaign['broadcast_sent'] else 'NOT SENT'}</b>"
+                f"🎁 <b>BONUS #{campaign.get('id', campaign_id)}</b>\n\n"
+                f"💰 Amount: <b>{campaign.get('amount', 0):g} ETB</b>\n"
+                f"👥 Maximum: <b>{campaign.get('max_claims', 0)}</b>\n"
+                f"✅ Claimed: <b>{campaign.get('claimed_count', 0)}</b>\n"
+                f"🔥 Remaining: <b>{campaign.get('remaining', 0)}</b>\n"
+                f"📌 Status: <b>{str(campaign.get('status', 'N/A')).upper()}</b>\n"
+                f"📢 Broadcast: <b>{'SENT' if campaign.get('broadcast_sent') else 'NOT SENT'}</b>"
             ),
             parse_mode="HTML"
         )
@@ -503,7 +510,10 @@ def handle_bonus_cancel_command(message):
 
     try:
         response = requests.post(url, json=payload, timeout=15)
-        data = response.json()
+        try:
+            data = response.json()
+        except Exception:
+            data = {}
 
         if response.status_code == 200:
             bot.reply_to(message, f"✅ Bonus Campaign <b>#{campaign_id}</b> cancelled.", parse_mode="HTML")
@@ -562,4 +572,8 @@ def handle_admin_actions(call):
 
 # 🚀 Bot Start Polling Loop
 if __name__ == "__main__":
-    bot.infinity_polling(skip_pending=True)
+    try:
+        bot.remove_webhook()
+    except Exception:
+        pass
+    bot.infinity_polling(skip_pending=True, timeout=60, long_polling_timeout=60)
