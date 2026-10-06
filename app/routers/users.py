@@ -173,12 +173,25 @@ def sync_or_register_user(data: UserSync, db: Session = Depends(get_db)):
             telegram_id=orig_tg_id,
             telegram_username=data.telegram_username,
             first_name=data.first_name,
-            balance=0.0
+            balance=15.0  # 👈 15 ብር የመመዝገቢያ ቦነስ
         )
         db.add(user)
         db.commit()
         db.refresh(user)
-        print(f"✅ [USER CREATED]: DB ID #{user.id} ({orig_tg_id})")
+
+        # የ 15 ብር ቦነስ Transaction ታሪክ መመዝገቢያ
+        tx = WalletTransaction(
+            user_id=user.id,
+            transaction_type="bonus",
+            amount=15.0,
+            balance_after=user.balance,
+            description="Welcome Registration Bonus (+15 ETB)"
+        )
+        db.add(tx)
+        db.commit()
+
+        print(f"✅ [USER CREATED WITH 15 ETB BONUS]: DB ID #{user.id} ({orig_tg_id})")
+
     else:
         if data.first_name:
             user.first_name = data.first_name
@@ -241,11 +254,21 @@ def request_deposit(req: DepositRequest, db: Session = Depends(get_db)):
         user = User(
             telegram_id=tg_id, 
             first_name=req.telegram_name, 
-            balance=0.0
+            balance=15.0  # 👈 15 ብር የመመዝገቢያ ቦነስ
         )
         db.add(user)
         db.commit()
         db.refresh(user)
+
+        tx = WalletTransaction(
+            user_id=user.id,
+            transaction_type="bonus",
+            amount=15.0,
+            balance_after=user.balance,
+            description="Welcome Registration Bonus (+15 ETB)"
+        )
+        db.add(tx)
+        db.commit()
 
     dep = Deposit(
         user_id=user.id, 
@@ -279,65 +302,6 @@ def request_deposit(req: DepositRequest, db: Session = Depends(get_db)):
     notify_admin(msg, buttons)
     
     return {"success": True, "message": "የዲፖዚት ጥያቄዎ ለአድሚን ተልኳል!"}
-
-
-# 5️⃣ Request Withdrawal
-@router.post("/withdraw")
-def request_withdraw(req: WithdrawRequest, db: Session = Depends(get_db)):
-    print(f"📥 [WITHDRAWAL REQUEST RECEIVED]: {req.model_dump()}")
-    tg_id = str(req.telegram_id).strip()
-
-    if not tg_id or tg_id.lower() in INVALID_TG_IDS:
-        print(f"❌ [WITHDRAWAL FAILED]: Invalid Telegram ID '{tg_id}'")
-        return {"success": False, "message": "የቴሌግራም ማንነት ማረጋገጥ አልተቻለም! እባክዎን አፑን በቦቱ በኩል ይክፈቱት።"}
-
-    user = db.query(User).filter(User.telegram_id == tg_id).first()
-    
-    if not user or user.balance < req.amount:
-        print(f"❌ [WITHDRAWAL FAILED]: Insufficient Balance for User {tg_id}")
-        return {"success": False, "message": "በቂ ባላንስ የሎትም!"}
-
-    user.balance -= req.amount
-    
-    withd = Withdrawal(
-        user_id=user.id, 
-        amount=req.amount, 
-        method=req.bank_name, 
-        account_number=req.account_number, 
-        status="pending"
-    )
-    db.add(withd)
-    db.commit()
-    db.refresh(withd)
-
-    tx = WalletTransaction(
-        user_id=user.id,
-        transaction_type="withdrawal",
-        amount=-req.amount,
-        balance_after=user.balance,
-        description=f"Withdrawal request via {req.bank_name} ({req.account_number})"
-    )
-    db.add(tx)
-    db.commit()
-
-    print(f"✅ [WITHDRAWAL CREATED IN DB]: ID #{withd.id} for User {user.telegram_id}")
-
-    msg = (
-        f"🔻 <b>NEW WITHDRAWAL REQUEST #{withd.id}</b>\n\n"
-        f"👤 <b>User Telegram ID:</b> {req.telegram_id}\n"
-        f"💵 <b>Amount:</b> {req.amount} ETB\n"
-        f"🏦 <b>Bank:</b> {req.bank_name}\n"
-        f"💳 <b>Account:</b> <code>{req.account_number}</code>"
-    )
-    buttons = {
-        "inline_keyboard": [[
-            {"text": "✅ Approve", "callback_data": f"approve_with_{withd.id}"},
-            {"text": "❌ Reject", "callback_data": f"reject_with_{withd.id}"}
-        ]]
-    }
-    notify_admin(msg, buttons)
-    
-    return {"success": True, "message": "የማውጫ ጥያቄዎ ተመዝግቧል!"}
 
 
 # 6️⃣ Admin Deposit Action
