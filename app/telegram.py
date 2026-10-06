@@ -282,12 +282,14 @@ def handle_contact(message):
         daemon=True
     ).start()
 
-    bot.send_message(chat_id, "✅ በስኬት ተመዝግበዋል!", reply_markup=types.ReplyKeyboardRemove())
+    # 🎁 የ 15 ብር ቦነስ እንዳገኘ የሚያሳውቅ መልእክት
+    bot.send_message(chat_id, "✅ በስኬት ተመዝግበዋል! 🎁 የ 15.00 ETB የመመዝገቢያ ቦነስ ተሰጥቶዎታል!", reply_markup=types.ReplyKeyboardRemove())
 
     my_ref_link = f"https://t.me/{BOT_USERNAME}?start=ref_{telegram_id}"
     welcome_text = (
         f"👋 ሰላም <b>{first_name}</b>፣ ወደ <b>Quick Birr Games</b> እንኳን መጡ! 🎲\n\n"
-        "የተለያዩ አዝናኝ ጨዋታዎችን በመጫወት ያሸንፉ!\n\n"
+        f"🎁 <b>የ 15.00 ETB የመመዝገቢያ ቦነስ ወደ ሂሳብዎ ተጨምሯል!</b>\n"
+        "አሁኑኑ የተለያዩ አዝናኝ ጨዋታዎችን በመጫወት ያሸንፉ!\n\n"
         f"🔗 <b>የመጋበዣ ሊንክዎ፦</b>\n<code>{my_ref_link}</code>"
     )
 
