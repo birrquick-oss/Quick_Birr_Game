@@ -158,13 +158,26 @@ function showToastMessage(message, type) {
     setTimeout(() => { if (toast) toast.remove(); }, 2200);
 }
 
+// 🔊 Sound Toggle Function
 function toggleSound() {
     soundEnabled = !soundEnabled;
+    
     const soundText = document.getElementById('soundStatusText');
     const soundBtn = document.getElementById('soundToggleBtn');
-    if (soundText) soundText.textContent = soundEnabled ? 'ON' : 'OFF';
-    if (soundBtn) soundBtn.style.opacity = soundEnabled ? '1' : '0.5';
+
+    if (soundText && soundBtn) {
+        if (soundEnabled) {
+            soundText.textContent = "ON";
+            soundBtn.classList.remove("muted");
+            console.log("🔊 Sound turned ON");
+        } else {
+            soundText.textContent = "OFF";
+            soundBtn.classList.add("muted");
+            console.log("🔇 Sound turned OFF");
+        }
+    }
 }
+
 
 /* =========================
    MODALS & NAVIGATION
