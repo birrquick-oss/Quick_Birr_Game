@@ -629,7 +629,7 @@ function handleGameOver(data) {
 
     winnerAutoCloseTimer = setTimeout(() => {
         closeWinnerModalAndReset();
-    }, 5000);
+    }, 3000);
 
     selectedBingoCards = []; 
     temporarilySelectedCards = [];
