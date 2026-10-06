@@ -88,9 +88,9 @@ class GameEngine:
         elif 13 <= hour <= 23:
             return random.randint(150, 250)
         elif 0 <= hour < 3:
-            return random.randint(100, 200)
+            return random.randint(50, 100)
         else:
-            return random.randint(100, 150)
+            return random.randint(40, 80)
 
     async def auto_buy_bot_cards(self, game_id: int):
         db: Session = None
