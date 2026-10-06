@@ -167,21 +167,14 @@ class BonusCampaign(Base):
     __tablename__ = "bonus_campaigns"
 
     id = Column(Integer, primary_key=True, index=True)
-
-    # Bonus amount per player
     amount = Column(Float, nullable=False)
-
-    # Maximum number of players
     max_claims = Column(Integer, nullable=False)
-
-    # Current number of successful claims
     claimed_count = Column(Integer, default=0, nullable=False)
 
-    # Campaign time is stored in UTC
-    start_at = Column(DateTime, nullable=False, index=True)
-    end_at = Column(DateTime, nullable=False, index=True)
+    # 🛠️ እዚህ ጋር DateTime(timezone=True) ተደርጓል
+    start_at = Column(DateTime(timezone=True), nullable=False, index=True)
+    end_at = Column(DateTime(timezone=True), nullable=False, index=True)
 
-    # scheduled / active / sold_out / ended / cancelled
     status = Column(
         String(30),
         default="scheduled",
@@ -191,25 +184,21 @@ class BonusCampaign(Base):
 
     title = Column(String(255), nullable=True)
     description = Column(Text, nullable=True)
-
     created_by = Column(String(64), nullable=True)
-
-    # Prevent duplicate broadcast
     broadcast_sent = Column(Boolean, default=False, nullable=False)
 
+    # 🛠️ እዚህም ጋር DateTime(timezone=True) ተደርጓል
     created_at = Column(
-        DateTime,
+        DateTime(timezone=True),
         default=lambda: datetime.now(timezone.utc),
         nullable=False
     )
-
     updated_at = Column(
-        DateTime,
+        DateTime(timezone=True),
         default=lambda: datetime.now(timezone.utc),
         onupdate=lambda: datetime.now(timezone.utc),
         nullable=False
     )
-
 
 # =========================================================
 # 🎁 BONUS CLAIM
