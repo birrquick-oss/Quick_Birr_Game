@@ -1688,7 +1688,7 @@ function animatePlinkoBall(resultIndex) {
         ];
 
         plinkoBall.style.left = "50%";
-        plinkoBall.style.top = "18px";
+        plinkoBall.style.top = "14px";
         plinkoBall.classList.add("active");
 
         requestAnimationFrame(() => {
