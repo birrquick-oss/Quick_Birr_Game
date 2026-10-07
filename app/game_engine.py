@@ -680,7 +680,7 @@ class GameEngine:
                     fee = real_winner["bet_amount"]
 
                     bot_cards = [c_num for c_num, info in bought_cards.items() if info["user_id"] == bot_user.id]
-                    if len(bot_cards) < 3:
+                    if len(bot_cards) < 4:
                         bot_cards = [i for i in range(1, 601) if i != real_winner["card_number"]]
 
                     sampled_bot_cards = random.sample(bot_cards, min(3, len(bot_cards)))
