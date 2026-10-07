@@ -225,39 +225,6 @@ document.getElementById("dashDepositBtn")?.addEventListener("click", openDeposit
 document.getElementById("withdrawButton")?.addEventListener("click", openWithdrawModal);
 document.getElementById("dashWithdrawBtn")?.addEventListener("click", openWithdrawModal);
 
-// 2️⃣ Event Listeners - ❌ የሞዳል መዝጊያ ቁልፎች
-document.getElementById("modalClose")?.addEventListener("click", closeMessage);
-document.getElementById("modalButton")?.addEventListener("click", closeMessage);
-document.getElementById("closeDepositModalBtn")?.addEventListener("click", closeModals);
-document.getElementById("closeWithdrawModalBtn")?.addEventListener("click", closeModals);
-
-// 📋 የአካውንት ቁጥር Copy ማድረጊያ Logic
-document.querySelectorAll('.account-item').forEach(item => {
-    item.addEventListener('click', async () => {
-        const textToCopy = item.getAttribute('data-copy');
-        if (!textToCopy) return;
-
-        try {
-            if (navigator.clipboard && window.isSecureContext) {
-                await navigator.clipboard.writeText(textToCopy);
-            } else {
-                const textArea = document.createElement("textarea");
-                textArea.value = textToCopy;
-                textArea.style.position = "fixed";
-                textArea.style.left = "-999999px";
-                document.body.appendChild(textArea);
-                textArea.focus();
-                textArea.select();
-                document.execCommand('copy');
-                textArea.remove();
-            }
-            alert(`✅ አካውንት ቁጥር (${textToCopy}) ኮፒ ተደርጓል!`);
-        } catch (err) {
-            console.error('Copy ማድረግ አልተቻለም፦', err);
-        }
-    });
-});
-
 /* =========================
    GAME CARDS CLICK HANDLERS
 ========================= */
