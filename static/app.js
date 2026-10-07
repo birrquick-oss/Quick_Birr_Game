@@ -164,6 +164,16 @@ function toggleSound() {
 /* =========================
    MODALS & NAVIGATION
 ========================= */
+
+// 1️⃣ DOM Elements (ኤለመንቶችን መያዝ)
+const modal = document.getElementById("messageModal");
+const modalTitle = document.getElementById("modalTitle");
+const modalMessage = document.getElementById("modalMessage");
+const modalIcon = document.getElementById("modalIcon");
+const depositModal = document.getElementById("depositModal");
+const withdrawModal = document.getElementById("withdrawModal");
+
+// 2️⃣ Functions (ተግባራት)
 function showMessage(title, message, icon = "🎮") {
     if (!modal) {
         alert(`${title}\n${message}`);
@@ -193,9 +203,23 @@ function closeModals() {
     if (modal) modal.hidden = true;
 }
 
+// 3️⃣ Event Listeners - ❌ የሞዳል መዝጊያ ቁልፎች
 document.getElementById("modalClose")?.addEventListener("click", closeMessage);
 document.getElementById("modalButton")?.addEventListener("click", closeMessage);
+document.getElementById("closeDepositModalBtn")?.addEventListener("click", closeModals);
+document.getElementById("closeWithdrawModalBtn")?.addEventListener("click", closeModals);
 
+// 🔍 ከሞዳሉ ውጭ (Overlay) ብቻ ሲነካ እንዲዘጋ ማድረግ
+document.querySelectorAll(".modal-overlay").forEach(overlay => {
+    overlay.addEventListener("click", (e) => {
+        if (e.target === e.currentTarget) {
+            closeMessage();
+            closeModals();
+        }
+    });
+});
+
+// 4️⃣ Event Listeners - 🟢 የሞዳል መክፈቻ ቁልፎች
 document.getElementById("depositButton")?.addEventListener("click", openDepositModal);
 document.getElementById("dashDepositBtn")?.addEventListener("click", openDepositModal);
 document.getElementById("withdrawButton")?.addEventListener("click", openWithdrawModal);
@@ -221,7 +245,13 @@ document.querySelectorAll('.account-item').forEach(item => {
                 document.execCommand('copy');
                 textArea.remove();
             }
-            alert(`✅ አካውንት ቁጥር (${textToCopy}) ኮፒ ተደርጓል!`);
+            
+            // alert አጠቃቀም ፈንታ አፑ ላይ ያለውን showMessage መጠቀም ይቻላል፡
+            if (typeof showMessage === "function") {
+                showMessage("የተቀዳ", `አካውንት ቁጥር (${textToCopy}) ኮፒ ተደርጓል!`, "📋");
+            } else {
+                alert(`✅ አካውንት ቁጥር (${textToCopy}) ኮፒ ተደርጓል!`);
+            }
         } catch (err) {
             console.error('Copy ማድረግ አልተቻለም፦', err);
         }
