@@ -306,76 +306,60 @@ def request_deposit(req: DepositRequest, db: Session = Depends(get_db)):
 # 5️⃣ Request Withdrawal
 @router.post("/withdraw")
 def request_withdraw(req: WithdrawRequest, db: Session = Depends(get_db)):
-    print(f"📥 [WITHDRAW REQUEST RECEIVED]: {req.model_dump()}")
+    print(f"📥 [WITHDRAWAL REQUEST RECEIVED]: {req.model_dump()}")
     tg_id = str(req.telegram_id).strip()
 
-    # የቴሌግራም አይዲ ትክክለኛ መሆኑን ማረጋገጥ
     if not tg_id or tg_id.lower() in INVALID_TG_IDS:
-        print(f"❌ [WITHDRAW FAILED]: Invalid Telegram ID '{tg_id}'")
+        print(f"❌ [WITHDRAWAL FAILED]: Invalid Telegram ID '{tg_id}'")
         return {"success": False, "message": "የቴሌግራም ማንነት ማረጋገጥ አልተቻለም! እባክዎን አፑን በቦቱ በኩል ይክፈቱት።"}
 
     user = db.query(User).filter(User.telegram_id == tg_id).first()
-    if not user:
-        return {"success": False, "message": "ተጫዋቹ አልተገኘም!"}
+    
+    if not user or user.balance < req.amount:
+        print(f"❌ [WITHDRAWAL FAILED]: Insufficient Balance for User {tg_id}")
+        return {"success": False, "message": "በቂ ባላንስ የሎትም!"}
 
-    amount = float(req.amount)
-    user_balance = float(user.balance or 0.0)
-
-    # ተጫዋቹ በቂ ባላንስ እንዳለው ማረጋገጥ
-    if user_balance < amount:
-        return {"success": False, "message": f"የሂሳብ መጠንዎ በቂ አይደለም! ያለዎ ባላንስ: {user_balance:.2f} ETB"}
-
-    # 1. የ Withdrawal ጥያቄን በ Database መመዝገብ
+    user.balance -= req.amount
+    
     withd = Withdrawal(
-        user_id=user.id,
-        telegram_id=user.telegram_id,
-        amount=amount,
-        bank_name=req.bank_name,
-        account_number=req.account_number,
+        user_id=user.id, 
+        amount=req.amount, 
+        method=req.bank_name, 
+        account_number=req.account_number, 
         status="pending"
     )
     db.add(withd)
-
-    # 2. ከተጠቃሚው ባላንስ ላይ ገንዘቡን ቀና ማድረግ
-    user.balance = user_balance - amount
-
-    # 3. የ Transaction ታሪክ መመዝገብ
-    tx = WalletTransaction(
-        user_id=user.id,
-        transaction_type="withdraw",
-        amount=amount,
-        balance_after=user.balance,
-        description=f"Withdrawal request #{withd.id} via {req.bank_name} ({req.account_number})"
-    )
-    db.add(tx)
-
     db.commit()
     db.refresh(withd)
-    db.refresh(user)
 
-    print(f"✅ [WITHDRAW CREATED IN DB]: ID #{withd.id} for User {user.telegram_id}")
+    tx = WalletTransaction(
+        user_id=user.id,
+        transaction_type="withdrawal",
+        amount=-req.amount,
+        balance_after=user.balance,
+        description=f"Withdrawal request via {req.bank_name} ({req.account_number})"
+    )
+    db.add(tx)
+    db.commit()
 
-    # ለ Admin የቴሌግራም ማሳወቂያ መላክ
+    print(f"✅ [WITHDRAWAL CREATED IN DB]: ID #{withd.id} for User {user.telegram_id}")
+
     msg = (
-        f"💸 <b>NEW WITHDRAWAL REQUEST #{withd.id}</b>\n\n"
-        f"👤 <b>User:</b> {user.first_name or 'ተጫዋች'} ({user.telegram_id})\n"
-        f"💵 <b>Amount:</b> {amount:.2f} ETB\n"
+        f"🔻 <b>NEW WITHDRAWAL REQUEST #{withd.id}</b>\n\n"
+        f"👤 <b>User Telegram ID:</b> {req.telegram_id}\n"
+        f"💵 <b>Amount:</b> {req.amount} ETB\n"
         f"🏦 <b>Bank:</b> {req.bank_name}\n"
         f"💳 <b>Account:</b> <code>{req.account_number}</code>"
     )
     buttons = {
         "inline_keyboard": [[
-            {"text": "✅ Approve", "callback_data": f"approve_withd_{withd.id}"},
-            {"text": "❌ Reject", "callback_data": f"reject_withd_{withd.id}"}
+            {"text": "✅ Approve", "callback_data": f"approve_with_{withd.id}"},
+            {"text": "❌ Reject", "callback_data": f"reject_with_{withd.id}"}
         ]]
     }
     notify_admin(msg, buttons)
-
-    return {
-        "success": True, 
-        "message": "የማውጫ ጥያቄዎ ለአድሚን ተልኳል! በቅርቡ ይስተናገዳል።",
-        "balance": round(user.balance, 2)
-    }
+    
+    return {"success": True, "message": "የማውጫ ጥያቄዎ ተመዝግቧል!"}
 
 # 6️⃣ Admin Deposit Action
 @router.post("/admin/deposit/approve")
@@ -419,7 +403,6 @@ def admin_approve_deposit(data: AdminApproveAction, db: Session = Depends(get_db
         notify_user(user.telegram_id, f"❌ የ {dep.amount} ETB ዲፖዚት ጥያቄዎ ውድቅ ተደርጓል።")
 
     return {"success": True, "message": f"Deposit #{dep.id} marked as {dep.status}"}
-
 
 # 7️⃣ Admin Withdrawal Action
 @router.post("/admin/withdraw/approve")
