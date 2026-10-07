@@ -39,23 +39,6 @@ const slotSymbols = [
     "7️⃣"
 ];
 
-let selectedPlinkoBet = 10;
-let plinkoPlaying = false;
-
-const plinkoMultipliers = [
-    0,
-    0.5,
-    1,
-    2,
-    5,
-    10,
-    5,
-    2,
-    1,
-    0.5,
-    0
-];
-
 // 🎡 Roulette
 let selectedRouletteBet = 10;
 let rouletteSpinning = false;
@@ -212,13 +195,6 @@ function closeModals() {
 
 document.getElementById("modalClose")?.addEventListener("click", closeMessage);
 document.getElementById("modalButton")?.addEventListener("click", closeMessage);
-
-document.querySelectorAll(".modal-overlay").forEach(overlay => {
-    overlay.addEventListener("click", () => {
-        closeMessage();
-        closeModals();
-    });
-});
 
 document.getElementById("depositButton")?.addEventListener("click", openDepositModal);
 document.getElementById("dashDepositBtn")?.addEventListener("click", openDepositModal);
