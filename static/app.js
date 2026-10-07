@@ -181,8 +181,6 @@ function toggleSound() {
 /* =========================
    MODALS & NAVIGATION
 ========================= */
-
-// 1️⃣ Functions
 function showMessage(title, message, icon = "🎮") {
     if (!modal) {
         alert(`${title}\n${message}`);
@@ -192,52 +190,29 @@ function showMessage(title, message, icon = "🎮") {
     if (modalMessage) modalMessage.textContent = message;
     if (modalIcon) modalIcon.textContent = icon;
     modal.hidden = false;
-    modal.style.display = 'flex';
 }
 
 function closeMessage() {
-    if (modal) {
-        modal.hidden = true;
-        modal.style.display = 'none';
-    }
+    if (modal) modal.hidden = true;
 }
 
 function openDepositModal() {
-    if (depositModal) {
-        depositModal.hidden = false;
-        depositModal.style.display = 'flex';
-    }
+    if (depositModal) depositModal.hidden = false;
 }
 
 function openWithdrawModal() {
-    if (withdrawModal) {
-        withdrawModal.hidden = false;
-        withdrawModal.style.display = 'flex';
-    }
+    if (withdrawModal) withdrawModal.hidden = false;
 }
 
 function closeModals() {
-    if (depositModal) {
-        depositModal.hidden = true;
-        depositModal.style.display = 'none';
-    }
-    if (withdrawModal) {
-        withdrawModal.hidden = true;
-        withdrawModal.style.display = 'none';
-    }
-    if (modal) {
-        modal.hidden = true;
-        modal.style.display = 'none';
-    }
+    if (depositModal) depositModal.hidden = true;
+    if (withdrawModal) withdrawModal.hidden = true;
+    if (modal) modal.hidden = true;
 }
 
-// 2️⃣ Event Listeners - ❌ የሞዳል መዝጊያ ቁልፎች
 document.getElementById("modalClose")?.addEventListener("click", closeMessage);
 document.getElementById("modalButton")?.addEventListener("click", closeMessage);
-document.getElementById("closeDepositModalBtn")?.addEventListener("click", closeModals);
-document.getElementById("closeWithdrawModalBtn")?.addEventListener("click", closeModals);
 
-// 🔍 ከሞዳሉ ውጭ (Overlay) ሲነካ እንዲዘጋ ማድረግ
 document.querySelectorAll(".modal-overlay").forEach(overlay => {
     overlay.addEventListener("click", () => {
         closeMessage();
@@ -245,11 +220,16 @@ document.querySelectorAll(".modal-overlay").forEach(overlay => {
     });
 });
 
-// 🔘 የDeposit እና Withdraw መክፈቻ ቁልፎች
 document.getElementById("depositButton")?.addEventListener("click", openDepositModal);
 document.getElementById("dashDepositBtn")?.addEventListener("click", openDepositModal);
 document.getElementById("withdrawButton")?.addEventListener("click", openWithdrawModal);
 document.getElementById("dashWithdrawBtn")?.addEventListener("click", openWithdrawModal);
+
+// 2️⃣ Event Listeners - ❌ የሞዳል መዝጊያ ቁልፎች
+document.getElementById("modalClose")?.addEventListener("click", closeMessage);
+document.getElementById("modalButton")?.addEventListener("click", closeMessage);
+document.getElementById("closeDepositModalBtn")?.addEventListener("click", closeModals);
+document.getElementById("closeWithdrawModalBtn")?.addEventListener("click", closeModals);
 
 // 📋 የአካውንት ቁጥር Copy ማድረጊያ Logic
 document.querySelectorAll('.account-item').forEach(item => {
@@ -277,42 +257,6 @@ document.querySelectorAll('.account-item').forEach(item => {
         }
     });
 });
-
-// 3️⃣ Form Submissions (Deposit እና Withdraw Form Submit ሲደረጉ)
-const depositForm = document.getElementById("deposit-form");
-const withdrawForm = document.getElementById("withdraw-form");
-
-if (depositForm) {
-    depositForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        
-        const amount = document.getElementById('deposit-amount')?.value;
-        const bank = document.getElementById('deposit-bank')?.value;
-        const sms = document.getElementById('deposit-sms')?.value;
-
-        console.log("Deposit Request:", { amount, bank, sms });
-
-        alert("📩 የማስገቢያ ጥያቄዎ በተሳካ ሁኔታ ተልኳል!");
-        depositForm.reset();
-        closeModals();
-    });
-}
-
-if (withdrawForm) {
-    withdrawForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-
-        const amount = document.getElementById('withdraw-amount')?.value;
-        const bank = document.getElementById('withdraw-bank')?.value;
-        const account = document.getElementById('withdraw-account')?.value;
-
-        console.log("Withdraw Request:", { amount, bank, account });
-
-        alert("📬 የማውጫ ጥያቄዎ በተሳካ ሁኔታ ተልኳል!");
-        withdrawForm.reset();
-        closeModals();
-    });
-}
 
 /* =========================
    GAME CARDS CLICK HANDLERS
