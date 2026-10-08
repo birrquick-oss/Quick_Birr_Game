@@ -7,6 +7,7 @@ from zoneinfo import ZoneInfo
 from typing import Optional
 from pydantic import BaseModel
 from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.database import SessionLocal
@@ -315,7 +316,27 @@ def request_withdraw(req: WithdrawRequest, db: Session = Depends(get_db)):
 
     user = db.query(User).filter(User.telegram_id == tg_id).first()
     
-    if not user or user.balance < req.amount:
+    if not user:
+        print(f"❌ [WITHDRAWAL FAILED]: User Not Found ({tg_id})")
+        return {"success": False, "message": "ተጫዋቹ አልተገኘም!"}
+
+    # 🛑 [አዲስ የተጨመረ ሎጅክ]: ተጫዋቹ ያደረጋቸውን አጠቃላይ የተረጋገጡ (Approved) Deposits መደመር
+    total_approved_deposit = db.query(func.sum(Deposit.amount)).filter(
+        Deposit.user_id == user.id,
+        Deposit.status == "approved"
+    ).scalar() or 0.0
+
+    # 🛑 ቢያንስ 200 ETB Deposit ያላደረገ ከሆነ ማገድ
+    MIN_REQUIRED_DEPOSIT = 200.0
+    if total_approved_deposit < MIN_REQUIRED_DEPOSIT:
+        print(f"❌ [WITHDRAWAL BLOCKED]: User {tg_id} deposited only {total_approved_deposit} ETB (Required: {MIN_REQUIRED_DEPOSIT} ETB)")
+        return {
+            "success": False, 
+            "message": f"ገንዘብ ለማውጣት ቢያንስ {MIN_REQUIRED_DEPOSIT:g} ETB Deposit ማድረግ አለብዎት! (እስካሁን ያደረጉት: {total_approved_deposit:g} ETB)"
+        }
+
+    # ------------------ ቀድሞ የነበረው ሎጅክ (ያልተቀየረ) ------------------
+    if user.balance < req.amount:
         print(f"❌ [WITHDRAWAL FAILED]: Insufficient Balance for User {tg_id}")
         return {"success": False, "message": "በቂ ባላንስ የሎትም!"}
 
