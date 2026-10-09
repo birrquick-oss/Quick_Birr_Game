@@ -3125,29 +3125,15 @@ async function claimChannelBonus() {
     }
 }
 
-// 4️⃣ Referral Link ለጓደኛ Share ማድረጊያ (ሁለቱም ሊንኮች እንዲሰሩ)
+// 4️⃣ Referral Link Share ማድረጊያ (የተዘጋ)
 function shareReferralLink() {
-    const tgId = getTelegramUserId();
-
-    if (!tgId) {
-        if (typeof showToastMessage === 'function') {
-            showToastMessage("የቴሌግራም ማንነትዎ አልተገኘም!", "error");
-        } else {
-            alert("የቴሌግራም ማንነትዎ አልተገኘም!");
-        }
-        return;
-    }
-
-    const botUsername = "QuickBirr_Games_Bot"; 
-    const refLink = `https://t.me/${botUsername}?start=ref_${tgId}`;
-    const shareText = encodeURIComponent("🎉 የቢንጎ እና የካሲኖ ጨዋታዎችን ተጫውተህ ገንዘብ እንድታሸንፍ ጋብዤሃለሁ! በሊንኩ ገብተህ ተመዝገብ፦");
-    const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(refLink)}&text=${shareText}`;
-
-    if (window.Telegram?.WebApp?.openTelegramLink) {
-        window.Telegram.WebApp.openTelegramLink(shareUrl);
+    // 🛑 የ Share ማድረጊያው ሊንክ እንዳይከፈት እዚህ ጋር ተዘግቷል
+    if (typeof showToastMessage === 'function') {
+        showToastMessage("የመጋበዣ ሊንክ ማጋራት ለጊዜው ተዘግቷል!", "error");
     } else {
-        window.open(shareUrl, "_blank");
+        alert("የመጋበዣ ሊንክ ማጋራት ለጊዜው ተዘግቷል!");
     }
+    return; // ⛔ ከዚህ በታች ያለው የ Share መክፈቻ ኮድ አይሰራም
 }
 
 /* =========================================================
@@ -3163,7 +3149,6 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 });
-
 
 /* =========================================================
    6️⃣ LEADERBOARD FUNCTIONS (Top 20 Depositors)
