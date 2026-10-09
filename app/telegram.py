@@ -285,19 +285,15 @@ def handle_contact(message):
     # 🎁 የ 15 ብር ቦነስ እንዳገኘ የሚያሳውቅ መልእክት
     bot.send_message(chat_id, "✅ በስኬት ተመዝግበዋል! 🎁 የ 15.00 ETB የመመዝገቢያ ቦነስ ተሰጥቶዎታል!", reply_markup=types.ReplyKeyboardRemove())
 
-    my_ref_link = f"https://t.me/{BOT_USERNAME}?start=ref_{telegram_id}"
     welcome_text = (
         f"👋 ሰላም <b>{first_name}</b>፣ ወደ <b>Quick Birr Games</b> እንኳን መጡ! 🎲\n\n"
         f"🎁 <b>የ 15.00 ETB የመመዝገቢያ ቦነስ ወደ ሂሳብዎ ተጨምሯል!</b>\n"
-        "አሁኑኑ የተለያዩ አዝናኝ ጨዋታዎችን በመጫወት ያሸንፉ!\n\n"
-        f"🔗 <b>የመጋበዣ ሊንክዎ፦</b>\n<code>{my_ref_link}</code>"
+        "አሁኑኑ የተለያዩ አዝናኝ ጨዋታዎችን በመጫወት ያሸንፉ!"
     )
 
     markup = types.InlineKeyboardMarkup()
     btn_play = types.InlineKeyboardButton(text="🎮 Play Now (ክፈት)", web_app=types.WebAppInfo(url=MINI_APP_URL))
-    share_url = f"https://t.me/share/url?url={my_ref_link}&text=Quick%20Birr%20Games%20ተጫውተው%20ያሸንፉ!"
-    btn_share = types.InlineKeyboardButton(text="🔗 Share Link", url=share_url)
-    markup.add(btn_play, btn_share)
+    markup.add(btn_play)
 
     try:
         bot.send_photo(chat_id, photo=WELCOME_IMAGE_URL, caption=welcome_text, parse_mode="HTML", reply_markup=markup)
