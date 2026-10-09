@@ -1255,6 +1255,20 @@
         <div id="bonusView" class="page-view" hidden style="padding: 15px;">
             <h2 style="color: #fff; text-align: center; margin-bottom: 20px;">🎁 ቦነሶች እና ሽልማቶች</h2>
 
+            <!-- 🏆 NEW: Weekly Top Deposit Leaderboard Banner & Button -->
+            <div style="background: linear-gradient(135deg, #831843, #be123c); border-radius: 16px; padding: 20px; margin-bottom: 20px; border: 1px solid #f43f5e; box-shadow: 0 4px 15px rgba(244, 63, 94, 0.3);">
+                <div style="text-align: center; margin-bottom: 12px;">
+                    <div style="font-size: 13px; font-weight: bold; color: #fecdd3; letter-spacing: 1px; text-transform: uppercase;">🔥 ሳምንታዊ ልዩ ውድድር</div>
+                    <div style="font-size: 22px; font-weight: 900; color: #ffd700; margin: 4px 0;">🏆 TOP 10 የ 20,000 ETB ሽልማት</div>
+                    <p style="margin: 0; color: #ffe4e6; font-size: 12px;">ብዙ Deposit ያደረጉ 20 ተጫዋቾች ደረጃ እና ሳምንታዊ አሸናፊዎች!</p>
+                </div>
+                <div style="text-align: center; margin-top: 15px;">
+                    <button onclick="openLeaderboardModal()" style="background: #ffd700; color: #831843; border: none; padding: 12px 24px; border-radius: 25px; font-weight: 900; cursor: pointer; font-size: 14px; box-shadow: 0 2px 10px rgba(0,0,0,0.2); transition: transform 0.2s;">
+                        📊 Leaderboard ይመልከቱ
+                    </button>
+                </div>
+            </div>
+
             <!-- Task 1: Join Channel Task (10 BIRR) -->
             <div style="background: linear-gradient(135deg, #1e1b4b, #311b92); border-radius: 16px; padding: 20px; margin-bottom: 20px; border: 1px solid #4d38bd; display: flex; align-items: center; justify-content: space-between;">
                 <div style="display: flex; align-items: center; gap: 15px;">
@@ -1265,7 +1279,6 @@
                     </div>
                 </div>
                 <div style="display: flex; flex-direction: column; gap: 8px;">
-                    <!-- 🛠️ እዚህ ጋር ወደ button እና openTelegramChannel() ተቀይሯል -->
                     <button onclick="openTelegramChannel()" style="background: #eab308; color: #000; padding: 8px 16px; border-radius: 20px; font-weight: bold; border: none; cursor: pointer; font-size: 13px;">📢 Join Channel</button>
                     <button onclick="claimChannelBonus()" style="background: transparent; color: #ffd700; border: 1px solid #eab308; padding: 8px 16px; border-radius: 20px; font-weight: bold; cursor: pointer; font-size: 13px;">I've Joined</button>
                 </div>
@@ -1486,6 +1499,32 @@
                 መደብ ያዙ (Place Bet)
             </button>
         </div>
+    </div>
+</div>
+
+    <!-- 📊 LEADERBOARD MODAL -->
+<div id="leaderboardModal" class="modal" style="display: none; fixed: top 0 left 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 9999; justify-content: center; align-items: center; padding: 15px;">
+    <div style="background: #111827; border: 1px solid #374151; border-radius: 20px; width: 100%; max-width: 450px; max-height: 85vh; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.5);">
+        
+        <!-- Header -->
+        <div style="background: linear-gradient(135deg, #831843, #be123c); padding: 15px 20px; display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <h3 style="margin: 0; color: #fff; font-size: 18px;">🏆 TOP 20 Leaderboard</h3>
+                <p style="margin: 2px 0 0; color: #fecdd3; font-size: 11px;">ሳምንታዊ ከፍተኛ Deposit ያደረጉ ተጫዋቾች</p>
+            </div>
+            <button onclick="closeLeaderboardModal()" style="background: rgba(255,255,255,0.2); color: #fff; border: none; border-radius: 50%; width: 30px; height: 30px; font-weight: bold; cursor: pointer; font-size: 16px;">✕</button>
+        </div>
+
+        <!-- Banner Info -->
+        <div style="background: #1f2937; padding: 10px 15px; border-bottom: 1px solid #374151; text-align: center;">
+            <span style="color: #ffd700; font-weight: bold; font-size: 12px;">🎁 TOP 10 ሳምንታዊ ልዩ ሽልማት እስከ 20,000 ETB!</span>
+        </div>
+
+        <!-- Players List (Scrollable) -->
+        <div id="leaderboardList" style="padding: 15px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 10px;">
+            <div style="text-align: center; color: #9ca3af; padding: 20px;">መረጃው በመጫን ላይ ነው...</div>
+        </div>
+
     </div>
 </div>
 
