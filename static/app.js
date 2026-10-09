@@ -4090,6 +4090,71 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 });
 
+
+/* =========================================================
+   6️⃣ LEADERBOARD FUNCTIONS (Top 20 Depositors)
+========================================================= */
+
+// 🏆 Open Leaderboard Modal & Fetch Data
+async function openLeaderboardModal() {
+    const modal = document.getElementById("leaderboardModal");
+    const listContainer = document.getElementById("leaderboardList");
+    
+    if (modal) modal.style.display = "flex";
+    if (listContainer) {
+        listContainer.innerHTML = `<div style="text-align: center; color: #9ca3af; padding: 20px;">መረጃው በመጫን ላይ ነው...</div>`;
+    }
+
+    try {
+        const res = await fetch("/api/users/leaderboard");
+        const data = await res.json();
+
+        if (data.success && data.leaderboard.length > 0) {
+            let html = "";
+            data.leaderboard.forEach((user) => {
+                let badge = `#${user.rank}`;
+                let badgeBg = "#374151";
+                let badgeColor = "#fff";
+
+                // ለ TOP 3 ተጫዋቾች ልዩ ባጅ እና ቀለም
+                if (user.rank === 1) { badge = "🥇 1st"; badgeBg = "#ffd700"; badgeColor = "#000"; }
+                else if (user.rank === 2) { badge = "🥈 2nd"; badgeBg = "#c0c0c0"; badgeColor = "#000"; }
+                else if (user.rank === 3) { badge = "🥉 3rd"; badgeBg = "#cd7f32"; badgeColor = "#fff"; }
+
+                html += `
+                    <div style="background: #1f2937; border-radius: 12px; padding: 12px 15px; display: flex; align-items: center; justify-content: space-between; border: 1px solid #374151;">
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <span style="background: ${badgeBg}; color: ${badgeColor}; font-weight: bold; padding: 4px 10px; border-radius: 20px; font-size: 12px;">${badge}</span>
+                            <div>
+                                <div style="color: #fff; font-weight: bold; font-size: 14px;">${user.name}</div>
+                                <div style="color: #9ca3af; font-size: 11px;">ID: ${user.telegram_id}</div>
+                            </div>
+                        </div>
+                        <div style="text-align: right;">
+                            <div style="color: #10b981; font-weight: bold; font-size: 14px;">${user.total_deposited.toLocaleString()} ETB</div>
+                            <div style="color: #6b7280; font-size: 10px;">Total Deposit</div>
+                        </div>
+                    </div>
+                `;
+            });
+            listContainer.innerHTML = html;
+        } else {
+            listContainer.innerHTML = `<div style="text-align: center; color: #9ca3af; padding: 20px;">እስካሁን የተመዘገበ መረጃ የለም።</div>`;
+        }
+    } catch (err) {
+        console.error("Leaderboard Fetch Error:", err);
+        if (listContainer) {
+            listContainer.innerHTML = `<div style="text-align: center; color: #f87171; padding: 20px;">መረጃውን መጫን አልተቻለም!</div>`;
+        }
+    }
+}
+
+// ✕ Close Leaderboard Modal
+function closeLeaderboardModal() {
+    const modal = document.getElementById("leaderboardModal");
+    if (modal) modal.style.display = "none";
+}
+
 /* =========================================================
    ⚽ SPORTS BETTING INTEGRATION (ALL MARKETS & LEAGUES FIXED)
 ========================================================= */
