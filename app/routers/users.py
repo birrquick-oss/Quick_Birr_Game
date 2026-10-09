@@ -217,6 +217,39 @@ def get_all_user_ids(db: Session = Depends(get_db)):
     return [str(u[0]).strip() for u in users if u[0] and str(u[0]).strip().lower() not in INVALID_TG_IDS]
 
 
+# 🏆 2️⃣.1️⃣ LEADERBOARD API (Top 20 Depositors)
+@router.get("/leaderboard")
+def get_top_depositors(db: Session = Depends(get_db)):
+    top_users = (
+        db.query(
+            User.telegram_id,
+            User.first_name,
+            User.telegram_username,
+            func.sum(Deposit.amount).label("total_deposited")
+        )
+        .join(Deposit, User.id == Deposit.user_id)
+        .filter(Deposit.status == "approved")
+        .group_by(User.id)
+        .order_by(func.sum(Deposit.amount).desc())
+        .limit(20)
+        .all()
+    )
+
+    result = []
+    for rank, (tg_id, first_name, username, total_deposited) in enumerate(top_users, start=1):
+        name = first_name or username or f"Player_{str(tg_id)[-4:]}"
+        masked_id = str(tg_id)[:3] + "***" + str(tg_id)[-2:] if len(str(tg_id)) > 5 else str(tg_id)
+        
+        result.append({
+            "rank": rank,
+            "name": name,
+            "telegram_id": masked_id,
+            "total_deposited": round(float(total_deposited or 0), 2)
+        })
+
+    return {"success": True, "leaderboard": result}
+
+
 # 3️⃣ Get User Profile
 @router.get("/{telegram_id}")
 def get_user_profile(telegram_id: str, db: Session = Depends(get_db)):
@@ -316,7 +349,11 @@ def request_withdraw(req: WithdrawRequest, db: Session = Depends(get_db)):
 
     user = db.query(User).filter(User.telegram_id == tg_id).first()
     
-    # 🛑 የተጨመረ ሎጅክ፦ ተጫዋቹ ያደረጋቸውን አጠቃላይ Approved የሆኑ Deposits መደመር
+    if not user:
+        print(f"❌ [WITHDRAWAL FAILED]: User Not Found ({tg_id})")
+        return {"success": False, "message": "ተጫዋቹ አልተገኘም!"}
+
+    # 🛑 ተጫዋቹ ያደረጋቸውን አጠቃላይ Approved የሆኑ Deposits መደመር
     total_approved_deposit = db.query(func.sum(Deposit.amount)).filter(
         Deposit.user_id == user.id,
         Deposit.status == "approved"
@@ -331,8 +368,7 @@ def request_withdraw(req: WithdrawRequest, db: Session = Depends(get_db)):
             "message": f"ገንዘብ ለማውጣት ቢያንስ {MIN_REQUIRED_DEPOSIT:g} ETB Deposit ማድረግ አለብዎት! (እስካሁን ያደረጉት: {total_approved_deposit:g} ETB)"
         }
 
-    # ------------------ ቀድሞ የነበረው ሎጅክ (ያልተቀየረ) ------------------
-    if not user or user.balance < req.amount:
+    if user.balance < req.amount:
         print(f"❌ [WITHDRAWAL FAILED]: Insufficient Balance for User {tg_id}")
         return {"success": False, "message": "በቂ ባላንስ የሎትም!"}
 
@@ -432,7 +468,7 @@ def admin_approve_withdraw(data: AdminApproveAction, db: Session = Depends(get_d
 
     withd = db.query(Withdrawal).filter(Withdrawal.id == req_id).first()
     if not withd or str(withd.status).lower() != "pending":
-        print(f"⚠️️ [ADMIN WITHDRAW ACTION FAILED]: Withdrawal #{req_id} not found or not pending")
+        print(f"⚠ [ADMIN WITHDRAW ACTION FAILED]: Withdrawal #{req_id} not found or not pending")
         return {"success": False, "message": "ጥያቄው አልተገኘም ወይም አስቀድሞ ውሳኔ አግኝቷል!"}
 
     user = db.query(User).filter(User.id == withd.user_id).first()
